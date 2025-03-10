@@ -1,0 +1,121 @@
+.custom-card {
+    border: none;
+    background-color: transparent;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-card:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Лёгкая подсветка */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.603); /* Эффект свечения */
+}
+
+.card-body {
+    padding: 0.5rem; /* Reduced padding for tighter spacing */
+}
+
+.image-container {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 30px; /* Adjust this height as needed to match the Reddit post */
+}
+
+.centered-image {
+    max-width: 50%;
+    border-radius: 16px; /* Optional: to match the rounded corners in the Reddit post */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: subtle shadow for depth */
+}
+
+.custom-a {
+    color: inherit; /* Наследует цвет от родительского элемента */
+}
+
+.custom-a:hover, a:focus, a:active {
+    color: inherit; /* Отключает изменение цвета при наведении, клике */
+    text-decoration: none;
+}
+
+.content-wrapper {
+    max-width: 1600px; /* Ограничение ширины */
+    margin: 0 auto; /* Центрирование */
+}
+
+hr {
+    border-top: 1px solid #eceaea; /* Lighter gray for contrast on dark background */
+    margin: 0.5rem 0; /* Tight vertical spacing */
+}
+
+
+/* Стили для фиксированного sidebar */
+.sidebar {
+    position: fixed;
+    top: 53px; /* Располагаем sidebar ниже header */
+    left: 0;
+    width: 18rem; /* Фиксированная ширина sidebar */
+    height: calc(100vh - 56px); /* Высота = высота экрана минус высота header */
+    overflow-y: auto; /* Прокрутка, если контент превышает высоту */
+}
+
+body {
+    padding-top: 76px; /* Примерная высота navbar, можно уточнить в зависимости от дизайна */
+}
+
+.media-container {
+    position: relative;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 540px;
+}
+.media-container .background-img {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%) scale(1.2);
+    opacity: 0.8;
+    object-fit: cover;
+}
+.media-container .main-img,
+.media-container video {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.custom-dropdown {
+    min-width: 250px; /* Ширина меню */
+    padding: 15px;    /* Отступы внутри */
+    background: rgb(41, 39, 39);
+    
+}
+  
+.custom-dropdown .dropdown-item {
+    font-size: 1.1rem; /* Размер шрифта элементов */
+}
+
+
+.dropdown-menu li {
+    user-select: text; /* Разрешает выделение текста */
+}
+
+.dropdown-menu li:hover,
+.dropdown-menu li:active,
+.dropdown-menu li:focus {
+    background-color: transparent !important; /* Убирает фоновое выделение */
+    outline: none; /* Убирает обводку */
+}
+
+.dropdown-item:hover,
+.dropdown-item:active,
+.dropdown-item:focus {
+    background-color: transparent !important; /* Убирает фон */
+}
+
+.dropdown-item:hover {
+    color: rgb(177, 177, 177) !important; /* Легкое затемнение текста */
+}

@@ -1,0 +1,41 @@
+{% extends "main.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card border-0 bg-dark text-white profile-card" style='width: 45rem;'>
+            <h2 class="mb-3 text-24 font-bold ml-3 mt-3">Create post</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3 mx-3">
+                    <label for="title" class="form-label">Post title</label>
+                    {{ form.title }}
+                </div>
+
+                <div class="mb-3 mx-3" id="body-section">
+                    <label for="body" class="form-label">Post body</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="mb-3 mx-3">
+                    <label for="id_category" class="form-label">Category</label>
+                    {{ form.category }}
+                </div class="mb-3 mx-3">
+
+                <div class="mb-3 mx-3">
+                    <label for="id_status" class="form-label">Post status</label>
+                    {{ form.status }}
+                </div>
+
+                <div class="mb-3 mx-3" id="media-section">
+                    {{ media_formset.management_form }}
+                    {% for media_form in media_formset %}
+                        {{ media_form.as_p }}
+                    {% endfor %}
+                </div>
+                <div class="mb-3 mx-3">
+                    <button type="submit" class="btn btn-primary">Create Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

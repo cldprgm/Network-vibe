@@ -1,0 +1,56 @@
+<header class="fixed-top bg-dark d-flex flex-wrap py-0 mb-0 border-bottom border-secondary">
+    <nav class="navbar navbar-dark bg-dark w-100">
+      <div class="container-fluid">
+        <!-- Логотип/Название -->
+        <a class="navbar-brand" href="/">Network</a>
+        
+        <!-- Поисковая строка -->
+        <div class="d-flex align-items-center px-3" style='width: 37% !important;'>
+          <form class="w-100 me-3">
+            <input type="search" class="form-control rounded-3" placeholder="Search Network" aria-label="Search">
+          </form>
+        </div>
+        
+        <!-- Кнопки действий и выпадающее меню пользователя -->
+        {% if request.user.is_authenticated %}
+          <div class="d-flex align-items-center gap-2">
+              <ul class="text-white nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+                  <li><a href="{% url "post_create" %}" class="text-white nav-link px-2">+ Create</a></li>
+              </ul>
+            <div class="flex-shrink-0 dropdown">
+              <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="{{ request.user.profile.avatar.url }}" alt="mdo" width="38" height="38" class="rounded-circle">
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end custom-dropdown rounded-3" aria-labelledby="dropdownUser2">
+                <li>
+                  <a class="dropdown-item text-white" href="{% url "profile_detail" request.user.profile.slug %}">
+                    <div class="d-flex align-items-center mb-0">
+                      <img src="{{ request.user.profile.avatar.url }}" class="rounded-circle" alt="{{ profile }}" width="50" height="50">
+                      <div class='p-3'>
+                          <div>View Profile</div>
+                          <div class="fw-bold">{{ request.user }}</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li><hr></li>
+                <li><a class="dropdown-item text-white" href="{% url "profile_update" %}">Settings</a></li>
+                <li><hr></li>
+                <li>
+                  <form action="{% url 'user_logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-white border-0 bg-transparent">Log Out</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </div>
+        {% else %}
+          <ul class="nav ">
+            <li><a href="{% url 'user_register' %}" class="nav-link px-2 text-white">Sign Up</a></li>
+            <li><a href="{% url 'user_login' %}" class="nav-link px-2 text-white">Log In</a></li>
+          </ul>
+        {% endif %}
+      </div>
+    </nav>
+</header>
