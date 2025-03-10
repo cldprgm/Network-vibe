@@ -1,0 +1,68 @@
+{% extends "main.html" %}
+
+{% block content %}
+<div class="text-white card bg-dark border-dark mb-0" style="width: 45rem;">
+    <div class="card-body">
+        <h6 class="text-white d-flex align-items-center">
+            <!-- Аватарка -->
+            <img
+              src="{{ post.author.profile.avatar.url }}"
+              class="rounded-circle"
+              alt="{{ profile }}"
+              width="40"
+              height="40"
+            >
+            
+            <!-- Обёртка для текстовой части -->
+            <div class="ms-2 d-flex flex-column">
+                <!-- Верхняя строка: Ник + время -->
+                <div>
+                    <a
+                      class="custom-a fw-bold"
+                      href="{{ post.author.profile.get_absolute_url }}"
+                    >
+                        {{ post.author.username }}
+                    </a>
+                    <span style="color: rgba(255, 255, 255, 0.75);">• {{ post.created|timesince }} ago</span>
+                </div>
+                
+                <!-- Нижняя строка: Категория -->
+                <div>
+                    <span>in category:</span>
+                    <a
+                      class="custom-a ms-1"
+                      href="{{ post.category.get_absolute_url }}"
+                    >
+                        {{ post.category.title }}
+                    </a>
+                </div>
+            </div>
+        </h6>
+        <h3 class="card-title">{{ post.title }}</h3>
+        <p style="color: rgba(255, 255, 255, 0.75);">{{ post.description }}</p>
+        {% for media in post.media.all %}
+            <div class="media-container" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(236, 234, 234, 0.42); border-radius: 16px; overflow: hidden; max-height: 640px;">
+                {% if media.media_type == 'image' %}
+                    <img src="{{ media.file.url }}" style="position: absolute; top: 50%; left: 0; width: 150%; transform: translateY(-50%) scale(1.2); opacity: 0.3; object-fit: cover; filter: blur(8px);">
+                    <img src="{{ media.file.url }}" style="position: relative; width: 100%; height: 100%; object-fit: contain;">
+                {% elif media.media_type == 'video' %}
+                    <video controls style="width: 100%; height: 100%; object-fit: contain;">
+                        <source src="{{ media.file.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <hr>
+        {% comment %} Comments {% endcomment %}
+        <div class="card border-0 text-white bg-dark">
+            <div class="card-body">
+                <h5 class="card-title">
+                    Комментарии
+                </h5>
+                {% include 'social_network/comments/comments_list.html' %}
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock content %}

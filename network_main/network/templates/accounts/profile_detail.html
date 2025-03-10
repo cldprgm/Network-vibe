@@ -1,0 +1,65 @@
+{% extends "main.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-0 bg-dark text-white profile-card" style='width: 45rem;'>
+        <div class="card-body">
+            <!-- Profile Header (Avatar and Username) -->
+            <div class="d-flex justify-content-center align-items-center mb-4">
+                <div class="text-center">
+                    <img src="{{ profile.avatar.url }}" class="rounded-circle border border-3 border-secondary" alt="{{ profile }}" width="110" height='110'>
+                    <h4 class="card-title mt-3">@{{ profile.user.username }}</h4>
+                </div>
+            </div>
+
+            <!-- Profile Details -->
+            <div class="text-center mb-4">
+                <p class="text-white">Last login: {{ profile.user.last_login|date:"d M Y, H:i" }}</p>
+                
+                {% if profile.user.get_full_name %}
+                    <p><strong>Name:</strong> {{ profile.user.get_full_name }}</p>
+                {% endif %}
+                
+                {% if profile.birth_date %}
+                    <p><strong>Birth Date:</strong> {{ profile.birth_date }}</p>
+                {% endif %}
+                
+                {% if profile.description %}
+                    <p><strong>About:</strong> {{ profile.description }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs nav-fill mb-4">
+                <li class="nav-item"><a class="nav-link active text-light bg-secondary" href="#">Overview</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Posts</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Comments</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Saved</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Hidden</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Upvoted</a></li>
+                <li class="nav-item"><a class="nav-link text-light" href="#">Downvoted</a></li>
+            </ul>
+
+            <!-- Create Post Button -->
+            {% if request.user == profile.user %}
+                <div class="text-center mb-4">
+                    <a href="{% url 'post_create' %}" class="btn btn-outline-light rounded-3">+ Create Post</a>
+                </div>
+            {% endif %}
+            
+
+            <!-- No Posts Message -->
+            <div>
+                {% if posts %}
+                    {% include "social_network/includes/include_post_list.html" %}
+                {% else %}
+                    <div class='text-center'>
+                        <img src="media/uploads/avatars/default.png" width="50" alt="No posts">
+                        <p class="text-white">{{ profile.user.username }} hasn't posted yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
