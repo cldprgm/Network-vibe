@@ -19,8 +19,7 @@ class PostListView(ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        media_qs = Media.objects.all()
-        return Post.published.prefetch_related(Prefetch('media', media_qs))
+        return Post.published.prefetch_related('media')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
