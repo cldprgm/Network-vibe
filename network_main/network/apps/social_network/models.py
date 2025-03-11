@@ -15,7 +15,7 @@ from .validators import validate_file_size
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related('author', 'category').filter(status='PB')
+        return super().get_queryset().select_related('author__profile', 'category').filter(status='PB')
 
 
 class Post(models.Model):
