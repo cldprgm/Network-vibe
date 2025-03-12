@@ -74,7 +74,7 @@ class UserLoginView(SuccessMessageMixin, LoginView):
     form_class = UserLoginForm
     next_page = 'home'
     template_name = 'accounts/user_login.html'
-    success_message = 'Welcome to the network!'
+    success_message = 'Welcome to the Network!'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
