@@ -3,7 +3,7 @@
 {% block content %}
     <div class="container mt-4">
         <div class="card border-0 bg-dark text-white profile-card" style="width: 45rem;">
-            <h2 class="mb-3 text-24 font-bold ml-3 mt-3">Profile</h2>
+            <h2 class="mb-3 text-24 font-bold ml-3 mt-3">Profile Settings</h2>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="mb-3 mx-3">
-                    <label for="avatar" class="form-label">Avatar</label>
+                    <label for="avatar" class="form-label">Current Avatar:</label>
                     {% if form.instance.avatar %}
                         <img src="{{ form.instance.avatar.url }}" alt="Current Avatar" style="max-width: 200px; margin-bottom: 10px;">
                     {% endif %}
