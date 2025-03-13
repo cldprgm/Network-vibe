@@ -24,7 +24,7 @@ function replyComment() {
 async function createComment(event) {
     event.preventDefault();
     commentFormSubmit.disabled = true;
-    commentFormSubmit.innerText = "Ожидаем ответа сервера";
+    commentFormSubmit.innerText = "Waiting for the server response";
     try {
         const response = await fetch(`/post/${commentPostId}/comments/create/`, {
             method: 'POST',
@@ -55,7 +55,7 @@ async function createComment(event) {
                                                 <p class="card-text">
                                                     ${comment.content}
                                                 </p>
-                                                <a class="btn bg-white btn-sm btn-reply" href="#commentForm" data-comment-id="${comment.id}" data-comment-username="${comment.author}">Ответить</a>
+                                                <a class="btn bg-white btn-sm btn-reply" href="#commentForm" data-comment-id="${comment.id}" data-comment-username="${comment.author}">Reply</a>
                                                 <hr/>
                                                 <time>${comment.time_created}</time>
                                             </div>
@@ -91,7 +91,7 @@ async function createComment(event) {
         alert(error);
     } finally {
         commentFormSubmit.disabled = false;
-        commentFormSubmit.innerText = "Добавить комментарий";
+        commentFormSubmit.innerText = "Add comment";
     }
     
     replyUser();
