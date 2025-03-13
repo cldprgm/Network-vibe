@@ -13,25 +13,43 @@
     </div>
 {% endif %}
 
-<div class="nested-comments bg-dark text-white">
+<div class="nested-comments bg-dark text-white mt-2">
     {% recursetree post.comments.all %}
-    <ul id="comment-thread-{{ node.pk }}">
+    <ul id="comment-thread-{{ node.pk }}" style="margin-top: 0; margin-bottom: 0;">
         <li class="card border-0 text-white bg-dark">
             <div class="row">
-                <div class="col-md-2">
-                    <img src="{{ node.author.profile.avatar.url }}" style="width: 100px;height: 100px;object-fit: cover;" alt="{{ node.author }}"/>
-                </div>
-                <div class="col-md-10">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <a href="{{ node.author.profile.get_absolute_url }}">{{ node.author }}</a>
-                        </h6>
-                        <p class="card-text">
+                
+                <h6 class="text-white d-flex">
+                    <!-- Аватарка -->
+                    <img
+                      src="{{ node.author.profile.avatar.url }}"
+                      class="rounded-circle"
+                      alt="{{ node.author }}"
+                      width="40"
+                      height="40"
+                    >
+                    
+                    <!-- Обёртка для текстовой части -->
+                    <div class="ms-2 d-flex flex-column mt-2">
+                        <!-- Верхняя строка: Ник + время -->
+                        <div>
+                            <a
+                              class="custom-a fw-bold"
+                              href="{{ node.author.profile.get_absolute_url }}">
+                              {{ node.author }}
+                            </a>
+                            <span style="color: rgba(255, 255, 255, 0.75);">• {{ node.time_created|timesince }} ago</span>
+                        </div>
+                        <!-- Content -->
+                        <div class='mt-2'>
                             {{ node.content }}
-                        </p>
+                        </div>             
+                    </div>
+                </h6>
+                <div class="col-md-12">
+                    <div class="card-body">
                         <a class="btn bg-white btn-sm btn-reply" href="#commentForm" data-comment-id="{{ node.pk }}" data-comment-username="{{ node.author }}">Reply</a>
-                        <hr/>
-                        <time>{{ node.time_created }}</time>
+                        <hr style="width: 38rem; margin: 0.40rem 0;">
                     </div>
                 </div>
             </div>
