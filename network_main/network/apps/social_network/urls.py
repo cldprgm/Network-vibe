@@ -10,4 +10,5 @@ urlpatterns = [
          CommentCreateView.as_view(), name='comment_create_view'),
     path('category/<str:slug>/', PostFromCategory.as_view(),
          name='post_by_category'),
+
 ]

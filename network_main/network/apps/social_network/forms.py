@@ -13,7 +13,7 @@ class PostCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs.update({
-                'class': 'form-control bg-dark text-white',
+                'class': 'form-control bg-dark text-white rounded-4',
                 'autocomplete': 'off'
             })
 
@@ -37,7 +37,11 @@ class CommentCreateForm(forms.ModelForm):
 
     parent = forms.IntegerField(widget=forms.HiddenInput, required=False)
     content = forms.CharField(label='', widget=forms.Textarea(
-        attrs={'cols': 30, 'rows': 5, 'placeholder': 'Join the conversation', 'class': 'form-control'}))
+        attrs={'cols': 10,
+               'rows': 3,
+               'placeholder': 'Join the conversation',
+               'class': 'form-control rounded-4 border-1 bg-dark text-white',
+               }))
 
     class Meta:
         model = Comment
