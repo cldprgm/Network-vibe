@@ -11,9 +11,9 @@
                     {{ form.title }}
                 </div>
 
-                <div class="mb-3 mx-3" id="body-section">
-                    <label for="body" class="form-label">Post body</label>
-                    {{ form.description }}
+                <div class="mb-3 mx-3 border-white" id="body-section">
+                    <label for="id_description" class="form-label">Post body</label>
+                    {{ form.description }}  
                 </div>
 
                 <div class="mb-3 mx-3">
@@ -33,7 +33,7 @@
                     {% endfor %}
                 </div>
                 <div class="mb-3 mx-3">
-                    <button type="submit" class="btn btn-primary mt-2">Create Post</button>
+                    <button type="submit" class="btn btn-primary mt-2 rounded-4">Create Post</button>
                 </div>
             </form>
         </div>

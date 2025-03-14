@@ -1,12 +1,12 @@
 {% load mptt_tags static %}
 
 {% if request.user.is_authenticated %}
-    <div class="card border-0 bg-dark text-white">
+    <div class="card border-0 bg-dark text-white" >
        <div class="card-body">
           <form method="post" action="{% url 'comment_create_view' post.pk %}" id="commentForm" name="commentForm" data-post-id="{{ post.pk }}">
             {{ form }}
             <div class="d-grid gap-2 d-md-block mt-2">
-                <button type="submit" class="btn bg-white" id="commentSubmit">Add comment</button>
+                <button type="submit" class="btn btn-secondary text-white rounded-4 border-0" id="commentSubmit">Add comment</button>
             </div>
           </form>
        </div>
@@ -30,7 +30,7 @@
                     >
                     
                     <!-- Обёртка для текстовой части -->
-                    <div class="ms-2 d-flex flex-column mt-2">
+                    <div class="ms-2 d-flex flex-column mt-2" style="max-width: 100%;">
                         <!-- Верхняя строка: Ник + время -->
                         <div>
                             <a
@@ -41,14 +41,14 @@
                             <span style="color: rgba(255, 255, 255, 0.75);">• {{ node.time_created|timesince }} ago</span>
                         </div>
                         <!-- Content -->
-                        <div class='mt-2'>
+                        <div class='mt-2 comment-content'>
                             {{ node.content }}
                         </div>             
                     </div>
                 </h6>
                 <div class="col-md-12">
                     <div class="card-body">
-                        <a class="btn bg-white btn-sm btn-reply" href="#commentForm" data-comment-id="{{ node.pk }}" data-comment-username="{{ node.author }}">Reply</a>
+                        <a class="btn bg-white btn-sm btn-reply rounded-4 border-0" href="#commentForm" data-comment-id="{{ node.pk }}" data-comment-username="{{ node.author }}">Reply</a>
                         <hr style="width: 38rem; margin: 0.40rem 0;">
                     </div>
                 </div>

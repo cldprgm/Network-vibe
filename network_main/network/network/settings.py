@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'apps.social_network.apps.SocialNetworkConfig',
     'apps.accounts.apps.AccountsConfig',
     'mptt',
-    'debug_toolbar'
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -127,8 +127,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "templates/js"),
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "static/js"),
+    os.path.join(BASE_DIR, 'static')
 ]
 
 MEDIA_URL = 'media/'

@@ -24,7 +24,7 @@ class UserUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs.update({
-                'class': 'form-control bg-dark text-white',
+                'class': 'form-control bg-dark text-white rounded-4',
                 'autocomplete': 'off'
             })
 
@@ -54,7 +54,7 @@ class ProfileUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs.update({
-                'class': 'form-control bg-dark text-white',
+                'class': 'form-control bg-dark text-white rounded-4',
                 'autocomplete': 'off'
             })
 
@@ -90,7 +90,8 @@ class UserRegisterForm(UserCreationForm):
 
         for field in self.fields:
             self.fields[field].widget.attrs.update(
-                {'class': 'form-control', 'autocomplete': 'off'})
+                {'class': 'form-control bg-transparent text-white rounded-4',
+                 'autocomplete': 'off'})
 
 
 class UserLoginForm(AuthenticationForm):
@@ -103,4 +104,4 @@ class UserLoginForm(AuthenticationForm):
 
         for field in self.fields:
             self.fields[field].widget.attrs.update(
-                {'class': 'form-control', 'autocomplete': 'off'})
+                {'class': 'form-control bg-transparent text-white rounded-4', 'autocomplete': 'off'})

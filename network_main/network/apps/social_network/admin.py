@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Post, Media, Category, Comment
 from mptt.admin import DraggableMPTTAdmin
+
+from .models import Post, Media, Category, Comment
 
 
 class MediaInLine(admin.TabularInline):

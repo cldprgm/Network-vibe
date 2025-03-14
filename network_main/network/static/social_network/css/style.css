@@ -119,3 +119,16 @@ body {
 .dropdown-item:hover {
     color: rgb(177, 177, 177) !important; /* Легкое затемнение текста */
 }
+
+.form-control::placeholder {
+    color: gray; /* Укажите нужный цвет */
+    opacity: 1; /* Некоторые браузеры уменьшают прозрачность */
+}
+
+.comment-content {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important; /* Гарантирует перенос текста */
+    max-width: 100% !important; /* Ограничивает ширину до контейнера */
+}
+
