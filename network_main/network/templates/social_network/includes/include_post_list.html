@@ -1,10 +1,11 @@
 {% load tz %}
+{% load static %}
 <hr style='width: 45rem;'>
 {% for post in posts %}
     <div class="text-white card custom-card mb-0" style='width: 45rem;'>
         <div class="card-body">
             <h6 class="text-white d-flex align-items-center">
-                <!-- Аватарка -->
+                <!-- Avatar -->
                 <img
                   src="{{ post.author.profile.avatar.url }}"
                   class="rounded-circle"
@@ -13,9 +14,9 @@
                   height="40"
                 >
                 
-                <!-- Обёртка для текстовой части -->
+                <!-- Text -->
                 <div class="ms-2 d-flex flex-column">
-                    <!-- Верхняя строка: Ник + время -->
+                    <!-- Nickname + time -->
                     <div>
                         <a
                           class="custom-a fw-bold"
@@ -36,12 +37,12 @@
                 {% for media in post.media.all %}
                     <div class="media-container" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(236, 234, 234, 0.42); border-radius: 16px; overflow: hidden; max-height: 640px;">
                         {% if media.media_type == 'image' %}
-                            <!-- Фоновое изображение -->
+                            <!-- Background image -->
                             <img src="{{ media.file.url }}" style="position: absolute; top: 50%; left: 0; width: 150%; transform: translateY(-50%) scale(1.2); opacity: 0.3; object-fit: cover; filter: blur(8px);">
-                            <!-- Основное изображение -->
+                            <!-- Main image -->
                             <img src="{{ media.file.url }}" style="position: relative; width: 100%; height: 100%; object-fit: contain;">
                         {% elif media.media_type == 'video' %}
-                            <!-- Видео -->
+                            <!-- Video -->
                             <video controls style="width: 100%; height: 100%; object-fit: contain;">
                                 <source src="{{ media.file.url }}" type="video/mp4">
                             </video>
@@ -51,7 +52,20 @@
                 {% endfor %}
                 
             </a>
+            
+        </div>
+        <div class="ms-2 mb-2 rating-buttons">
+            <button class="btn btn-sm btn-secondary rounded-4" data-post="{{ post.id }}" data-value="1">
+                <img src={% static 'icons/upvote.svg' %} width="16" height="16" data-post="{{ post.id }}" data-value="1">
+            </button>
+            <span class="rating-sum">{{ post.get_sum_rating }}</span>
+            <button class="btn btn-sm btn-secondary rounded-4" data-post="{{ post.id }}" data-value="-1">
+                <img src={% static 'icons/downvote.svg' %} width="16" height="16" data-post="{{ post.id }}" data-value="-1">
+            </button>
         </div>
     </div>
     <hr style='width: 45rem;'>
+    
 {% endfor %}
+<script src="{% static 'ratings.js' %}"></script>
+{% block script %}{% endblock script %}
