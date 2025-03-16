@@ -1,14 +1,15 @@
 from django.shortcuts import render, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Prefetch
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.http import JsonResponse
+from django.core.exceptions import ObjectDoesNotExist
 
 
-from .models import Post, Category, Media, Comment
+from .models import Post, Category, Media, Comment, Rating
 from .forms import PostCreateForm, MediaFormSet, CommentCreateForm
 from ..services.mixins import AuthorRequiredMixin
 
@@ -159,3 +160,38 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
     def handle_no_permission(self):
         return JsonResponse({'error': 'You need to log in to add comments.'}, status=400)
+
+
+class RatingCreateView(LoginRequiredMixin, View):
+    model = Rating
+
+    def post(self, request, *args, **kwargs):
+        post_id = request.POST.get('post_id')
+        user = request.user
+        allowed_value = [1, -1]
+        value = int(request.POST.get('value'))
+        if value not in allowed_value:
+            return JsonResponse({'status': 'error', 'message': 'Invalid rating value'})
+        x_forwaded_for = request.META.get('HTTP_X_FORWADED_FOR')
+        ip_address = x_forwaded_for.split(
+            ',')[0] if x_forwaded_for else request.META.get('REMOTE_ADDR')
+
+        with transaction.atomic():
+            rating, created = self.model.objects.get_or_create(
+                post_id=post_id,
+                user=user,
+                defaults={'value': value, 'ip_address': ip_address}
+            )
+
+        if not created:
+            if rating.value == value:
+                rating.delete()
+                return JsonResponse({'status': 'deleted', 'rating_sum': rating.post.get_sum_rating()})
+            else:
+                rating.value = value
+                rating.user = user
+                rating.ip_address = ip_address
+                rating.save()
+                return JsonResponse({'status': 'updated', 'rating_sum': rating.post.get_sum_rating()})
+
+        return JsonResponse({'status': 'created', 'rating_sum': rating.post.get_sum_rating()})

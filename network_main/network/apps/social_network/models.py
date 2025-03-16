@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.core.validators import MinLengthValidator
 
 from PIL import Image
 import os
@@ -28,7 +29,8 @@ class Post(models.Model):
         ("PB", "Published"),
     )
 
-    title = models.CharField(max_length=255, verbose_name="Post title")
+    title = models.CharField(max_length=255, validators=[
+                             MinLengthValidator(5)], verbose_name="Post title")
     slug = models.SlugField(
         max_length=255, verbose_name="URL", blank=True)
     description = models.TextField(
@@ -59,6 +61,9 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         self.slug = unique_slugify(self, self.title)
         super().save(*args, **kwargs)
+
+    def get_sum_rating(self):
+        return sum([rating.value for rating in self.ratings.all()])
 
     def __str__(self):
         return self.title
@@ -168,3 +173,27 @@ class Comment(MPTTModel):
 
     def __str__(self):
         return f'{self.author}:{self.content}'
+
+
+class Rating(models.Model):
+    post = models.ForeignKey(
+        to=Post, on_delete=models.CASCADE, related_name='ratings', verbose_name='Post')
+    user = models.ForeignKey(
+        to=User, on_delete=models.CASCADE, verbose_name='User')
+    value = models.IntegerField(
+        choices=[(1, 'upvote'), (-1, 'downvote')], verbose_name='Rating value')
+    time_created = models.DateTimeField(
+        auto_now_add=True, verbose_name='Time created')
+    ip_address = models.GenericIPAddressField(verbose_name='IP address')
+
+    class Meta:
+        unique_together = ('post', 'user')
+        ordering = ('-time_created', )
+        indexes = [
+            models.Index(fields=['-time_created', 'value'])
+        ]
+        verbose_name = 'Rating'
+        verbose_name_plural = 'Ratings'
+
+    def __str__(self):
+        return self.post.title

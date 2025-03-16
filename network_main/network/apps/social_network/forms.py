@@ -5,6 +5,8 @@ from .models import Post, Media, Comment
 
 
 class PostCreateForm(forms.ModelForm):
+    title = forms.CharField(min_length=5)
+
     class Meta:
         model = Post
         fields = ('title', 'description', 'category', 'status')
