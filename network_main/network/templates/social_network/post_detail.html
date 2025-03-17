@@ -52,14 +52,24 @@
                 {% endif %}
             </div>
         {% endfor %}
-        <div class="ms-2 mb-3 rating-buttons">
-            <button class="btn btn-sm btn-secondary rounded-4" data-post="{{ post.id }}" data-value="1">
-                <img src={% static 'icons/upvote.svg' %} width="16" height="16" data-post="{{ post.id }}" data-value="1">
-            </button>
-            <button class="btn btn-sm btn-secondary rounded-4" data-post="{{ post.id }}" data-value="-1">
-                <img src={% static 'icons/downvote.svg' %} width="16" height="16" data-post="{{ post.id }}" data-value="-1">
-            </button>
-            <span class="rating-sum">{{ post.get_sum_rating }}</span>
+        <div class="post-toolbar">
+            <div class="rating-buttons ms-2 mb-1">
+                <button class="btn btn-sm btn-secondary rounded-circle border-0" data-post="{{ post.id }}" data-value="1">
+                    <img src="{% static 'icons/upvote.svg' %}" data-post="{{ post.id }}" data-value="1" width="16" height="16" style="filter: invert(1);">
+                </button>
+                <span class="rating-sum">{{ post.get_sum_rating }}</span>
+                <button class="btn btn-sm btn-secondary rounded-circle border-0" data-post="{{ post.id }}" data-value="-1">
+                    <img src="{% static 'icons/downvote.svg' %}" data-post="{{ post.id }}" data-value="-1" width="16" height="16" style="filter: invert(1);">
+                </button>
+            </div>
+            <a href="{{ post.get_absolute_url }}" class="toolbar-button ms-2 mb-1">
+                <img src="{% static 'icons/comment.svg' %}" width="16" height="16" style="filter: invert(1);">
+                <span>{{ post.get_comments_count }}</span>
+            </a>
+            <a href="/" class="toolbar-button ms-2 mb-1">              
+                <img src="{% static 'icons/share.svg' %}" width="22" height="22" style="filter: invert(1);">
+                Share
+            </a>
         </div>
         <hr>
         {% comment %} Comments {% endcomment %}

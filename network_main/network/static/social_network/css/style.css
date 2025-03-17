@@ -132,3 +132,43 @@ body {
     max-width: 100% !important; /* Ограничивает ширину до контейнера */
 }
 
+.post-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между блоками рейтинга и комментариев */
+}
+
+.rating-buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px; /* Расстояние между кнопками и суммой рейтинга */
+    background-color: rgba(200, 200, 200, 0.2);
+    border-radius: 16px;
+}
+
+.btn.btn-sm.btn-secondary {
+    background-color: transparent; /* Легкий серый фон */
+    border: none;
+    padding: 5px 8px; /* Отступы внутри кнопок */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+.btn.btn-sm.btn-secondary:hover {
+    background-color: rgba(200, 200, 200, 0.4); /* Чуть темнее при наведении */
+}
+
+.toolbar-button {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Расстояние между иконкой и числом комментариев */
+    padding: 4px 12px; /* Отступы внутри элемента */
+    background-color: rgba(200, 200, 200, 0.2); /* Такой же фон, как у кнопок */
+    border-radius: 16px; /* Закругленные углы */
+    text-decoration: none; /* Убираем подчеркивание ссылки */
+    color: inherit; /* Цвет текста наследуется */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+.toolbar-button:hover {
+    background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
+}
