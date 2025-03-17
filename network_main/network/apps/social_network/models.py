@@ -65,6 +65,9 @@ class Post(models.Model):
     def get_sum_rating(self):
         return sum([rating.value for rating in self.ratings.all()])
 
+    def get_comments_count(self):
+        return self.comments.count()
+
     def __str__(self):
         return self.title
 
