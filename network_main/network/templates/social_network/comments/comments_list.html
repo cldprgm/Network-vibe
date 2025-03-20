@@ -13,42 +13,66 @@
     </div>
 {% endif %}
 
+<!-- Comment Display -->
 <div class="nested-comments bg-dark text-white mt-2">
     {% recursetree post.comments.all %}
     <ul id="comment-thread-{{ node.pk }}" style="margin-top: 0; margin-bottom: 0;">
         <li class="card border-0 text-white bg-dark">
             <div class="row">
-                
                 <h6 class="text-white d-flex">
-                    <!-- Аватарка -->
-                    <img
-                      src="{{ node.author.profile.avatar.url }}"
-                      class="rounded-circle"
-                      alt="{{ node.author }}"
-                      width="40"
-                      height="40"
-                    >
-                    
-                    <!-- Обёртка для текстовой части -->
+                    <img src="{{ node.author.profile.avatar.url }}" class="rounded-circle" alt="{{ node.author }}" width="40" height="40">
                     <div class="ms-2 d-flex flex-column mt-2" style="max-width: 100%;">
-                        <!-- Верхняя строка: Ник + время -->
                         <div>
-                            <a
-                              class="custom-a fw-bold"
-                              href="{{ node.author.profile.get_absolute_url }}">
-                              {{ node.author }}
-                            </a>
+                            <a class="custom-a fw-bold" href="{{ node.author.profile.get_absolute_url }}">{{ node.author }}</a>
                             <span style="color: rgba(255, 255, 255, 0.75);">• {{ node.time_created|timesince }} ago</span>
                         </div>
-                        <!-- Content -->
-                        <div class='mt-2 comment-content'>
-                            {{ node.content }}
-                        </div>             
+                        <div class="mt-2 comment-content">{{ node.content }}</div>
                     </div>
                 </h6>
                 <div class="col-md-12">
                     <div class="card-body">
-                        <a class="btn bg-white btn-sm btn-reply rounded-4 border-0" href="#commentForm" data-comment-id="{{ node.pk }}" data-comment-username="{{ node.author }}">Reply</a>
+                        <div class="comment-toolbar">
+                            <!-- Rating Buttons -->
+                            <div class="comment-rating-buttons ms-2 mb-1">
+                                <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                                        data-content-type="{{ comment_content_type }}" 
+                                        data-object-id="{{ node.pk }}" 
+                                        data-value="1">
+                                    <img src="{% static 'icons/upvote.svg' %}" 
+                                         data-content-type="{{ comment_content_type }}" 
+                                         data-object-id="{{ node.pk }}" 
+                                         data-value="1" 
+                                         width="16" height="16" 
+                                         style="filter: invert(0.7);">
+                                </button>
+                                <span class="comment-rating-sum" style='color: rgba(255, 255, 255, 0.75);'>{{ node.get_sum_rating }}</span>
+                                <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                                        data-content-type="{{ comment_content_type }}" 
+                                        data-object-id="{{ node.pk }}" 
+                                        data-value="-1">
+                                    <img src="{% static 'icons/downvote.svg' %}" 
+                                         data-content-type="{{ comment_content_type }}" 
+                                         data-object-id="{{ node.pk }}" 
+                                         data-value="-1" 
+                                         width="16" height="16" 
+                                         style="filter: invert(0.7);">
+                                </button>
+                            </div>
+                            <a class="comment-toolbar-button btn-reply mb-1" 
+                                href="#commentForm" 
+                                data-comment-id="{{ node.pk }}" 
+                                data-comment-username="{{ node.author }}">
+                                <img src="{% static 'icons/comment.svg' %}" width="16" height="16" style="filter: invert(0.7);">
+                                Reply
+                            </a>
+                            <a href="#" class="comment-toolbar-button mb-1">              
+                                <img src="{% static 'icons/share.svg' %}" width="22" height="22" style="filter: invert(0.7);">
+                                Share
+                            </a>
+                            <a href="#" class="comment-toolbar-button mb-1">
+                                <img src="{% static 'icons/ellipsis.svg' %}" width="20" height="20" style="filter: invert(0.7);">
+                            </a>
+                        </div>
                         <hr style="width: 38rem; margin: 0.40rem 0;">
                     </div>
                 </div>
@@ -60,6 +84,14 @@
     </ul>
     {% endrecursetree %}
 </div>
+
+<!-- Expose content types to JavaScript -->
+<script>
+    var contentTypes = {
+        post: {{ post_content_type }},
+        comment: {{ comment_content_type }}
+    };
+</script>
 
 {% block script %}
 <script src="{% static '/comments.js' %}"></script>

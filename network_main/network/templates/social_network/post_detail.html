@@ -53,13 +53,29 @@
             </div>
         {% endfor %}
         <div class="post-toolbar">
-            <div class="rating-buttons ms-2 mb-1">
-                <button class="btn btn-sm btn-secondary rounded-circle border-0" data-post="{{ post.id }}" data-value="1">
-                    <img src="{% static 'icons/upvote.svg' %}" data-post="{{ post.id }}" data-value="1" width="16" height="16" style="filter: invert(1);">
+            <div class="post-rating-buttons ms-2 mb-1">
+                <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                    data-content-type="{{ post_content_type }}" 
+                    data-object-id="{{ post.id }}" 
+                    data-value="1">
+                    <img src="{% static 'icons/upvote.svg' %}" 
+                        data-content-type="{{ post_content_type }}" 
+                        data-object-id="{{ post.id }}" 
+                        data-value="1" 
+                        width="16" height="16" 
+                        style="filter: invert(1);">
                 </button>
-                <span class="rating-sum">{{ post.get_sum_rating }}</span>
-                <button class="btn btn-sm btn-secondary rounded-circle border-0" data-post="{{ post.id }}" data-value="-1">
-                    <img src="{% static 'icons/downvote.svg' %}" data-post="{{ post.id }}" data-value="-1" width="16" height="16" style="filter: invert(1);">
+                <span class="post-rating-sum">{{ post.get_sum_rating }}</span>
+                <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                    data-content-type="{{ post_content_type }}"
+                    data-object-id="{{ post.id }}"
+                    data-value="-1">
+                    <img src="{% static 'icons/downvote.svg' %}" 
+                        data-content-type="{{ post_content_type }}"
+                        data-object-id="{{ post.id }}"
+                        data-value="-1" 
+                        width="16" height="16" 
+                        style="filter: invert(1);">
                 </button>
             </div>
             <a href="{{ post.get_absolute_url }}" class="toolbar-button ms-2 mb-1">
@@ -73,6 +89,7 @@
         </div>
         <hr>
         {% comment %} Comments {% endcomment %}
+        <script src="{% static '/utils.js' %}"></script>
         <div class="card border-0 text-white bg-dark" >
             <div class="card-body">
                 <h5 class="card-title">
@@ -84,6 +101,6 @@
         
     </div>
 </div>
-<script src="{% static 'ratings.js' %}"></script>
+<script src="{% static '/ratings.js' %}"></script>
 {% block script %}{% endblock script %}
 {% endblock content %}

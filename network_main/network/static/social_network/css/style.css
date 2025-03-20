@@ -132,13 +132,14 @@ body {
     max-width: 100% !important; /* Ограничивает ширину до контейнера */
 }
 
+/* for posts */
 .post-toolbar {
     display: flex;
     align-items: center;
     gap: 10px; /* Расстояние между блоками рейтинга и комментариев */
 }
 
-.rating-buttons {
+.post-rating-buttons {
     display: flex;
     align-items: center;
     gap: 2px; /* Расстояние между кнопками и суммой рейтинга */
@@ -157,6 +158,16 @@ body {
     background-color: rgba(200, 200, 200, 0.4); /* Чуть темнее при наведении */
 }
 
+/* Активное состояние для upvote */
+.btn.btn-sm.btn-secondary.upvoted {
+    background-color: rgba(0, 255, 0, 0.3); /* Зеленый фон с прозрачностью */
+}
+
+/* Активное состояние для downvote */
+.btn.btn-sm.btn-secondary.downvoted {
+    background-color: rgba(255, 0, 0, 0.3); /* Красный фон с прозрачностью */
+}
+
 .toolbar-button {
     display: flex;
     align-items: center;
@@ -170,5 +181,57 @@ body {
 }
 
 .toolbar-button:hover {
+    background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
+}
+
+/* for comments */
+.comment-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между блоками рейтинга и комментариев */
+}
+
+.comment-rating-buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px; /* Расстояние между кнопками и суммой рейтинга */
+    background-color: transparent;
+    border-radius: 16px;
+}
+
+.btn.btn-sm.btn-secondary {
+    background-color: transparent; /* Легкий серый фон */
+    border: none;
+    padding: 5px 8px; /* Отступы внутри кнопок */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+.btn.btn-sm.btn-secondary:hover {
+    background-color: rgba(200, 200, 200, 0.4); /* Чуть темнее при наведении */
+}
+
+/* Активное состояние для upvote */
+.btn.btn-sm.btn-secondary.upvoted {
+    background-color: rgba(0, 255, 0, 0.3); /* Зеленый фон с прозрачностью */
+}
+
+/* Активное состояние для downvote */
+.btn.btn-sm.btn-secondary.downvoted {
+    background-color: rgba(255, 0, 0, 0.3); /* Красный фон с прозрачностью */
+}
+
+.comment-toolbar-button {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Расстояние между иконкой и числом комментариев */
+    padding: 4px 12px; /* Отступы внутри элемента */
+    background-color: transparent; /* Такой же фон, как у кнопок */
+    border-radius: 16px; /* Закругленные углы */
+    text-decoration: none; /* Убираем подчеркивание ссылки */
+    color: rgba(255, 255, 255, 0.75);; /* Цвет текста наследуется */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+.comment-toolbar-button:hover {
     background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
 }

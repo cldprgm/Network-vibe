@@ -7,6 +7,7 @@ from django.db import transaction
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.contenttypes.models import ContentType
 
 
 from .models import Post, Category, Media, Comment, Rating
@@ -25,6 +26,8 @@ class PostListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Main page'
+        context['post_content_type'] = ContentType.objects.get_for_model(
+            Post).id
         return context
 
 
@@ -37,6 +40,10 @@ class PostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["title"] = self.object.title
         context["form"] = CommentCreateForm
+        context['post_content_type'] = ContentType.objects.get_for_model(
+            Post).id
+        context['comment_content_type'] = ContentType.objects.get_for_model(
+            Comment).id
         return context
 
 
@@ -166,19 +173,28 @@ class RatingCreateView(LoginRequiredMixin, View):
     model = Rating
 
     def post(self, request, *args, **kwargs):
-        post_id = request.POST.get('post_id')
+        content_type_id = request.POST.get('content_type_id')
+        object_id = request.POST.get('object_id')
         user = request.user
         allowed_value = [1, -1]
+
         value = int(request.POST.get('value'))
         if value not in allowed_value:
             return JsonResponse({'status': 'error', 'message': 'Invalid rating value'})
-        x_forwaded_for = request.META.get('HTTP_X_FORWADED_FOR')
+
+        x_forwaded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         ip_address = x_forwaded_for.split(
             ',')[0] if x_forwaded_for else request.META.get('REMOTE_ADDR')
 
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+        except ContentType.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Invalid content type'})
+
         with transaction.atomic():
             rating, created = self.model.objects.get_or_create(
-                post_id=post_id,
+                content_type=content_type,
+                object_id=object_id,
                 user=user,
                 defaults={'value': value, 'ip_address': ip_address}
             )
@@ -186,12 +202,48 @@ class RatingCreateView(LoginRequiredMixin, View):
         if not created:
             if rating.value == value:
                 rating.delete()
-                return JsonResponse({'status': 'deleted', 'rating_sum': rating.post.get_sum_rating()})
+                target_object = rating.content_object
+                return JsonResponse({
+                    'user_vote': 0,
+                    'rating_sum': target_object.get_sum_rating() if target_object else 0})
             else:
                 rating.value = value
-                rating.user = user
                 rating.ip_address = ip_address
                 rating.save()
-                return JsonResponse({'status': 'updated', 'rating_sum': rating.post.get_sum_rating()})
+                return JsonResponse({
+                    'user_vote': value,
+                    'rating_sum': rating.content_object.get_sum_rating()})
+        else:
+            return JsonResponse({
+                'user_vote': value,
+                'rating_sum': rating.content_object.get_sum_rating()})
 
-        return JsonResponse({'status': 'created', 'rating_sum': rating.post.get_sum_rating()})
+
+class RatingStatusView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        content_type_id = request.GET.get('content_type')
+        object_id = request.GET.get('object_id')
+
+        if not content_type_id or not object_id:
+            return JsonResponse({'error': 'Missing content_type or object_id'}, status=400)
+
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+            rating = Rating.objects.filter(
+                user=request.user,
+                content_type=content_type,
+                object_id=object_id
+            ).first()
+
+            user_vote = rating.value if rating else 0
+            target_object = content_type.get_object_for_this_type(id=object_id)
+            rating_sum = target_object.get_sum_rating() if target_object else 0
+
+            return JsonResponse({
+                'user_vote': user_vote,
+                'rating_sum': rating_sum
+            })
+        except ContentType.DoesNotExist:
+            return JsonResponse({'error': 'Invalid content_type'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
