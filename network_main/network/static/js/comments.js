@@ -1,3 +1,76 @@
+// Function to set up rating buttons for a container
+function setupRatingButtons(container) {
+    const buttons = container.querySelectorAll('button');
+    const ratingSum = container.querySelector('.comment-rating-sum');
+
+    const updateButtonStates = (userVote) => {
+        buttons.forEach(btn => {
+            btn.classList.remove('upvoted', 'downvoted');
+            const btnValue = parseInt(btn.dataset.value);
+            if (userVote === 1 && btnValue === 1) {
+                btn.classList.add('upvoted');
+            } else if (userVote === -1 && btnValue === -1) {
+                btn.classList.add('downvoted');
+            }
+        });
+    };
+
+    buttons.forEach(button => {
+        button.addEventListener('click', debounce(event => {
+            const target = event.target.tagName === 'IMG' ? event.target.parentElement : event.target;
+            const value = parseInt(target.dataset.value);
+            const contentTypeId = parseInt(target.dataset.contentType);
+            const objectId = parseInt(target.dataset.objectId);
+
+            const formData = new FormData();
+            formData.append('content_type_id', contentTypeId);
+            formData.append('object_id', objectId);
+            formData.append('value', value);
+
+            fetch("/rating/create/", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrftoken, // Ensure csrftoken is defined globally
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                ratingSum.textContent = data.rating_sum;
+                updateButtonStates(data.user_vote);
+            })
+            .catch(error => {
+                console.error("Error updating rating:", error);
+                alert("Failed to update rating. Please try again.");
+            });
+        }, 200));
+    });
+
+    // Initialize button states
+    fetch(`/rating/status/?content_type=${buttons[0].dataset.contentType}&object_id=${buttons[0].dataset.objectId}`, {
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateButtonStates(data.user_vote);
+        ratingSum.textContent = data.rating_sum;
+    })
+    .catch(error => {
+        console.error("Error initializing rating:", error);
+        ratingSum.textContent = "N/A";
+    });
+}
+
+// Initialize all rating buttons on page load (for posts and comments)
+document.querySelectorAll('.comment-rating-buttons').forEach(setupRatingButtons);
+
+// Comment form handling
 const commentForm = document.forms.commentForm;
 const commentFormContent = commentForm.content;
 const commentFormParentInput = commentForm.parent;
@@ -9,16 +82,16 @@ commentForm.addEventListener('submit', createComment);
 replyUser();
 
 function replyUser() {
-  document.querySelectorAll('.btn-reply').forEach(e => {
-    e.addEventListener('click', replyComment);
-  });
+    document.querySelectorAll('.btn-reply').forEach(e => {
+        e.addEventListener('click', replyComment);
+    });
 }
 
 function replyComment() {
-  const commentUsername = this.getAttribute('data-comment-username');
-  const commentMessageId = this.getAttribute('data-comment-id');
-  commentFormContent.value = `${commentUsername}, `;
-  commentFormParentInput.value = commentMessageId;
+    const commentUsername = this.getAttribute('data-comment-username');
+    const commentMessageId = this.getAttribute('data-comment-id');
+    commentFormContent.value = `${commentUsername}, `;
+    commentFormParentInput.value = commentMessageId;
 }
 
 async function createComment(event) {
@@ -34,83 +107,114 @@ async function createComment(event) {
             },
             body: new FormData(commentForm),
         });
-        
+
         if (!response.ok) {
-            throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
-        
+
         const comment = await response.json();
 
-        let commentTemplate = `<ul id="comment-thread-${comment.id}" style="margin-top: 0; margin-bottom: 0;">
-                                    <li class="card border-0 text-white bg-dark">
-                                        <div class="row">
-                                            <h6 class="text-white d-flex">
-                                                <img
-                                                src="${comment.avatar}"
-                                                class="rounded-circle"
-                                                alt="${comment.author}"
-                                                width="40"
-                                                height="40"
-                                                >
-                                                <div class="ms-2 d-flex flex-column mt-2" style="max-width: 100%;">
-                                                    <div>
-                                                        <a
-                                                        class="custom-a fw-bold"
-                                                        href="${comment.get_absolute_url}">
-                                                        ${comment.author}
-                                                        </a>
-                                                        <span style="color: rgba(255, 255, 255, 0.75);">• ${comment.time_created}</span>
-                                                    </div>
-                                                    <div class="mt-2" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%;">
-                                                        ${comment.content}
-                                                    </div>
-                                                </div>
-                                            </h6>
-                                            <div class="col-md-12">
-                                                <div class="card-body">
-                                                    <a class="btn bg-white btn-sm btn-reply rounded-4 border-0" href="#commentForm" data-comment-id="${comment.id}" data-comment-username="${comment.author}">Reply</a>
-                                                    <hr style="width: 38rem; margin: 0.40rem 0;">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                                `;
-        
+        let commentTemplate = `
+            <ul id="comment-thread-${comment.id}" style="margin-top: 0; margin-bottom: 0;">
+                <li class="card border-0 text-white bg-dark">
+                    <div class="row">
+                        <h6 class="text-white d-flex">
+                            <img src="${comment.avatar}" class="rounded-circle" alt="${comment.author}" width="40" height="40">
+                            <div class="ms-2 d-flex flex-column mt-2" style="max-width: 100%;">
+                                <div>
+                                    <a class="custom-a fw-bold" href="${comment.get_absolute_url}">${comment.author}</a>
+                                    <span style="color: rgba(255, 255, 255, 0.75);">• ${comment.time_created}</span>
+                                </div>
+                                <div class="mt-2" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%;">
+                                    ${comment.content}
+                                </div>
+                            </div>
+                        </h6>
+                        <div class="col-md-12">
+                            <div class="card-body">
+                                <div class="comment-toolbar">
+                                    <div class="comment-rating-buttons ms-2 mb-1">
+                                        <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                                                data-content-type="${contentTypes.comment}" 
+                                                data-object-id="${comment.id}" 
+                                                data-value="1">
+                                            <img src="/static/icons/upvote.svg" 
+                                                 data-content-type="${contentTypes.comment}" 
+                                                 data-object-id="${comment.id}" 
+                                                 data-value="1" 
+                                                 width="16" height="16" 
+                                                 style="filter: invert(0.7);">
+                                        </button>
+                                        <span class="comment-rating-sum">0</span>
+                                        <button class="btn btn-sm btn-secondary rounded-circle border-0" 
+                                                data-content-type="${contentTypes.comment}" 
+                                                data-object-id="${comment.id}" 
+                                                data-value="-1">
+                                            <img src="/static/icons/downvote.svg" 
+                                                 data-content-type="${contentTypes.comment}" 
+                                                 data-object-id="${comment.id}" 
+                                                 data-value="-1" 
+                                                 width="16" height="16" 
+                                                 style="filter: invert(0.7);">
+                                        </button>                                        
+                                    </div>
+
+                                    <a class="comment-toolbar-button btn-reply mb-1" 
+                                        href="#commentForm" 
+                                        data-comment-id="${ comment.pk }" 
+                                        data-comment-username="${ comment.author }">
+                                        <img src="/static/icons/comment.svg" width="16" height="16" style="filter: invert(0.7);">
+                                        Reply
+                                    </a>
+                                    <a href="#" class="comment-toolbar-button mb-1">              
+                                        <img src="/static/icons/share.svg" width="22" height="22" style="filter: invert(0.7);">
+                                        Share
+                                    </a>
+                                    <a href="#" class="comment-toolbar-button mb-1">
+                                        <img src="/static/icons/ellipsis.svg" width="20" height="20" style="filter: invert(0.7);">
+                                    </a>
+                                </div>
+                                <hr style="width: 38rem; margin: 0.40rem 0;">
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        `;
+
         if (comment.is_child) {
             let parentThread = document.querySelector(`#comment-thread-${comment.parent_id}`);
             if (parentThread) {
                 let parentLi = parentThread.querySelector('li');
                 if (parentLi) {
                     parentLi.insertAdjacentHTML("afterend", commentTemplate);
-                } else {
-                    console.error("Не найдена <li> в родительском комментарии");
                 }
-            } else {
-                console.error("Не найден родительский комментарий", comment.parent_id);
-                alert("Не найден родительский комментарий");
-                alert(comment.parent_id);
             }
         } else {
             let nestedComments = document.querySelector('.nested-comments');
             if (nestedComments) {
                 nestedComments.insertAdjacentHTML("afterbegin", commentTemplate);
-            } else {
-                console.error("Не найден контейнер .nested-comments");
-                alert("Не найден контейнер .nested-comments");
             }
         }
-        
+
+        // Set up rating buttons for the new comment
+        const newCommentThread = document.querySelector(`#comment-thread-${comment.id}`);
+        if (newCommentThread) {
+            const newRatingButtons = newCommentThread.querySelector('.comment-rating-buttons');
+            if (newRatingButtons) {
+                setupRatingButtons(newRatingButtons);
+            }
+        }
+
         commentForm.reset();
         commentFormParentInput.value = "";
     } catch (error) {
-        console.error("Ошибка при отправке комментария:", error);
-        alert("Произошла ошибка при добавлении комментария. Попробуйте снова.");
-        alert(error);
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment. Please try again.");
     } finally {
         commentFormSubmit.disabled = false;
         commentFormSubmit.innerText = "Add comment";
     }
-    
+
     replyUser();
 }
