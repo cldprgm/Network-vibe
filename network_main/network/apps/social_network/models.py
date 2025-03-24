@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.core.validators import MinLengthValidator
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 from PIL import Image
 import os
@@ -19,7 +19,7 @@ from .validators import validate_file_size
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related('author__profile', 'category').filter(status='PB')
+        return super().get_queryset().select_related('author__profile', 'category').filter(status='PB').order_by('-created')
 
 
 class Category(MPTTModel):
@@ -79,7 +79,8 @@ class Rating(models.Model):
         indexes = [
             models.Index(fields=['-time_created', 'value']),
             models.Index(
-                fields=['content_type', 'object_id', '-time_created', 'value'])
+                fields=['content_type', 'object_id', '-time_created', 'value']),
+            models.Index(fields=['user', 'content_type', 'object_id'])
         ]
         verbose_name = 'Rating'
         verbose_name_plural = 'Ratings'
@@ -89,9 +90,7 @@ class Rating(models.Model):
 
 
 class Post(models.Model):
-    """
-    Model posts for network
-    """
+    """Posts model"""
 
     STATUS_OPTIONS = (
         ("DF", "Draft"),
@@ -133,10 +132,8 @@ class Post(models.Model):
         super().save(*args, **kwargs)
 
     def get_sum_rating(self):
-        return sum([rating.value for rating in self.ratings.all()])
-
-    def get_comments_count(self):
-        return self.comments.count()
+        result = self.ratings.aggregate(total=Sum('value'))['total']
+        return result if result is not None else 0
 
     def __str__(self):
         return self.title
@@ -174,7 +171,12 @@ class Comment(MPTTModel):
         verbose_name_plural = 'Comments'
 
     def get_sum_rating(self):
-        return self.ratings.aggregate(sum_rating=Sum('value'))['sum_rating'] or 0
+        if hasattr(self, 'sum_rating'):
+            return self.sum_rating or 0
+        content_type = ContentType.objects.get_for_model(Comment)
+        ratings = Rating.objects.filter(
+            content_type=content_type, object_id=self.id)
+        return ratings.aggregate(sum_rating=Sum('value'))['sum_rating'] or 0
 
     def __str__(self):
         return f'{self.author}:{self.content}'

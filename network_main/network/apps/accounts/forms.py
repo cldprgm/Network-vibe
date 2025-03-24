@@ -104,4 +104,4 @@ class UserLoginForm(AuthenticationForm):
 
         for field in self.fields:
             self.fields[field].widget.attrs.update(
-                {'class': 'form-control bg-transparent text-white rounded-4', 'autocomplete': 'off'})
+                {'class': 'form-control bg-transparent text-white rounded-4', 'autocomplete': 'on'})

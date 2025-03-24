@@ -4,6 +4,9 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db import transaction
 from django.urls import reverse_lazy
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count
+
 
 from .models import Profile
 from apps.social_network.models import Post
@@ -18,8 +21,14 @@ class ProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.object.user
+
+        posts = Post.published.filter(author=user).prefetch_related('media').annotate(
+            comments_count=Count('comments'))
+        post_content_type = ContentType.objects.get_for_model(Post).id
+
         context["title"] = f'User profile: {user.username}'
-        context['posts'] = Post.published.filter(author=user)
+        context['posts'] = posts
+        context['post_content_type'] = post_content_type
         return context
 
 
