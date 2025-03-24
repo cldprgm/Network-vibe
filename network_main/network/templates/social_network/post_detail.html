@@ -1,7 +1,7 @@
 {% extends "main.html" %}
 {% load static %}
 {% block content %}
-<div class="text-white card bg-dark border-dark mb-0" style="width: 45rem;">
+<div class="text-white card bg-dark border-0 mb-0" style="width: 45rem;">
     <div class="card-body">
         <h6 class="text-white d-flex align-items-center">
             <!-- Аватарка -->
@@ -38,7 +38,7 @@
                 </div>
             </div>
         </h6>
-        <h3 class="card-title">{{ post.title }}</h3>
+        <h4 class="card-title">{{ post.title }}</h4>
         <p style="color: rgba(255, 255, 255, 0.75);">{{ post.description }}</p>
         {% for media in post.media.all %}
             <div class="media-container mb-3" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(236, 234, 234, 0.42); border-radius: 16px; overflow: hidden; max-height: 640px;">
@@ -53,7 +53,7 @@
             </div>
         {% endfor %}
         <div class="post-toolbar">
-            <div class="post-rating-buttons ms-2 mb-1">
+            <div class="post-rating-buttons mb-1">
                 <button class="btn btn-sm btn-secondary rounded-circle border-0" 
                     data-content-type="{{ post_content_type }}" 
                     data-object-id="{{ post.id }}" 
@@ -65,7 +65,7 @@
                         width="16" height="16" 
                         style="filter: invert(1);">
                 </button>
-                <span class="post-rating-sum">{{ post.get_sum_rating }}</span>
+                <span class="post-rating-sum">{{ post.sum_rating }}</span>
                 <button class="btn btn-sm btn-secondary rounded-circle border-0" 
                     data-content-type="{{ post_content_type }}"
                     data-object-id="{{ post.id }}"
@@ -80,21 +80,17 @@
             </div>
             <a href="{{ post.get_absolute_url }}" class="toolbar-button ms-2 mb-1">
                 <img src="{% static 'icons/comment.svg' %}" width="16" height="16" style="filter: invert(1);">
-                <span>{{ post.get_comments_count }}</span>
+                <span>{{ post.comments_count }}</span>
             </a>
             <a href="/" class="toolbar-button ms-2 mb-1">              
                 <img src="{% static 'icons/share.svg' %}" width="22" height="22" style="filter: invert(1);">
                 Share
             </a>
         </div>
-        <hr>
         {% comment %} Comments {% endcomment %}
         <script src="{% static '/utils.js' %}"></script>
         <div class="card border-0 text-white bg-dark" >
-            <div class="card-body">
-                <h5 class="card-title">
-                    Comments:
-                </h5>
+            <div class="custom-comments-card-body mt-2">
                 {% include 'social_network/comments/comments_list.html' %}
             </div>
         </div>

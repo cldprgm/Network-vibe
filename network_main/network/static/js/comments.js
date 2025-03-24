@@ -1,4 +1,3 @@
-// Function to set up rating buttons for a container
 function setupRatingButtons(container) {
     const buttons = container.querySelectorAll('button');
     const ratingSum = container.querySelector('.comment-rating-sum');
@@ -7,11 +6,8 @@ function setupRatingButtons(container) {
         buttons.forEach(btn => {
             btn.classList.remove('upvoted', 'downvoted');
             const btnValue = parseInt(btn.dataset.value);
-            if (userVote === 1 && btnValue === 1) {
-                btn.classList.add('upvoted');
-            } else if (userVote === -1 && btnValue === -1) {
-                btn.classList.add('downvoted');
-            }
+            if (userVote === 1 && btnValue === 1) btn.classList.add('upvoted');
+            else if (userVote === -1 && btnValue === -1) btn.classList.add('downvoted');
         });
     };
 
@@ -30,47 +26,70 @@ function setupRatingButtons(container) {
             fetch("/rating/create/", {
                 method: "POST",
                 headers: {
-                    "X-CSRFToken": csrftoken, // Ensure csrftoken is defined globally
-                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": csrftoken,
+                    "X-Requested-With": "XMLHttpRequest"
                 },
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'error') {
-                    throw new Error(data.message);
-                }
+                if (data.status === 'error') throw new Error(data.message);
                 ratingSum.textContent = data.rating_sum;
                 updateButtonStates(data.user_vote);
             })
             .catch(error => {
                 console.error("Error updating rating:", error);
-                alert("Failed to update rating. Please try again.");
+                alert("Failed to update rating.");
             });
         }, 200));
     });
-
-    // Initialize button states
-    fetch(`/rating/status/?content_type=${buttons[0].dataset.contentType}&object_id=${buttons[0].dataset.objectId}`, {
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        updateButtonStates(data.user_vote);
-        ratingSum.textContent = data.rating_sum;
-    })
-    .catch(error => {
-        console.error("Error initializing rating:", error);
-        ratingSum.textContent = "N/A";
-    });
 }
 
-// Initialize all rating buttons on page load (for posts and comments)
-document.querySelectorAll('.comment-rating-buttons').forEach(setupRatingButtons);
+// Batch fetch ratings for all comments
+const commentRatingButtons = document.querySelectorAll('.comment-rating-buttons');
+const commentObjectIds = [];
+let commentContentTypeId;
 
-// Comment form handling
+commentRatingButtons.forEach(container => {
+    const button = container.querySelector('button');
+    commentObjectIds.push(button.dataset.objectId);
+    commentContentTypeId = button.dataset.contentType;
+});
+
+fetch(`/rating/status/?content_type=${commentContentTypeId}&object_ids=${commentObjectIds.join('&object_ids=')}`, {
+    headers: {"X-Requested-With": "XMLHttpRequest"}
+})
+.then(response => {
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    return response.json();
+})
+.then(data => {
+    commentRatingButtons.forEach(container => {
+        const buttons = container.querySelectorAll('button');
+        const ratingSum = container.querySelector('.comment-rating-sum');
+        const objectId = buttons[0].dataset.objectId;
+
+        setupRatingButtons(container); // Setup click handlers
+        const updateButtonStates = (userVote) => {
+            buttons.forEach(btn => {
+                btn.classList.remove('upvoted', 'downvoted');
+                const btnValue = parseInt(btn.dataset.value);
+                if (userVote === 1 && btnValue === 1) btn.classList.add('upvoted');
+                else if (userVote === -1 && btnValue === -1) btn.classList.add('downvoted');
+            });
+        };
+        updateButtonStates(data[objectId].user_vote);
+        ratingSum.textContent = data[objectId].rating_sum;
+    });
+})
+.catch(error => {
+    console.error("Error initializing comment ratings:", error);
+    commentRatingButtons.forEach(container => {
+        container.querySelector('.comment-rating-sum').textContent = "N/A";
+    });
+});
+
+// Comment form handling (unchanged)
 const commentForm = document.forms.commentForm;
 const commentFormContent = commentForm.content;
 const commentFormParentInput = commentForm.parent;
@@ -103,15 +122,12 @@ async function createComment(event) {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrftoken,
-                'X-Requested-With': 'XMLHttpRequest',
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: new FormData(commentForm),
+            body: new FormData(commentForm)
         });
 
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-
+        if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
         const comment = await response.json();
 
         let commentTemplate = `
@@ -158,11 +174,10 @@ async function createComment(event) {
                                                  style="filter: invert(0.7);">
                                         </button>                                        
                                     </div>
-
                                     <a class="comment-toolbar-button btn-reply mb-1" 
                                         href="#commentForm" 
-                                        data-comment-id="${ comment.pk }" 
-                                        data-comment-username="${ comment.author }">
+                                        data-comment-id="${comment.pk}" 
+                                        data-comment-username="${comment.author}">
                                         <img src="/static/icons/comment.svg" width="16" height="16" style="filter: invert(0.7);">
                                         Reply
                                     </a>
@@ -186,31 +201,24 @@ async function createComment(event) {
             let parentThread = document.querySelector(`#comment-thread-${comment.parent_id}`);
             if (parentThread) {
                 let parentLi = parentThread.querySelector('li');
-                if (parentLi) {
-                    parentLi.insertAdjacentHTML("afterend", commentTemplate);
-                }
+                if (parentLi) parentLi.insertAdjacentHTML("afterend", commentTemplate);
             }
         } else {
             let nestedComments = document.querySelector('.nested-comments');
-            if (nestedComments) {
-                nestedComments.insertAdjacentHTML("afterbegin", commentTemplate);
-            }
+            if (nestedComments) nestedComments.insertAdjacentHTML("afterbegin", commentTemplate);
         }
 
-        // Set up rating buttons for the new comment
         const newCommentThread = document.querySelector(`#comment-thread-${comment.id}`);
         if (newCommentThread) {
             const newRatingButtons = newCommentThread.querySelector('.comment-rating-buttons');
-            if (newRatingButtons) {
-                setupRatingButtons(newRatingButtons);
-            }
+            if (newRatingButtons) setupRatingButtons(newRatingButtons);
         }
 
         commentForm.reset();
         commentFormParentInput.value = "";
     } catch (error) {
         console.error("Error adding comment:", error);
-        alert("Failed to add comment. Please try again.");
+        alert("Failed to add comment.");
     } finally {
         commentFormSubmit.disabled = false;
         commentFormSubmit.innerText = "Add comment";

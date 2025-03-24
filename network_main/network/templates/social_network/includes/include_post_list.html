@@ -2,7 +2,7 @@
 {% load static %}
 <hr style='width: 45rem;'>
 {% for post in posts %}
-    <div class="text-white card custom-card mb-0" style='width: 45rem;'>
+    <div class="text-white card custom-card mb-0" style='width: 45rem; border-radius: 18px;'>
         <div class="card-body">
             <h6 class="text-white d-flex align-items-center">
                 <!-- Avatar -->
@@ -31,9 +31,9 @@
             </h6>
             
             <a class='custom-a' style='text-decoration: none;' href="{{ post.get_absolute_url }}">
-                <h3 class="card-title">
+                <h4 class="card-title">
                     {{ post.title }}
-                </h3>
+                </h4>
                 {% for media in post.media.all %}
                     <div class="media-container" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(236, 234, 234, 0.42); border-radius: 16px; overflow: hidden; max-height: 640px;">
                         {% if media.media_type == 'image' %}
@@ -70,7 +70,7 @@
                         width="16" height="16" 
                         style="filter: invert(1);">
                 </button>
-                <span class="post-rating-sum">{{ post.get_sum_rating }}</span>
+                <span class="post-rating-sum">{{ post.rating_sum }}</span>
                 <button class="btn btn-sm btn-secondary rounded-circle border-0" 
                     data-content-type="{{ post_content_type }}"
                     data-object-id="{{ post.id }}"
@@ -85,7 +85,7 @@
             </div>
             <a href="{{ post.get_absolute_url }}" class="toolbar-button ms-2 mb-1">
                 <img src="{% static 'icons/comment.svg' %}" width="16" height="16" style="filter: invert(1);">
-                <span>{{ post.get_comments_count }}</span>
+                <span>{{ post.comments_count }}</span>
             </a>
             <a href="/" class="toolbar-button ms-2 mb-1">              
                 <img src="{% static 'icons/share.svg' %}" width="22" height="22" style="filter: invert(1);">

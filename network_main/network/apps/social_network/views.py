@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count, Sum, OuterRef, Subquery
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 
 
 from .models import Post, Category, Media, Comment, Rating
@@ -21,7 +22,23 @@ class PostListView(ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return Post.published.prefetch_related('media')
+        queryset = Post.published.prefetch_related('media')
+        queryset = queryset.annotate(comments_count=Count('comments'))
+
+        post_ids = list(queryset.values_list('id', flat=True))
+        content_type = ContentType.objects.get_for_model(Post)
+
+        ratings = Rating.objects.filter(
+            content_type=content_type,
+            object_id__in=post_ids
+        ).values('object_id').annotate(total_rating=Sum('value'))
+
+        rating_dict = {rating['object_id']: rating['total_rating'] for rating in ratings}
+
+        for post in queryset:
+            post.rating_sum = rating_dict.get(post.id, 0)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -36,14 +53,44 @@ class PostDetailView(DetailView):
     template_name = 'social_network/post_detail.html'
     context_object_name = 'post'
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        content_type = ContentType.objects.get_for_model(Post)
+        rating_subquery = Rating.objects.filter(
+            content_type=content_type,
+            object_id=OuterRef('pk')
+        ).values('object_id').annotate(sum_rating=Sum('value')).values('sum_rating')
+
+        queryset = queryset.annotate(
+            comments_count=Count('comments'),
+            sum_rating=Subquery(
+                rating_subquery, output_field=models.IntegerField())
+        )
+
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = self.object.title
+        post = self.object
+
+        comment_content_type = ContentType.objects.get_for_model(Comment)
+        comment_rating_subquery = Rating.objects.filter(
+            content_type=comment_content_type,
+            object_id=OuterRef('pk')
+        ).values('object_id').annotate(sum_rating=Sum('value')).values('sum_rating')
+
+        comments = post.comments.all().select_related('author__profile').annotate(
+            sum_rating=Subquery(comment_rating_subquery,
+                                output_field=models.IntegerField())
+        )
+
+        context["title"] = post.title
         context["form"] = CommentCreateForm
         context['post_content_type'] = ContentType.objects.get_for_model(
             Post).id
         context['comment_content_type'] = ContentType.objects.get_for_model(
             Comment).id
+        context['comments'] = comments
         return context
 
 
@@ -176,9 +223,9 @@ class RatingCreateView(LoginRequiredMixin, View):
         content_type_id = request.POST.get('content_type_id')
         object_id = request.POST.get('object_id')
         user = request.user
-        allowed_value = [1, -1]
+        value = int(request.POST.get('value', 0))
 
-        value = int(request.POST.get('value'))
+        allowed_value = {1, -1}
         if value not in allowed_value:
             return JsonResponse({'status': 'error', 'message': 'Invalid rating value'})
 
@@ -219,30 +266,41 @@ class RatingCreateView(LoginRequiredMixin, View):
                 'rating_sum': rating.content_object.get_sum_rating()})
 
 
-class RatingStatusView(LoginRequiredMixin, View):
+class BatchRatingStatusView(View):
     def get(self, request, *args, **kwargs):
         content_type_id = request.GET.get('content_type')
-        object_id = request.GET.get('object_id')
+        object_ids = request.GET.getlist('object_ids')
 
-        if not content_type_id or not object_id:
-            return JsonResponse({'error': 'Missing content_type or object_id'}, status=400)
+        if not content_type_id or not object_ids:
+            return JsonResponse({'error': 'Missing content_type or object_ids'}, status=400)
 
         try:
             content_type = ContentType.objects.get(id=content_type_id)
-            rating = Rating.objects.filter(
+            ratings = Rating.objects.filter(
                 user=request.user,
                 content_type=content_type,
-                object_id=object_id
-            ).first()
+                object_id__in=object_ids
+            ).values('object_id', 'value')
 
-            user_vote = rating.value if rating else 0
-            target_object = content_type.get_object_for_this_type(id=object_id)
-            rating_sum = target_object.get_sum_rating() if target_object else 0
+            user_votes = {str(rating['object_id']): rating['value']
+                          for rating in ratings}
 
-            return JsonResponse({
-                'user_vote': user_vote,
-                'rating_sum': rating_sum
-            })
+            rating_sums = Rating.objects.filter(
+                content_type=content_type,
+                object_id__in=object_ids
+            ).values('object_id').annotate(total=Sum('value'))
+
+            rating_sums_dict = {
+                str(rating['object_id']): rating['total'] for rating in rating_sums}
+
+            result = {}
+            for obj_id in object_ids:
+                result[obj_id] = {
+                    'user_vote': user_votes.get(obj_id, 0),
+                    'rating_sum': rating_sums_dict.get(obj_id, 0)
+                }
+
+            return JsonResponse(result)
         except ContentType.DoesNotExist:
             return JsonResponse({'error': 'Invalid content_type'}, status=400)
         except Exception as e:

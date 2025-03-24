@@ -2,7 +2,7 @@
 
 {% if request.user.is_authenticated %}
     <div class="card border-0 bg-dark text-white" >
-       <div class="card-body">
+       <div class="custom-comments-card-body">
           <form method="post" action="{% url 'comment_create_view' post.pk %}" id="commentForm" name="commentForm" data-post-id="{{ post.pk }}">
             {{ form }}
             <div class="d-grid gap-2 d-md-block mt-2">
@@ -14,9 +14,9 @@
 {% endif %}
 
 <!-- Comment Display -->
-<div class="nested-comments bg-dark text-white mt-2">
-    {% recursetree post.comments.all %}
-    <ul id="comment-thread-{{ node.pk }}" style="margin-top: 0; margin-bottom: 0;">
+<div class="nested-comments custom-comments-card-body bg-dark text-white mt-3">
+    {% recursetree comments %}
+    <ul id="comment-thread-{{ node.pk }}" style="margin-top: 0; margin-bottom: 0; ">
         <li class="card border-0 text-white bg-dark">
             <div class="row">
                 <h6 class="text-white d-flex">
@@ -45,7 +45,7 @@
                                          width="16" height="16" 
                                          style="filter: invert(0.7);">
                                 </button>
-                                <span class="comment-rating-sum" style='color: rgba(255, 255, 255, 0.75);'>{{ node.get_sum_rating }}</span>
+                                <span class="comment-rating-sum" style='color: rgba(255, 255, 255, 0.75);'>{{ node.sum_rating }}</span>
                                 <button class="btn btn-sm btn-secondary rounded-circle border-0" 
                                         data-content-type="{{ comment_content_type }}" 
                                         data-object-id="{{ node.pk }}" 
@@ -73,7 +73,7 @@
                                 <img src="{% static 'icons/ellipsis.svg' %}" width="20" height="20" style="filter: invert(0.7);">
                             </a>
                         </div>
-                        <hr style="width: 38rem; margin: 0.40rem 0;">
+                        <hr style="margin: 0.40rem 0;">
                     </div>
                 </div>
             </div>
