@@ -11,8 +11,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 
-from .models import Post, Category, Media, Comment, Rating
-from .forms import PostCreateForm, MediaFormSet, CommentCreateForm
+from .models import Post, Category, Media, Comment, Rating, Community, Membership
+from .forms import PostCreateForm, MediaFormSet, CommentCreateForm, CommunityCreateForm
 from ..services.mixins import AuthorRequiredMixin
 
 
@@ -305,3 +305,44 @@ class BatchRatingStatusView(View):
             return JsonResponse({'error': 'Invalid content_type'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+
+class CommunityListView(ListView):
+    model = Community
+    template_name = 'social_network/communities/community_list.html'
+    context_object_name = 'communities'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = 'Communities'
+        context["categories"] = Category.objects.all()
+        return context
+
+
+class CommunityCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    model = Community
+    form_class = CommunityCreateForm
+    context_object_name = 'community'
+    success_message = 'Community successfully created!'
+    success_url = '/communities/'
+    template_name = 'social_network/communities/community_create.html'
+
+    def form_valid(self, form):
+        community = form.save(commit=False)
+        community.creator = self.request.user
+        community.save()
+        form.save_m2m()
+
+        Membership.objects.create(
+            user=self.request.user,
+            community=community,
+            is_moderator=True,
+            is_approved=True
+        )
+
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = 'Community create'
+        return context

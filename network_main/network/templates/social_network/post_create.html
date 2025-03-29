@@ -3,16 +3,14 @@
 {% block content %}
     <div class="container mt-4">
         <div class="card border-0 bg-dark text-white profile-card" style='width: 45rem;'>
-            <h2 class="mb-3 text-24 font-bold ml-3 mt-3">Create post</h2>
+            <h3 class="mb-3 text-24 font-bold ml-3 mt-3">Create post</h3>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="mb-3 mx-3">
-                    <label for="title" class="form-label">Post title</label>
                     {{ form.title }}
                 </div>
 
                 <div class="mb-3 mx-3 border-white" id="body-section">
-                    <label for="id_description" class="form-label">Post body</label>
                     {{ form.description }}  
                 </div>
 
