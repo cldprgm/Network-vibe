@@ -1,7 +1,7 @@
 from django.contrib import admin
 from mptt.admin import DraggableMPTTAdmin
 
-from .models import Post, Media, Category, Comment, Rating
+from .models import Post, Media, Category, Comment, Rating, Community
 
 
 class MediaInLine(admin.TabularInline):
@@ -26,6 +26,11 @@ class CommentAdminPage(DraggableMPTTAdmin):
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Community)
+class CommunityAdmin(admin.ModelAdmin):
     pass
 
 

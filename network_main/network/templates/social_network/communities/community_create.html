@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card border-0 bg-dark text-white profile-card" style='width: 45rem;'>
+            <h3 class="mb-3 text-24 font-bold ml-3 mt-3">Create Community</h3>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type='submit' class="btn btn-primary mt-2 rounded-4">Create community</button>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

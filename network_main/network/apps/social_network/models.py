@@ -12,19 +12,19 @@ import os
 
 from apps.services.utils import unique_slugify
 
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.models import MPTTModel, TreeForeignKey, TreeManyToManyField
 
 from .validators import validate_file_size
 
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related('author__profile', 'category').filter(status='PB').order_by('-created')
+        return super().get_queryset().select_related('author__profile', 'community').filter(status='PB').order_by('-created')
 
 
 class Category(MPTTModel):
     """
-    Nested Category model
+    Nested Category model for communities
     """
 
     title = models.CharField(max_length=255, verbose_name='Category name')
@@ -55,8 +55,92 @@ class Category(MPTTModel):
     def get_absolute_url(self):
         return reverse('post_by_category', kwargs={'slug': self.slug})
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slugify(self, self.title)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
+
+
+# update after adding Membership model
+class Community(models.Model):
+    """Community model"""
+
+    VISIBILITY_STATUS = (
+        ('PUBLIC', 'Public'),
+        ('RESTRICTED', 'Restricted'),
+        ('PRIVATE', 'Private'),
+    )
+
+    STATUS_OPTIONS = (
+        ("DF", "Draft"),
+        ("PB", "Published"),
+    )
+
+    creator = models.ForeignKey(to=User, on_delete=models.SET_NULL,
+                                related_name='created_communities', verbose_name='Creator', null=True)
+    name = models.CharField(max_length=25, validators=[
+                            MinLengthValidator(4)], unique=True, verbose_name='Community name')
+    description = models.TextField(max_length=450, verbose_name='Description')
+    banner = models.ImageField(
+        upload_to='uploads/community/banners/%Y/%m/%d', verbose_name="Banner", null=True, blank=True, default='uploads/avatars/default.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
+    icon = models.ImageField(
+        upload_to='uploads/community/icons/%Y/%m/%d', verbose_name='Icon', null=True, blank=True, default='uploads/avatars/default.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
+    categories = TreeManyToManyField(
+        to=Category, related_name='communities', verbose_name='Categories')
+    is_nsfw = models.BooleanField(default=False, verbose_name='is_NSFW')
+    visibility = models.CharField(
+        max_length=10, choices=VISIBILITY_STATUS, default='PUBLIC', verbose_name='Visibility')
+    created = models.DateTimeField(
+        auto_now_add=True, verbose_name='Create time')
+    updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
+    slug = models.SlugField(max_length=255, verbose_name='URL', blank=True)
+    status = models.CharField(choices=STATUS_OPTIONS, default='PB',
+                              max_length=10, verbose_name="Community status")
+
+    class Meta:
+        ordering = ('created', )
+        verbose_name = 'Community'
+        verbose_name_plural = 'Communities'
+        indexes = [models.Index(fields=['slug', 'visibility'])]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slugify(self, self.name)
+        super().save(*args, **kwargs)
+
+    def get_moderators(self):
+        return self.members.filter(is_moderator=True).select_related('user')
+
+    def get_absolute_url(self):
+        return reverse("community_detail", kwargs={"slug": self.slug})
+
+    def __str__(self):
+        return self.name
+
+
+class Membership(models.Model):
+    """Connect user with community"""
+
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE,
+                             related_name='memberships', verbose_name='User')
+    community = models.ForeignKey(
+        to=Community, on_delete=models.CASCADE, related_name='members', verbose_name='Community')
+    is_moderator = models.BooleanField(default=False, verbose_name='Moderator')
+    is_approved = models.BooleanField(
+        default=False, verbose_name='Approved user')
+    joined_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Joined at')
+
+    class Meta:
+        unique_together = ('user', 'community')
+        verbose_name = 'Community member'
+        verbose_name_plural = 'Community members'
+
+    def __str__(self):
+        return f'{self.user.username} in {self.community.name}'
 
 
 class Rating(models.Model):
@@ -89,6 +173,7 @@ class Rating(models.Model):
         return f'{self.content_object} - {self.value}'
 
 
+# update after adding Membership model
 class Post(models.Model):
     """Posts model"""
 
@@ -110,9 +195,10 @@ class Post(models.Model):
     updated = models.DateTimeField(auto_now=True, verbose_name="Update time")
     author = models.ForeignKey(to=User, verbose_name="Author",
                                on_delete=models.CASCADE, related_name="author_posts", default=1)
-    category = TreeForeignKey(
-        'Category', on_delete=models.PROTECT, related_name='posts', verbose_name='category')
     ratings = GenericRelation(to=Rating)
+    community = models.ForeignKey(
+        # delete a null=True
+        to=Community, on_delete=models.CASCADE, related_name='posts', null=True)
 
     objects = models.Manager()
     published = PublishedManager()
@@ -128,7 +214,8 @@ class Post(models.Model):
         return reverse("post_detail", kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):
-        self.slug = unique_slugify(self, self.title)
+        if not self.slug:
+            self.slug = unique_slugify(self, self.title)
         super().save(*args, **kwargs)
 
     def get_sum_rating(self):

@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Post, Media, Comment
+from .models import Post, Media, Comment, Community
 
 
 class PostCreateForm(forms.ModelForm):
@@ -9,14 +9,20 @@ class PostCreateForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ('title', 'description', 'category', 'status')
+        fields = ('title', 'description', 'status')
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Body'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields['title'].widget.attrs['placeholder'] = 'Title'
+
         for field in self.fields:
             self.fields[field].widget.attrs.update({
                 'class': 'form-control bg-dark text-white rounded-4',
-                'autocomplete': 'off'
+                'autocomplete': 'off',
             })
 
 
@@ -48,3 +54,33 @@ class CommentCreateForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ('content', )
+
+
+class CommunityCreateForm(forms.ModelForm):
+    name = forms.CharField(min_length=4, max_length=21)
+
+    class Meta:
+        model = Community
+        fields = ['name', 'description', 'banner',
+                  'icon', 'categories', 'is_nsfw', 'visibility']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Description'}),
+        }
+
+    def clean_categories(self):
+        categories = self.cleaned_data.get('categories')
+        if categories and categories.count() > 3:
+            raise forms.ValidationError(
+                'You cannot select more than 3 categories.')
+        return categories
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['name'].widget.attrs['placeholder'] = 'Community name'
+
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({
+                'class': 'form-control bg-dark text-white rounded-4',
+                'autocomplete': 'off',
+            })

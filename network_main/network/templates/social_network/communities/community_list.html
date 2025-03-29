@@ -1,0 +1,86 @@
+{% extends "main.html" %}
+
+{% block content %}
+    <div class="container" >
+        <!-- Заголовок -->
+        <div>
+            <h1 class="text-white fw-bold fs-2 mb-4">Explore Communities</h1>
+        </div>
+
+        <!-- Categories -->
+        <div class="d-flex overflow-auto gap-2 mb-3 ms-0">
+            <a href="#" class="border categories-toolbar-button d-flex align-items-center">
+                All
+            </a>
+            {% for category in categories %}
+                {% if category.parent %}
+                {% else %}
+                <a href="?category={{ category.slug }}" class="border categories-toolbar-button d-flex align-items-center">
+                    {{ category.title }}
+                </a>
+                {% endif %}
+                
+            {% endfor %}
+        </div>
+
+        <hr class='mb-4 ms-0'>
+    
+        <!-- Сетка сообществ -->
+        <div class="row row-cols-1 row-cols-md-3 g-1">
+            {% for community in communities %}
+                <div class="col {% if forloop.counter > 6 %}d-none{% endif %}" style='padding: 0rem;'>
+                    <a href="" class='community-button'>
+                        <div class="border communities-card-body">
+                                
+                            <div class="d-flex align-items-center mb-2">
+                                <!-- Иконка сообщества -->
+                                <img src="{{ community.icon.url }}" class="rounded-circle me-2" style="width: 40px; height: 40px;" alt="{{ community.name }} icon">
+                                    
+                                <!-- Название и количество участников -->
+                                <div class="flex-grow-1">
+                                    <p class="communities-card-title fw-bold m-0">{{ community.name }}</p>
+                                    <p class="fs-6 m-0" style='color: rgba(221, 221, 221, 0.81);'>432 members</p>
+                                </div>
+                                    
+                                <!-- Кнопка "Join" или "Joined" -->
+                                {% if community.is_member %}
+                                    <button class="btn btn-secondary btn-sm rounded-4 ms-2" 
+                                        style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'>
+                                        Joined
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-primary btn-sm rounded-4 ms-2" 
+                                        style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'>
+                                        Join
+                                    </button>
+                                {% endif %}
+                            </div>
+                                
+                            <!-- Описание -->
+                            <p class="small mb-0" style='color: rgba(221, 221, 221, 0.81);'>{{ community.description }}</p>
+
+                        </div>
+                    </a>
+
+                </div>
+            {% endfor %}
+        </div>
+    
+        <!-- Кнопка "Show more" -->
+        {% if communities.count > 6 %}
+            <div class="text-center mt-3">
+                <button class="btn btn-link" id="show-more">Show more</button>
+            </div>
+            
+            <!-- JavaScript для "Show more" -->
+            <script>
+                document.getElementById('show-more').addEventListener('click', function() {
+                    document.querySelectorAll('.d-none').forEach(function(el) {
+                        el.classList.remove('d-none');
+                    });
+                    this.style.display = 'none';
+                });
+            </script>
+        {% endif %}
+    </div>
+{% endblock content %}
