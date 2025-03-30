@@ -408,3 +408,6 @@ body {
     background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
 }
 
+.carousel-item {
+    transition: transform 0.28s ease-in-out; /* Увеличиваем длительность до 2 секунд */
+}

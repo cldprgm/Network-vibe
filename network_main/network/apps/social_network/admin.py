@@ -31,7 +31,7 @@ class RatingAdmin(admin.ModelAdmin):
 
 @admin.register(Community)
 class CommunityAdmin(admin.ModelAdmin):
-    pass
+    prepopulated_fields = {'slug': ('name', )}
 
 
 admin.site.register(Post, PostAdmin)

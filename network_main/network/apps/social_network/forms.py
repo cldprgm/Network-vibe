@@ -9,7 +9,7 @@ class PostCreateForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ('title', 'description', 'status')
+        fields = ('title', 'description', 'status', 'community')
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Body'}),
         }
