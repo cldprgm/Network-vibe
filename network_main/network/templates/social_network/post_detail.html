@@ -31,8 +31,7 @@
                     <span>in community:</span>
                     <a
                       class="custom-a ms-1"
-                      href="{{ post.community.get_absolute_url }}"
-                    >
+                      href="#"> <!-- post.community.get_absolute_url-->
                         {{ post.community }}
                     </a>
                 </div>
@@ -40,18 +39,46 @@
         </h6>
         <h4 class="card-title">{{ post.title }}</h4>
         <p style="color: rgba(255, 255, 255, 0.75);">{{ post.description }}</p>
-        {% for media in post.media.all %}
-            <div class="media-container mb-3" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(236, 234, 234, 0.42); border-radius: 16px; overflow: hidden; max-height: 640px;">
-                {% if media.media_type == 'image' %}
-                    <img src="{{ media.file.url }}" style="position: absolute; top: 50%; left: 0; width: 150%; transform: translateY(-50%) scale(1.2); opacity: 0.3; object-fit: cover; filter: blur(8px);">
-                    <img src="{{ media.file.url }}" style="position: relative; width: 100%; height: 100%; object-fit: contain;">
-                {% elif media.media_type == 'video' %}
-                    <video controls style="width: 100%; height: 100%; object-fit: contain;">
-                        <source src="{{ media.file.url }}" type="video/mp4">
-                    </video>
+        {% if post.media.all %}
+            <div id="carouselPost{{ post.id }}" class="carousel slide" data-bs-interval="false">
+                {% if post.media.count > 1 %}
+                    <div class="carousel-indicators">
+                        {% for media in post.media.all %}
+                            <button type="button" data-bs-target="#carouselPost{{ post.id }}" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="carousel-inner">
+                    {% for media in post.media.all %}
+                        <div class="carousel-item mb-3 {% if forloop.first %}active{% endif %}">
+                            <div class="media-container" style="background: black; position: relative; width: 100%; aspect-ratio: {{ media.get_aspect_ratio }}; border: 1px solid rgba(173, 173, 173, 0.31); border-radius: 16px; overflow: hidden; max-height: 640px;">
+                                {% if media.media_type == 'image' %}
+                                    <img src="{{ media.file.url }}" style="position: absolute; top: 50%; left: 0; width: 150%; transform: translateY(-50%) scale(1.2); opacity: 0.3; object-fit: cover; filter: blur(8px);">
+                                    <img src="{{ media.file.url }}" style="position: relative; width: 100%; height: 100%; object-fit: contain;">
+                                {% elif media.media_type == 'video' %}
+                                    <video controls style="width: 100%; height: 100%; object-fit: contain;">
+                                        <source src="{{ media.file.url }}" type="video/mp4">
+                                    </video>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if post.media.count > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselPost{{ post.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselPost{{ post.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
                 {% endif %}
             </div>
-        {% endfor %}
+        {% endif %}
+
         <div class="post-toolbar">
             <div class="post-rating-buttons mb-1">
                 <button class="btn btn-sm btn-secondary rounded-circle border-0" 

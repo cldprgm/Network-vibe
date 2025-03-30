@@ -33,7 +33,7 @@ class PostListView(ListView):
             object_id__in=post_ids
         ).values('object_id').annotate(total_rating=Sum('value'))
 
-        rating_dict = {rating['object_id']: rating['total_rating'] for rating in ratings}
+        rating_dict = {rating['object_id']                       : rating['total_rating'] for rating in ratings}
 
         for post in queryset:
             post.rating_sum = rating_dict.get(post.id, 0)
@@ -315,7 +315,8 @@ class CommunityListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = 'Communities'
-        context["categories"] = Category.objects.all()
+        context["parent_categories"] = Category.objects.filter(
+            parent__isnull=True)
         return context
 
 
@@ -345,4 +346,23 @@ class CommunityCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = 'Community create'
+        return context
+
+
+class CommunityFromCategoryView(CommunityListView):
+    category = None
+
+    def get_queryset(self):
+        self.category = Category.objects.prefetch_related(
+            'children').get(slug=self.kwargs['slug'])
+        child_categories = list(self.category.get_children())
+        queryset = Community.objects.filter(
+            categories__in=child_categories).distinct()
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['child_categories'] = self.category.get_children(
+        ).prefetch_related('communities')
         return context
