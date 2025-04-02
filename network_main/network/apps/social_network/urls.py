@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .views import PostListView, PostDetailView, PostFromCategory, \
     PostCreateView, PostUpdateView, CommentCreateView, RatingCreateView, BatchRatingStatusView, \
-    CommunityListView, CommunityCreateView, CommunityFromCategoryView
+    CommunityCreateView, CommunityFromCategoryView, CommunityDetailView
 
 urlpatterns = [
     path('', PostListView.as_view(), name='home'),
@@ -14,10 +14,12 @@ urlpatterns = [
          name='post_by_category'),
     path('rating/create/', RatingCreateView.as_view(), name='rating_create'),
     path('rating/status/', BatchRatingStatusView.as_view(), name='rating_status'),
-    path('communities/', CommunityListView.as_view(), name='community_list'),
     path('communities/create/', CommunityCreateView.as_view(),
          name='community_create'),
     path('communities/category/<str:slug>/',
          CommunityFromCategoryView.as_view(), name='community_by_category'),
+    path('communities/<str:slug>/',
+         CommunityDetailView.as_view(), name='community_detail'),
+
 
 ]

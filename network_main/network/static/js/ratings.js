@@ -72,7 +72,7 @@ fetch(`/rating/status/?content_type=${contentTypeId}&object_ids=${objectIds.join
                     console.error("Ошибка:", error);
                     alert("Ошибка при обновлении рейтинга.");
                 });
-            }, 200));
+            }, 100));
         });
     });
 })
