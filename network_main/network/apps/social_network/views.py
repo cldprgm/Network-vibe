@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Prefetch, Count, Sum, OuterRef, Subquery
+from django.db.models import Prefetch, Count, Sum, OuterRef, Subquery, Q
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 
 
 from .models import Post, Category, Media, Comment, Rating, Community, Membership
@@ -22,7 +23,13 @@ class PostListView(ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        queryset = Post.published.prefetch_related('media')
+        queryset = Post.published.prefetch_related('media')\
+            .defer('updated', 'author__profile__birth_date', 'author__profile__gender',
+                   'author__first_name', 'author__last_name',
+                   'author__email', 'author__date_joined', 'author__profile__description',
+                   'community__creator_id', 'community__is_nsfw', 'community__visibility',
+                   'community__created', 'community__updated', 'community__status')
+
         queryset = queryset.annotate(comments_count=Count('comments'))
 
         post_ids = list(queryset.values_list('id', flat=True))
@@ -33,7 +40,7 @@ class PostListView(ListView):
             object_id__in=post_ids
         ).values('object_id').annotate(total_rating=Sum('value'))
 
-        rating_dict = {rating['object_id']                       : rating['total_rating'] for rating in ratings}
+        rating_dict = {rating['object_id']: rating['total_rating'] for rating in ratings}
 
         for post in queryset:
             post.rating_sum = rating_dict.get(post.id, 0)
@@ -307,19 +314,6 @@ class BatchRatingStatusView(View):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-class CommunityListView(ListView):
-    model = Community
-    template_name = 'social_network/communities/community_list.html'
-    context_object_name = 'communities'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = 'Communities'
-        context["parent_categories"] = Category.objects.filter(
-            parent__isnull=True)
-        return context
-
-
 class CommunityCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Community
     form_class = CommunityCreateForm
@@ -349,12 +343,20 @@ class CommunityCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         return context
 
 
-class CommunityFromCategoryView(CommunityListView):
+class CommunityFromCategoryView(ListView):
+    model = Community
+    template_name = 'social_network/communities/community_list.html'
+    context_object_name = 'communities'
+
     category = None
 
     def get_queryset(self):
         self.category = Category.objects.prefetch_related(
             'children').get(slug=self.kwargs['slug'])
+
+        if self.category.slug == 'all':
+            return Category.objects.none()
+
         child_categories = list(self.category.get_children())
         queryset = Community.objects.filter(
             categories__in=child_categories).distinct()
@@ -365,4 +367,52 @@ class CommunityFromCategoryView(CommunityListView):
         context = super().get_context_data(**kwargs)
         context['child_categories'] = self.category.get_children(
         ).prefetch_related('communities')
+        context["title"] = 'Communities'
+        context["parent_categories"] = Category.objects.filter(
+            parent__isnull=True)
+
+        if self.category.slug == 'all':
+            user = self.request.user
+            for child_category in context['child_categories']:
+                if child_category.slug == 'recommended-for-you' and user.is_authenticated:
+                    user_communities = Community.objects.filter(
+                        members__user=user).order_by('-members__joined_at')[:12]
+                    user_categories = Category.objects.filter(
+                        communities__in=user_communities
+                    ).distinct()
+                    child_category.communities_list = Community.objects.filter(
+                        categories__in=user_categories
+                    ).exclude(members__user=user).prefetch_related('members').distinct()[:12]
+                elif child_category.slug == 'trending':
+                    child_category.communities_list = Community.objects.annotate(
+                        activity=Count('posts', filter=Q(
+                            posts__created__gte=timezone.now() - timezone.timedelta(days=7)))
+                    ).order_by('-activity').prefetch_related('members')[:12]
+                elif child_category.slug == 'most-popular':
+                    child_category.communities_list = Community.objects.annotate(
+                        members_count=Count('members')
+                    ).order_by('-members_count').prefetch_related('members')[:12]
+        else:
+            for child_category in context['child_categories']:
+                child_category.communities_list = child_category.communities.prefetch_related(
+                    'members').all()
+
+        return context
+
+
+class CommunityDetailView(DetailView):
+    model = Community
+    template_name = 'social_network/communities/community_detail.html'
+    context_object_name = 'community'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        posts = Post.published.filter(community=self.object).prefetch_related(
+            'media').annotate(comments_count=Count('comments'))
+
+        context["title"] = self.object.name
+        context['posts'] = posts
+        context['post_content_type'] = ContentType.objects.get_for_model(
+            Post).id
         return context

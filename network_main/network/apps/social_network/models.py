@@ -132,7 +132,7 @@ class Membership(models.Model):
     is_approved = models.BooleanField(
         default=False, verbose_name='Approved user')
     joined_at = models.DateTimeField(
-        auto_now_add=True, verbose_name='Joined at')
+        auto_now_add=True, verbose_name='Joined at', db_index=True)
 
     class Meta:
         unique_together = ('user', 'community')

@@ -5,24 +5,24 @@
 .header-toolbar {
     display: flex;
     align-items: center;
-    gap: 5px; /* Расстояние между блоками рейтинга и комментариев */
+    gap: 5px;
 }
 
 .header-toolbar-button {
     display: flex;
     align-items: center;
-    gap: 6px; /* Расстояние между иконкой и числом комментариев */
-    padding: 4px 12px; /* Отступы внутри элемента */
-    background-color: transparent; /* Такой же фон, как у кнопок */
-    border-radius: 20px; /* Закругленные углы */
-    text-decoration: none; /* Убираем подчеркивание ссылки */
-    color: rgba(255, 255, 255, 0.925);; /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    gap: 6px;
+    padding: 4px 12px;
+    background-color: transparent;
+    border-radius: 20px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.925);
+    transition: background-color 0.15s ease;
     padding: 0.5rem;
 }
 
 .header-toolbar-button:hover {
-    background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
+    background-color: rgba(200, 200, 200, 0.4);
 }
 
 .header-dropdown-toolbar-button {
@@ -34,7 +34,7 @@
     border-radius: 30px; /* Закругленные углы */
     text-decoration: none; /* Убираем подчеркивание ссылки */
     color: rgba(255, 255, 255, 0.856);; /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    transition: background-color 0.2s ease; /* Плавный переход */
     padding: 0.1rem;
 }
 
@@ -57,7 +57,7 @@
     border-radius: 20px; /* Закругленные углы */
     text-decoration: none; /* Убираем подчеркивание ссылки */
     color: rgba(255, 255, 255, 0.856); /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    transition: background-color 0.2s ease; /* Плавный переход */
     padding: 0.5rem;
 }
 
@@ -74,7 +74,7 @@
     border-radius: 11px; /* Закругленные углы */
     text-decoration: none; /* Убираем подчеркивание ссылки */
     color: rgba(255, 255, 255, 0.925);; /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    transition: background-color 0.1s ease; /* Плавный переход */
     padding: 0.5rem;
 }
 
@@ -117,7 +117,7 @@
     max-width: 96% !important; /* Ограничивает ширину до контейнера */
     min-width: 16rem;
     height: 80%;
-    min-height: 7.4rem;
+    min-height: 7.3rem;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2; /* Ограничение количества строк */
@@ -149,7 +149,7 @@
     border-radius: 11px; /* Закругленные углы */
     text-decoration: none; /* Убираем подчеркивание ссылки */
     color: rgba(255, 255, 255, 0.925);; /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    transition: background-color 0.2s ease; /* Плавный переход */
     padding: 0.5rem;
 }
 
@@ -157,10 +157,33 @@
     background-color: rgba(175, 175, 175, 0.253); /* Эффект при наведении */
 }
 
+/* community buttons */
+.communty-detail-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.communty-detail-button {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    border-radius: 25px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.925);
+    transition: background-color 0.15s ease;
+    padding: 0.45rem;
+    border-color: rgba(200, 200, 200, 0.4);
+}
+
+.communty-detail-button:hover {
+    border-color: white;
+}
+
 .custom-card {
     border: none;
     background-color: transparent;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: background-color 0.2s, box-shadow 0.2s;
 }
 
 .custom-card:hover {
@@ -320,7 +343,7 @@ body {
 }
 
 .btn.btn-sm.btn-secondary {
-    background-color: transparent; /* Легкий серый фон */
+    background-color: transparent;
     border: none;
     padding: 5px 8px; /* Отступы внутри кнопок */
     transition: background-color 0.3s ease; /* Плавный переход */
@@ -372,42 +395,87 @@ body {
 }
 
 .btn.btn-sm.btn-secondary {
-    background-color: transparent; /* Легкий серый фон */
+    background-color: transparent;
     border: none;
-    padding: 5px 8px; /* Отступы внутри кнопок */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    padding: 5px 8px;
+    transition: background-color 0.3s ease;
 }
 
 .btn.btn-sm.btn-secondary:hover {
-    background-color: rgba(200, 200, 200, 0.4); /* Чуть темнее при наведении */
+    background-color: rgba(200, 200, 200, 0.4);
 }
 
-/* Активное состояние для upvote */
+/* upvote */
 .btn.btn-sm.btn-secondary.upvoted {
-    background-color: rgba(0, 255, 0, 0.3); /* Зеленый фон с прозрачностью */
+    background-color: rgba(0, 255, 0, 0.3);
 }
 
-/* Активное состояние для downvote */
+/* downvote */
 .btn.btn-sm.btn-secondary.downvoted {
-    background-color: rgba(255, 0, 0, 0.3); /* Красный фон с прозрачностью */
+    background-color: rgba(255, 0, 0, 0.3);
 }
 
 .comment-toolbar-button {
     display: flex;
     align-items: center;
-    gap: 6px; /* Расстояние между иконкой и числом комментариев */
-    padding: 4px 12px; /* Отступы внутри элемента */
-    background-color: transparent; /* Такой же фон, как у кнопок */
-    border-radius: 16px; /* Закругленные углы */
-    text-decoration: none; /* Убираем подчеркивание ссылки */
-    color: rgba(255, 255, 255, 0.75);; /* Цвет текста наследуется */
-    transition: background-color 0.3s ease; /* Плавный переход */
+    gap: 6px;
+    padding: 4px 12px;
+    background-color: transparent;
+    border-radius: 16px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.75);;
+    transition: background-color 0.3s ease;
 }
 
 .comment-toolbar-button:hover {
-    background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
+    background-color: rgba(200, 200, 200, 0.4);
 }
 
 .carousel-item {
-    transition: transform 0.28s ease-in-out; /* Увеличиваем длительность до 2 секунд */
+    transition: transform 0.28s ease-in-out;
+}
+
+.btn.btn-primary {
+    background-color: rgb(55, 46, 184) !important;
+    border-color: transparent;
+}
+
+.btn.btn-primary:hover {
+    background-color: rgb(76, 64, 245) !important;
+    border-color: transparent;
+}
+
+/* Collapsed Sidebar */
+.sidebar {
+    position: fixed;
+    top: 58px;
+    left: 0;
+    width: 18rem;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 1rem;
+}
+
+.sidebar.collapsed .nav,
+.sidebar.collapsed hr,
+.sidebar.collapsed h6,
+.sidebar.collapsed .mt-auto {
+    display: none;
+}
+
+.main-content {
+    margin-left: 25rem;
+    transition: margin-left 0.3s ease;
+}
+
+.main-content.collapsed {
+    margin-left: 22rem;
+}
+
+.sidebar .nav {
+    width: 100%;
 }
