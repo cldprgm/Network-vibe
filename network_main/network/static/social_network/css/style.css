@@ -65,23 +65,6 @@
     background-color: rgba(200, 200, 200, 0.4); /* Эффект при наведении */
 }
 
-.sidebar-toolbar-button {
-    display: flex;
-    align-items: center;
-    gap: 6px; /* Расстояние между иконкой и числом комментариев */
-    padding: 4px 12px; /* Отступы внутри элемента */
-    background-color: transparent; /* Такой же фон, как у кнопок */
-    border-radius: 11px; /* Закругленные углы */
-    text-decoration: none; /* Убираем подчеркивание ссылки */
-    color: rgba(255, 255, 255, 0.925);; /* Цвет текста наследуется */
-    transition: background-color 0.1s ease; /* Плавный переход */
-    padding: 0.5rem;
-}
-
-.sidebar-toolbar-button:hover {
-    background-color: rgba(175, 175, 175, 0.253); /* Эффект при наведении */
-}
-
 .communities-toolbar {
     display: flex;
     align-items: center;
@@ -460,11 +443,44 @@ body {
     width: 1rem;
 }
 
-.sidebar.collapsed .nav,
-.sidebar.collapsed hr,
-.sidebar.collapsed h6,
-.sidebar.collapsed .mt-auto {
+.sidebar-wrapper.collapsed .sidebar .nav,
+.sidebar-wrapper.collapsed .sidebar hr,
+.sidebar-wrapper.collapsed .sidebar h6,
+.sidebar-wrapper.collapsed .sidebar .mt-auto {
     display: none;
+}
+
+.sidebar-toggle-button {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    border-radius: 25px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.925);
+    transition: background-color 0.15s ease;
+    padding: 0.45rem;
+    border-color: rgba(216, 216, 216, 0.616);
+}
+
+.sidebar-toggle-button:hover {
+    border-color: white;
+}
+
+.sidebar-toolbar-button {
+    display: flex;
+    align-items: center;
+    gap: 6px; 
+    padding: 4px 12px;
+    background-color: transparent;
+    border-radius: 11px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.925);
+    transition: background-color 0.1s ease;
+    padding: 0.5rem;
+}
+
+.sidebar-toolbar-button:hover {
+    background-color: rgba(175, 175, 175, 0.253);
 }
 
 .main-content {
@@ -473,9 +489,52 @@ body {
 }
 
 .main-content.collapsed {
-    margin-left: 22rem;
+    margin-left: 18rem;
 }
 
 .sidebar .nav {
     width: 100%;
+}
+
+.sidebar-wrapper {
+    padding: 10px;
+    position: fixed;
+    min-height: 100vh;
+    background: #161a1d !important;
+    width: 18rem;
+    left: 0;
+    transition: width 0.27s ease;
+}
+
+.sidebar-wrapper.collapsed {
+    width: 2rem;
+}
+
+.menu-btn {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    font-size: 15px;
+    border-radius: 25px;
+    transform: translateX(50%);
+
+    padding: 0.45rem;
+    align-items: center;
+    background-color: transparent;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.925);
+    transition: background-color 0.15s ease;
+    border-color: rgba(216, 216, 216, 0.616);
+}
+
+.menu-btn:hover {
+    border-color: white;
+}
+
+/* Community detail */
+.info-table {
+    background:rgb(13, 15, 17); 
+    max-width: 20rem;
+    min-width: 20rem;
+    border-radius: 17px;
 }

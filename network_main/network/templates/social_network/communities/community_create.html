@@ -4,11 +4,66 @@
     <div class="container mt-4">
         <div class="card border-0 bg-dark text-white profile-card" style='width: 45rem;'>
             <h3 class="mb-3 text-24 font-bold ml-3 mt-3">Create Community</h3>
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ form.as_p }}
+                <div id="banner-cropper" style="display: none; max-width: 100%;">
+                    <img id="banner-image" src="" alt="Banner preview" style="max-width: 100%;">
+                </div>
                 <button type='submit' class="btn btn-primary mt-2 rounded-4">Create community</button>
             </form>
         </div>
     </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bannerInput = document.querySelector('#id_banner');
+            const cropperDiv = document.querySelector('#banner-cropper');
+            const image = document.querySelector('#banner-image');
+            let cropper;
+    
+            bannerInput.addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        image.src = e.target.result;
+                        cropperDiv.style.display = 'block';
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        cropper = new Cropper(image, {
+                            viewMode: 0,
+                            autoCropArea: 0.5,
+                            minCropBoxWidth: 1000,    
+                            minCropBoxHeight: 100,   
+                            maxCropBoxWidth: 1000,   
+                            maxCropBoxHeight: 100,
+                            ready: function () {
+                                const data = cropper.getData();
+                                document.querySelector('#id_banner_x').value = Math.round(data.x);
+                                document.querySelector('#id_banner_y').value = Math.round(data.y);
+                                document.querySelector('#id_banner_width').value = Math.round(data.width);
+                                document.querySelector('#id_banner_height').value = Math.round(data.height);
+                            },
+                            crop: function(event) {
+                                const data = event.detail;
+                                document.querySelector('#id_banner_x').value = Math.round(data.x);
+                                document.querySelector('#id_banner_y').value = Math.round(data.y);
+                                document.querySelector('#id_banner_width').value = Math.round(data.width);
+                                document.querySelector('#id_banner_height').value = Math.round(data.height);
+                            }
+                        });
+                        
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+
 {% endblock content %}

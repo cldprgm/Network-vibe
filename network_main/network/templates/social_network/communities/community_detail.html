@@ -1,15 +1,15 @@
 {% extends "main.html" %}
-
+{% load static %}
 {% block content %}
 <div class="w-100 position-relative">
     <div class="container" >
         <!-- Баннер сообщества -->
-        <div class="position-relative bg-cover bg-center h-100 rounded"
+        <div class="position-relative bg-center h-100 rounded"
              style="background-image: url('{{ community.banner.url }}');
                     min-height: 140px;
                     height: clamp(150px, 25vh, 300px);
                     max-width: 68rem;
-                    margin-bottom: 7rem;">
+                    margin-bottom: 5rem;">
             <!-- Иконка, название и кнопка -->
             <div class="d-flex align-items-end justify-content-between gap-3 px-3"
                  style="position: absolute; bottom: -54px; left: 0; right: 0; z-index: 1;">
@@ -32,8 +32,11 @@
                         Create Post
                     </a>
                     <a href="#"
-                       class="btn btn-primary d-flex align-items-center gap-2" style='border-radius: 25px;'>
-                        Join
+                       id='join-btn'
+                       data-community-slug="{{ community.slug }}"
+                       class="btn {% if is_member %}btn-danger{% else %}btn-primary{% endif %} d-flex align-items-center gap-2"
+                       style='border-radius: 25px;'>
+                       {% if is_member %}Leave{% else %}Join{% endif %}
                     </a>
                     <a href="#"
                        class="btn communty-detail-button d-flex align-items-center gap-2">
@@ -46,10 +49,79 @@
             </div>
         </div>
 
-        <!-- Список постов -->
-        <div class="row px-3 mt-5 mb-4" >
-            {% include "social_network/includes/include_post_list.html" %}
+        <!-- posts and community info -->
+        <div class='d-flex'>
+            <div class="mt-4 mb-4" >
+                {% include "social_network/includes/include_post_list.html" %}
+            </div>
+
+            <div class='info-table ms-5'>
+                <div style="padding: 15px;">
+
+                    <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 10px; color: rgb(209, 209, 209);">
+                        {{ community.name }}
+                    </h2>
+        
+                    <p style="color: rgba(167, 167, 167, 0.75); margin-bottom: 15px;">{{ community.description }}</p>
+        
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <div>
+                            <span style="display: block; font-weight: bold;">{{ community.members.count }}</span>
+                            <span style="font-size: 0.875rem; color: rgba(167, 167, 167, 0.75)">Members</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-weight: bold;">2</span>
+                            <span style="font-size: 0.875rem; color: rgba(167, 167, 167, 0.75)">Online</span>
+                        </div>
+                    </div>
+        
+                    <div style="font-size: 0.875rem; color: rgba(167, 167, 167, 0.75);">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <svg style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Created {{ community.created }}
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <svg style="width: 16px; height: 16px; margin-right: 5px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18v18H3z" />
+                            </svg>
+                            {{ community.visibility }}
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div style="padding-top: 10px; padding-left: 15px;">
+                    <h2 style="font-size: 0.9rem; color: rgba(167, 167, 167, 0.75);">MODERATORS</h2>
+                    {% for moderator in moderators %}
+                        <div class='d-flex align-items-center'>
+                            <img
+                            src="{{ moderator.profile.avatar.url }}"
+                            class="rounded-circle"
+                            alt="{{ profile }}"
+                            width="40"
+                            height="40"
+                            >
+                            <div class="ms-2 d-flex flex-column">                       
+                                <div>
+                                    <a
+                                      class="custom-a fw-bold"
+                                      href="{{ moderator.profile.get_absolute_url }}"
+                                    >
+                                        {{ moderator }}
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+
+            </div>
         </div>
     </div>
 </div>
+<script src="{% static '/memberships.js' %}"></script>
 {% endblock content %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
@@ -40,7 +40,9 @@ class PostListView(ListView):
             object_id__in=post_ids
         ).values('object_id').annotate(total_rating=Sum('value'))
 
-        rating_dict = {rating['object_id']: rating['total_rating'] for rating in ratings}
+        rating_dict = {
+            rating['object_id']: rating['total_rating'] for rating in ratings
+        }
 
         for post in queryset:
             post.rating_sum = rating_dict.get(post.id, 0)
@@ -319,23 +321,26 @@ class CommunityCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     form_class = CommunityCreateForm
     context_object_name = 'community'
     success_message = 'Community successfully created!'
-    success_url = '/communities/'
+    success_url = reverse_lazy(
+        'community_by_category', kwargs={'slug': 'all'})
     template_name = 'social_network/communities/community_create.html'
 
     def form_valid(self, form):
-        community = form.save(commit=False)
-        community.creator = self.request.user
-        community.save()
+        response = super().form_valid(form)
+
+        self.object.creator = self.request.user
+        self.object.save()
+
         form.save_m2m()
 
         Membership.objects.create(
             user=self.request.user,
-            community=community,
+            community=self.object,
             is_moderator=True,
             is_approved=True
         )
 
-        return super().form_valid(form)
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -355,7 +360,7 @@ class CommunityFromCategoryView(ListView):
             'children').get(slug=self.kwargs['slug'])
 
         if self.category.slug == 'all':
-            return Category.objects.none()
+            return Community.objects.none()
 
         child_categories = list(self.category.get_children())
         queryset = Community.objects.filter(
@@ -365,14 +370,26 @@ class CommunityFromCategoryView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        user = self.request.user
+
         context['child_categories'] = self.category.get_children(
         ).prefetch_related('communities')
         context["title"] = 'Communities'
         context["parent_categories"] = Category.objects.filter(
             parent__isnull=True)
+        if user.is_authenticated:
+            memberships = Membership.objects.filter(
+                user=user,
+                community__in=self.get_queryset()
+            )
+            context['memberships'] = {
+                m.community_id: True for m in memberships
+            }
+        else:
+            context['memberships'] = {}
 
         if self.category.slug == 'all':
-            user = self.request.user
             for child_category in context['child_categories']:
                 if child_category.slug == 'recommended-for-you' and user.is_authenticated:
                     user_communities = Community.objects.filter(
@@ -408,6 +425,9 @@ class CommunityDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        user = self.request.user
+        community = self.get_object()
+
         posts = Post.published.filter(community=self.object).prefetch_related(
             'media').annotate(comments_count=Count('comments'))
 
@@ -415,4 +435,31 @@ class CommunityDetailView(DetailView):
         context['posts'] = posts
         context['post_content_type'] = ContentType.objects.get_for_model(
             Post).id
+        context['moderators'] = self.object.get_moderators()
+
+        context['is_member'] = False
+        if user.is_authenticated:
+            context['is_member'] = Membership.objects.filter(
+                user=user, community=community).exists()
         return context
+
+
+class MembershipCreateView(LoginRequiredMixin, View):
+    model = Membership
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        community_slug = request.POST.get('commuinity')
+        community = get_object_or_404(Community, slug=community_slug)
+
+        with transaction.atomic():
+            membership, created = self.model.objects.get_or_create(
+                user=user,
+                community=community
+            )
+
+        if created:
+            return JsonResponse({'membership': 'created'})
+        else:
+            membership.delete()
+            return JsonResponse({'membership': 'deleted'})
