@@ -85,9 +85,9 @@ class Community(models.Model):
                             MinLengthValidator(4)], unique=True, verbose_name='Community name')
     description = models.TextField(max_length=450, verbose_name='Description')
     banner = models.ImageField(
-        upload_to='uploads/community/banners/%Y/%m/%d', verbose_name="Banner", null=True, blank=True, default='uploads/avatars/default.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
+        upload_to='uploads/community/banners/%Y/%m/%d', verbose_name="Banner", null=True, blank=True, default='uploads/community/icons/default_icon.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
     icon = models.ImageField(
-        upload_to='uploads/community/icons/%Y/%m/%d', verbose_name='Icon', null=True, blank=True, default='uploads/avatars/default.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
+        upload_to='uploads/community/icons/%Y/%m/%d', verbose_name='Icon', null=True, blank=True, default='uploads/community/icons/default_icon.png', validators=[FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg'))])
     categories = TreeManyToManyField(
         to=Category, related_name='communities', verbose_name='Categories')
     is_nsfw = models.BooleanField(default=False, verbose_name='is_NSFW')
@@ -112,7 +112,7 @@ class Community(models.Model):
         super().save(*args, **kwargs)
 
     def get_moderators(self):
-        return self.members.filter(is_moderator=True).select_related('user')
+        return User.objects.filter(memberships__community=self, memberships__is_moderator=True)
 
     def get_absolute_url(self):
         return reverse("community_detail", kwargs={"slug": self.slug})
@@ -140,7 +140,7 @@ class Membership(models.Model):
         verbose_name_plural = 'Community members'
 
     def __str__(self):
-        return f'{self.user.username} in {self.community.name}'
+        return f'{self.user.username}'
 
 
 class Rating(models.Model):

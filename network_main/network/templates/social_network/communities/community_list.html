@@ -1,5 +1,7 @@
 {% extends "main.html" %}
 
+{% load static social_network_tags %}
+
 {% block content %}
     <div class="container" style="margin-left: 0 !important; margin-right: auto !important; width: 95%;">
         <!-- Title -->
@@ -38,7 +40,7 @@
                                         </div>
                                         
                                         <!-- "Join" or "Joined" -->
-                                        {% if community.is_member %}
+                                        {% if memberships|get_item:community.id %}
                                             <button class="btn btn-secondary btn-sm rounded-4 ms-2" 
                                                 style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'>
                                                 Joined

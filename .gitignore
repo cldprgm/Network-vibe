@@ -169,3 +169,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+
+*.jpg
+*.png
+*.PNG
+!network_main/network/media/uploads/community/icons/default_icon.png
