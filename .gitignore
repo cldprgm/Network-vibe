@@ -174,5 +174,4 @@ cython_debug/
 
 *.jpg
 *.png
-*.PNG
 !network_main/network/media/uploads/community/icons/default_icon.png
