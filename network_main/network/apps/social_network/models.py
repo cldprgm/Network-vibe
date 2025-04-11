@@ -30,8 +30,6 @@ class Category(MPTTModel):
     title = models.CharField(max_length=255, verbose_name='Category name')
     slug = models.SlugField(
         max_length=255, verbose_name='Category URL', blank=True)
-    description = models.TextField(
-        max_length=300, verbose_name='Category description')
     parent = TreeForeignKey(
         'self',
         on_delete=models.CASCADE,
@@ -52,9 +50,6 @@ class Category(MPTTModel):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
 
-    def get_absolute_url(self):
-        return reverse('post_by_category', kwargs={'slug': self.slug})
-
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = unique_slugify(self, self.title)
@@ -64,7 +59,6 @@ class Category(MPTTModel):
         return self.title
 
 
-# update after adding Membership model
 class Community(models.Model):
     """Community model"""
 
@@ -144,6 +138,7 @@ class Membership(models.Model):
 
 
 class Rating(models.Model):
+    """Rating model for posts and comments"""
 
     content_type = models.ForeignKey(to=ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -173,7 +168,6 @@ class Rating(models.Model):
         return f'{self.content_object} - {self.value}'
 
 
-# update after adding Membership model
 class Post(models.Model):
     """Posts model"""
 
@@ -194,7 +188,7 @@ class Post(models.Model):
         auto_now_add=True, verbose_name="Create time")
     updated = models.DateTimeField(auto_now=True, verbose_name="Update time")
     author = models.ForeignKey(to=User, verbose_name="Author",
-                               on_delete=models.CASCADE, related_name="author_posts", default=1)
+                               on_delete=models.CASCADE, related_name="author_posts")
     ratings = GenericRelation(to=Rating)
     community = models.ForeignKey(
         # delete a null=True
@@ -227,9 +221,7 @@ class Post(models.Model):
 
 
 class Comment(MPTTModel):
-    """
-    Tree Comment model
-    """
+    """Tree Comment model"""
 
     STATUS_OPTIONS = (
         ("DF", "Draft"),
@@ -300,5 +292,5 @@ class Media(models.Model):
                     width, height = img.size
                     return f"{width}/{height}"
             except Exception as e:
-                return "16/9"  # запасное значение
-        return "16/9"  # для видео или ошибки
+                return "16/9"
+        return "16/9"
