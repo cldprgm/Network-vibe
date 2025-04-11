@@ -103,25 +103,6 @@ class PostDetailView(DetailView):
         return context
 
 
-class PostFromCategory(ListView):
-    template_name = 'social_network/post_list.html'
-    context_object_name = 'posts'
-    category = None
-
-    def get_queryset(self):
-        self.category = Category.objects.get(slug=self.kwargs['slug'])
-        queryset = Post.published.filter(category__slug=self.category.slug)
-        if not queryset:
-            sub_cat = Category.objects.filter(parent=self.category)
-            queryset = Post.published.filter(category__in=sub_cat)
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = f'Posts from the category: {self.category.title}'
-        return context
-
-
 class PostCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Post
     template_name = 'social_network/post_create.html'

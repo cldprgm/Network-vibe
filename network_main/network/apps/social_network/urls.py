@@ -1,6 +1,6 @@
 from django.urls import path, include
-from .views import PostListView, PostDetailView, PostFromCategory, \
-    PostCreateView, PostUpdateView, CommentCreateView, RatingCreateView, BatchRatingStatusView, \
+from .views import PostListView, PostDetailView, PostCreateView, \
+    PostUpdateView, CommentCreateView, RatingCreateView, BatchRatingStatusView, \
     CommunityCreateView, CommunityFromCategoryView, CommunityDetailView, MembershipCreateView
 
 urlpatterns = [
@@ -10,8 +10,6 @@ urlpatterns = [
     path('post/<str:slug>/update/', PostUpdateView.as_view(), name='post_update'),
     path('post/<int:pk>/comments/create/',
          CommentCreateView.as_view(), name='comment_create_view'),
-    path('category/<str:slug>/', PostFromCategory.as_view(),
-         name='post_by_category'),
     path('rating/create/', RatingCreateView.as_view(), name='rating_create'),
     path('rating/status/', BatchRatingStatusView.as_view(), name='rating_status'),
     path('communities/create/', CommunityCreateView.as_view(),
