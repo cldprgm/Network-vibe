@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.accounts.apps.AccountsConfig',
     'mptt',
     'debug_toolbar',
+    'django_select2',
 ]
 
 MIDDLEWARE = [

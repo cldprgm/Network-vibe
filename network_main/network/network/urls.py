@@ -6,6 +6,7 @@ from django.conf import settings
 urlpatterns = [
     path('', include('apps.social_network.urls')),
     path('accounts/', include('apps.accounts.urls')),
+    path("select2/", include("django_select2.urls")),
     path('admin/', admin.site.urls),
 ]
 

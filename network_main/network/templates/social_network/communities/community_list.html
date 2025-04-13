@@ -1,5 +1,6 @@
 {% extends "main.html" %}
 
+{% load static %}
 {% load static social_network_tags %}
 
 {% block content %}
@@ -41,13 +42,15 @@
                                         
                                         <!-- "Join" or "Joined" -->
                                         {% if memberships|get_item:community.id %}
-                                            <button class="btn btn-secondary btn-sm rounded-4 ms-2" 
-                                                style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'>
+                                            <button class="btn custom-community-joined-btn btn-sm rounded-4 ms-2 btn-danger" 
+                                                    style='min-width: 4rem;'
+                                                    data-community-slug="{{ community.slug }}">
                                                 Joined
                                             </button>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm rounded-4 ms-2" 
-                                                style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'>
+                                                    style='min-width: 4rem; background-color: rgb(55, 46, 184); border-color: transparent;'
+                                                    data-community-slug="{{ community.slug }}">
                                                 Join
                                             </button>
                                         {% endif %}
@@ -70,20 +73,5 @@
         {% endfor %}
     </div>
 
-    <!-- "Show more" -->
-    <script>
-        document.querySelectorAll('.show-more-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const categorySlug = this.getAttribute('data-category');
-                const categorySection = this.closest('.category-section');
-                const hiddenCommunities = categorySection.querySelectorAll('.d-none');
-                
-                hiddenCommunities.forEach(el => {
-                    el.classList.remove('d-none');
-                });
-                
-                this.style.display = 'none';
-            });
-        });
-    </script>
+<script src="{% static "community_list_membership.js" %}"></script>
 {% endblock content %}

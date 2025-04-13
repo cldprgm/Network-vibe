@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 from django.core.files import File
+from django_select2.forms import ModelSelect2Widget
 from PIL import Image
 from io import BytesIO
 import os
@@ -16,6 +17,14 @@ class PostCreateForm(forms.ModelForm):
         fields = ('title', 'description', 'status', 'community')
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Body'}),
+            'community': ModelSelect2Widget(
+                model=Community,
+                search_fields=['name__icontains'],
+                attrs={
+                    'data-placeholder': 'Select a community',
+                    'class': 'form-control text-white rounded-4'
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -24,10 +33,11 @@ class PostCreateForm(forms.ModelForm):
         self.fields['title'].widget.attrs['placeholder'] = 'Title'
 
         for field in self.fields:
-            self.fields[field].widget.attrs.update({
-                'class': 'form-control bg-dark text-white rounded-4',
-                'autocomplete': 'off',
-            })
+            if field != 'community':
+                self.fields[field].widget.attrs.update({
+                    'class': 'form-control bg-dark text-white rounded-4',
+                    'autocomplete': 'off',
+                })
 
 
 class MediaForm(forms.ModelForm):
