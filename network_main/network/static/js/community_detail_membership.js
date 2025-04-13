@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': getCookie('csrftoken'),
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: `commuinity=${slug}`
+            body: `community=${slug}`
         })
         .then(response => response.json())
         .then(data => {

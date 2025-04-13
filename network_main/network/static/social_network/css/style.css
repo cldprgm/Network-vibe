@@ -428,6 +428,18 @@ body {
     border-color: transparent;
 }
 
+/* Community joined button */
+.custom-community-joined-btn {
+    color: white;
+    background-color: rgba(55, 46, 184, 0.575) !important;
+    border-color: transparent;
+}
+
+.custom-community-joined-btn:hover {
+    background-color: rgb(55, 46, 184) !important;
+    border-color: transparent;
+}
+
 /* Collapsed Sidebar */
 .sidebar {
     position: fixed;
@@ -538,3 +550,39 @@ body {
     min-width: 20rem;
     border-radius: 17px;
 }
+
+/* Post create */
+.select-wrapper {
+    position: relative;
+}
+
+.select2-container .select2-selection--single {
+    background: rgba(175, 175, 175, 0.253) !important;
+    border-color: transparent;
+}
+
+.select2-container .select2-selection__rendered {
+    color: white !important;
+}
+
+.select2-container .select2-selection__arrow {
+    height: 38px !important;
+}
+
+.select2-container .select2-dropdown {
+    background-color: #212529 !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 1rem !important;
+    color: white;
+}
+
+.select2-container .select2-results__option {
+    background-color: #212529 !important;
+    color: white !important;
+}
+
+.select2-container .select2-results__option--highlighted {
+    background-color: #343a40 !important;
+    color: white !important;
+}
+

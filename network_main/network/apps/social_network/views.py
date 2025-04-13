@@ -334,18 +334,17 @@ class CommunityFromCategoryView(ListView):
     template_name = 'social_network/communities/community_list.html'
     context_object_name = 'communities'
 
-    category = None
-
     def get_queryset(self):
         self.category = Category.objects.prefetch_related(
             'children').get(slug=self.kwargs['slug'])
 
+        self.child_categories = self.category.get_children()
+
         if self.category.slug == 'all':
             return Community.objects.none()
 
-        child_categories = list(self.category.get_children())
         queryset = Community.objects.filter(
-            categories__in=child_categories).distinct()
+            categories__in=self.child_categories).distinct()
 
         return queryset
 
@@ -354,8 +353,7 @@ class CommunityFromCategoryView(ListView):
 
         user = self.request.user
 
-        context['child_categories'] = self.category.get_children(
-        ).prefetch_related('communities')
+        context['child_categories'] = self.child_categories
         context["title"] = 'Communities'
         context["parent_categories"] = Category.objects.filter(
             parent__isnull=True)
@@ -430,7 +428,7 @@ class MembershipCreateView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        community_slug = request.POST.get('commuinity')
+        community_slug = request.POST.get('community')
         community = get_object_or_404(Community, slug=community_slug)
 
         with transaction.atomic():
