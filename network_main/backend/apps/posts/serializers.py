@@ -96,17 +96,30 @@ class PostListSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'community', 'community_name', 'created', 'updated',
-                  'sum_rating', 'media_data', 'media_files')
+                  'sum_rating', 'user_vote', 'media_data', 'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'community_name', 'media_data')
 
     def get_sum_rating(self, obj):
         return obj.get_sum_rating()
+
+    def get_user_vote(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            content_type = ContentType.objects.get_for_model(Post)
+            rating = Rating.objects.filter(
+                content_type=content_type,
+                object_id=obj.id,
+                user=request.user
+            ).first()
+            return rating.value if rating else 0
+        return 0
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -127,12 +140,14 @@ class PostDetailSerializer(serializers.ModelSerializer):
         required=False
     )
     owned_comments = CommentSerializer(many=True, read_only=True)
+    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'community', 'community_name', 'created', 'updated',
-                  'sum_rating', 'media_data', 'media_files', 'owned_comments')
+                  'sum_rating', 'user_vote', 'media_data', 'media_files',
+                  'owned_comments')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'community_name', 'media_data',
                             'owned_comments')
@@ -154,6 +169,18 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     def get_sum_rating(self, obj):
         return obj.get_sum_rating()
+
+    def get_vote_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            content_type = ContentType.objects.get_for_model(Post)
+            rating = Rating.objects.filter(
+                content_type=content_type,
+                object_id=obj.id,
+                user=request.user
+            ).first()
+            return rating.value if rating else 0
+        return 0
 
 
 class RatingSerializer(serializers.ModelSerializer):
