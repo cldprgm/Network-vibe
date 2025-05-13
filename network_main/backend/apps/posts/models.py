@@ -62,7 +62,7 @@ class Post(models.Model):
 
     def save(self, *args, **kwargs):
         # fix self.title != Post.objects.get(pk=self.pk).title
-        if not self.slug or self.title != Post.objects.get(pk=self.pk).title:
+        if not self.slug:
             self.slug = unique_slugify(self, self.title)
         super().save(*args, **kwargs)
 

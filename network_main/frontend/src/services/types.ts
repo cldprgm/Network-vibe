@@ -1,13 +1,22 @@
+export type Media = {
+    id: number;
+    file: string;
+    media_type: 'image' | 'video';
+    aspect_ratio?: string;
+    file_url?: string;
+    uploaded_at: string;
+};
+
 export type Post = {
     id: number;
     title: string;
     slug: string;
     description: string;
-    status: 'PB' | 'DR';
     author: string;
     community_name: string;
     created: string;
     updated: string;
     sum_rating: number;
+    user_vote: number;
     media_data: any[];
 };

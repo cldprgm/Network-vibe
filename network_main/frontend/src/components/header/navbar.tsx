@@ -1,5 +1,5 @@
 import React from "react"
-import Image from "next/image"
+import IconComponent from "./icon_component"
 
 export default function Navbar() {
     return(
@@ -14,8 +14,8 @@ export default function Navbar() {
                             </svg>
                         </button>
                         <a href="#" className="flex ms-2 md:me-24">
-                            <img src="https://flowbite.com/docs/images/logo.svg" className="h-8 me-3" alt="FlowBite Logo" />
-                            <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Flowbite</span>
+                            <IconComponent />
+                            <span className="self-center ms-2 text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Network</span>
                         </a>
                     </div>
                     <div className="flex items-center">
@@ -23,7 +23,7 @@ export default function Navbar() {
                             <div>
                             <button type="button" className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
                                 <span className="sr-only">Open user menu</span>
-                                <img className="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo" />
+                                <img className="w-8 h-8 rounded-full" src="abc" alt="user photo" />
                             </button>
                             </div>
                             <div className="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="dropdown-user">
@@ -32,7 +32,7 @@ export default function Navbar() {
                                     Neil Sims
                                     </p>
                                     <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
-                                    neil.sims@flowbite.com
+                                    neil.sims@test.com
                                     </p>
                                 </div>
                                 <ul className="py-1" role="none">
