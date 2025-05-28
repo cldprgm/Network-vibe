@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'apps.ratings.apps.RatingsConfig',
     'apps.posts.apps.PostsConfig',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -157,14 +159,11 @@ INTERNAL_IPS = [
 ]
 
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'apps.users.authentication.CookieJWTAuthentication',
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
@@ -175,16 +174,17 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
+    'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
+# for testing (not secure):
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
-
-# for testing (not secure):
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

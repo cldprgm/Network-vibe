@@ -170,7 +170,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
     def get_sum_rating(self, obj):
         return obj.get_sum_rating()
 
-    def get_vote_user(self, obj):
+    def get_user_vote(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             content_type = ContentType.objects.get_for_model(Post)

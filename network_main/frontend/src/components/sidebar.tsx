@@ -1,10 +1,55 @@
-import React from "react"
-import Image from "next/image"
+'use client';
+
+import React, {useState, useEffect} from "react"
+import clsx from "clsx"
 
 export default function Sidebar() {
+    const [collapsed, setCollapsed] = useState(true);
+
+    useEffect(() => {
+        const handleResize = () => {
+        setCollapsed(window.innerWidth < 768);
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const toggleSidebar = () => {
+        setCollapsed((prev) => !prev);
+    };
+
     return(
-        <aside id="logo-sidebar" className="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-[var(--background)] dark:border-[var(--border)]" aria-label="Sidebar">
-            <div className="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-[var(--background)]">
+        <aside
+            id="logo-sidebar"
+            className={clsx(
+                "relative sticky top-0 left-0 z-40 h-screen pt-20 transition-all duration-300 border-r dark:bg-[var(--background)] dark:border-[var(--border)]",
+                collapsed ? "w-10" : "w-64",
+                "bg-white border-gray-200"
+            )}
+            aria-label="Sidebar"
+        >
+            <button
+                type="button"
+                onClick={toggleSidebar}
+                className="absolute -right-4.5 z-50 w-9 h-9 flex items-center justify-center bg-gray-200 dark:bg-[var(--background)] border border-gray-300 dark:border-[var(--border)] rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                title={collapsed ? "Expand navigation" : "Collapse navigation"}
+            >
+                <svg
+                    className="w-3 h-3 text-gray-800 dark:text-gray-200"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                >
+                    <path
+                        fillRule="evenodd"
+                        d="M12.293 15.707a1 1 0 010-1.414L14.586 12H5a1 1 0 110-2h9.586l-2.293-2.293a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        clipRule="evenodd"
+                    />
+                </svg>
+            </button>
+            {!collapsed && (
+                <div className="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-[var(--background)]">
                 <ul className="space-y-2 font-medium">
                     <li>
                         <a href="#" className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -69,6 +114,8 @@ export default function Sidebar() {
                     </li>
                 </ul>
             </div>
+            )}
+            
         </aside>
     )
 }

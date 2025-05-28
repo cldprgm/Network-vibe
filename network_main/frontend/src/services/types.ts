@@ -20,3 +20,13 @@ export type Post = {
     user_vote: number;
     media_data: any[];
 };
+
+export type User = {
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    avatar?: string;
+    description: string;
+};

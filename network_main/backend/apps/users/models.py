@@ -5,8 +5,14 @@ from django.urls import reverse
 
 from apps.services.utils import unique_slugify, validate_file_size
 
+from .managers import CustomUserManager
 
-class User(AbstractUser):
+
+class CustomUser(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    email = models.EmailField(unique=True, blank=False)
     slug = models.SlugField(
         verbose_name='URL', max_length=75, blank=True, unique=True)
     avatar = models.ImageField(
@@ -21,6 +27,8 @@ class User(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=6, choices=[(
         'male', 'Male'), ('female', 'Female'), ('other', 'Other')], blank=True)
+
+    objects = CustomUserManager()
 
     class Meta:
         ordering = ('username',)

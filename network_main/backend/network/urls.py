@@ -3,8 +3,7 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 urlpatterns = [
     path('', include('apps.social_network.urls')),
@@ -17,8 +16,7 @@ urlpatterns = [
     path('api/v1/categories/', include('apps.categories.urls')),
     path('api/v1/communities/', include('apps.communities.urls')),
     # path('api/v1/memberships/', include('apps.memberships.urls')),
-    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
 ]
 
 if settings.DEBUG:
