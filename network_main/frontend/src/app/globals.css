@@ -5,19 +5,14 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #161a1d;
     --foreground: #ededed;
     --border: rgb(73, 73, 73);
     --hover-post-background: rgba(117, 117, 117, 0.1);
+    --button-backround: rgb(217, 57, 0);
+    --button-backround-hover: #ae2c00;
   }
 }
 

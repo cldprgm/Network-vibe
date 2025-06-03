@@ -108,7 +108,7 @@ class CookieTokenRefreshView(TokenRefreshView):
                                 value=access_token,
                                 httponly=True,
                                 secure=False,
-                                samesite='Strict')
+                                samesite='Lax')
             return response
         except TokenError:
             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)

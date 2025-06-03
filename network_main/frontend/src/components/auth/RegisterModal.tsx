@@ -1,25 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { registerUser, loginUser } from '@/services/auth';
 import { useAuthStore } from '@/zustand_store/authStore';
 
-export default function RegisterPage() {
-    const { login, setLoading, isLoading, isAuthenticated } = useAuthStore();
+export default function RegisterModal({
+    onClose,
+    onSwitchToLogin
+}: {
+    onClose: () => void;
+    onSwitchToLogin: () => void;
+}) {
+    const { login, setLoading, isLoading } = useAuthStore();
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
     const [error, setError] = useState('');
-    const router = useRouter();
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            router.push('/');
-        }
-    }, [isAuthenticated, router]);
-
 
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,10 +59,10 @@ export default function RegisterPage() {
         try {
             setLoading(true);
             await registerUser(email, username, password);
-            const loginResponse = await loginUser(email, password);
-            const { user } = loginResponse.data;
-            login(user);
-            router.push('/');
+            const { data } = await loginUser(email, password);
+            login(data.user);
+            onClose();
+            window.location.reload();
         } catch (err: any) {
             setLoading(false);
             const errorMessage =
@@ -77,8 +74,11 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-[var(--background)]">
-            <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-md relative">
+                <button onClick={onClose} className="cursor-pointer absolute top-2 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white">
+                    ✕
+                </button>
                 <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">
                     Create an Account
                 </h1>
@@ -169,12 +169,13 @@ export default function RegisterPage() {
                 </form>
                 <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                     Already have an account?{' '}
-                    <a
-                        href="/login"
+                    <button
+                        type='button'
+                        onClick={onSwitchToLogin}
                         className="text-blue-600 hover:underline dark:text-blue-400"
                     >
                         Log in
-                    </a>
+                    </button>
                 </p>
             </div>
         </div>
