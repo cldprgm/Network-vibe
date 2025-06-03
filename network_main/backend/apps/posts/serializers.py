@@ -187,19 +187,19 @@ class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     value = serializers.ChoiceField(choices=[(1, 'upvote'), (-1, 'downvote')])
     user_vote = serializers.SerializerMethodField()
-    rating_sum = serializers.SerializerMethodField()
+    sum_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Rating
         fields = ('id', 'user', 'value', 'time_created',
-                  'user_vote', 'rating_sum')
+                  'user_vote', 'sum_rating')
         read_only_fields = ('id', 'user', 'time_created',
-                            'user_vote', 'rating_sum')
+                            'user_vote', 'sum_rating')
 
     def get_user_vote(self, obj):
         return obj.value if obj else 0
 
-    def get_rating_sum(self, obj):
+    def get_sum_rating(self, obj):
         return obj.content_object.get_sum_rating() if obj.content_object else 0
 
     def validate(self, attrs):

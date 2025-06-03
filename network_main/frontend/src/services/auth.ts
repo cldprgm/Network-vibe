@@ -1,5 +1,4 @@
 import axios, { AxiosResponse } from "axios"
-import { error } from "console";
 import { User } from "./types";
 import { useAuthStore } from "@/zustand_store/authStore";
 
@@ -139,16 +138,24 @@ export const getUserInfo = async (): Promise<User> => {
     }
 };
 
-export const refreshToken = async () => {
+export async function refreshAccessToken(cookies: string): Promise<string | null> {
     try {
-        const response = await api.post(
-            '/users/refresh/',
-            null,
-            { withCredentials: true }
+        const api = axios.create({
+            baseURL: baseUrl,
+            headers: {
+                Cookie: cookies,
+            },
+            withCredentials: true,
+        });
+
+        const res = await api.post('/users/refresh/');
+        const newAccessToken = res.headers['set-cookie']?.find((cookie: string) =>
+            cookie.includes('access_token')
         );
-        return response;
+
+        return newAccessToken || null;
+    } catch (err: any) {
+        console.error('SSR token refresh failed:', err.response?.data || err.message);
+        return null;
     }
-    catch (e) {
-        throw new Error('Token refresh failed!')
-    }
-};
+}

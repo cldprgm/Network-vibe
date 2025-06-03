@@ -41,7 +41,7 @@ export default function RootLayout({
           <main className="flex-[5]">
             {children}
           </main>
-          <div className="flex-[1] hidden md:block"></div>
+          <div className="flex-[1] hidden lg:block"></div>
         </div>
 
       </body>

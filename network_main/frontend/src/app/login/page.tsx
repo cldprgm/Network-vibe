@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth";
 import { useAuthStore } from "@/zustand_store/authStore";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export default function loginPage() {
   const { login, setLoading, isLoading, isAuthenticated } = useAuthStore();
   const [email, setEmail] = useState("");
@@ -85,11 +83,20 @@ export default function loginPage() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold"
+            className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold"
           >
             {isLoading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
+        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account?{' '}
+          <a
+            href="/register"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Sign up
+          </a>
+        </p>
       </div>
     </div>
   );
