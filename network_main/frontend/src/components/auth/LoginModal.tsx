@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { loginUser } from "@/services/auth";
 import { useAuthStore } from "@/zustand_store/authStore";
-import RegisterModal from "./RegisterModal";
 
 export default function LoginModal({
     onClose,
@@ -16,7 +15,6 @@ export default function LoginModal({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const [showRegister, setShowRegister] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

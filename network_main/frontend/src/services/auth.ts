@@ -62,7 +62,7 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError);
                 useAuthStore.getState().logout();
-                window.location.href = '/login';
+                useAuthStore.getState().setShowAuthModal(true);
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -137,25 +137,3 @@ export const getUserInfo = async (): Promise<User> => {
         throw new Error('Getting user failed!')
     }
 };
-
-export async function refreshAccessToken(cookies: string): Promise<string | null> {
-    try {
-        const api = axios.create({
-            baseURL: baseUrl,
-            headers: {
-                Cookie: cookies,
-            },
-            withCredentials: true,
-        });
-
-        const res = await api.post('/users/refresh/');
-        const newAccessToken = res.headers['set-cookie']?.find((cookie: string) =>
-            cookie.includes('access_token')
-        );
-
-        return newAccessToken || null;
-    } catch (err: any) {
-        console.error('SSR token refresh failed:', err.response?.data || err.message);
-        return null;
-    }
-}

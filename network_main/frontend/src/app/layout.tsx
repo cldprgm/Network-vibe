@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "@/components/sidebar";
 import type { Viewport } from 'next'
 import Navbar from "@/components/header/navbar";
+import ClientRoot from "@/components/ClientRoot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
           </main>
           <div className="flex-[1] hidden lg:block"></div>
         </div>
+        <ClientRoot />
 
       </body>
     </html>
