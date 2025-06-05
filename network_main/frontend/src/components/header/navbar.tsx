@@ -68,6 +68,15 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="cursor-pointer flex gap-x-1 text-sm text-white hover:bg-[var(--button-create-background-hover)] px-3 py-2.5 rounded-full"
+            >
+              <svg fill="currentColor" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 9.25h-7.25V2a.772.772 0 0 0-.75-.75.772.772 0 0 0-.75.75v7.25H2a.772.772 0 0 0-.75.75c0 .398.352.75.75.75h7.25V18c0 .398.352.75.75.75s.75-.352.75-.75v-7.25H18c.398 0 .75-.352.75-.75a.772.772 0 0 0-.75-.75Z"></path>
+              </svg>
+              Create
+            </button>
             {isLoading ? (
               <span className="text-gray-500 dark:text-gray-400">Loading...</span>
             ) : isAuthenticated && user ? (
@@ -79,7 +88,7 @@ export default function Navbar() {
                 >
                   <span className="sr-only">Open user menu</span>
                   <img
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-9 h-9 rounded-full object-cover"
                     src={user.avatar || '/default-avatar.png'}
                     alt={`${user.username}'s avatar`}
                   />
@@ -130,7 +139,7 @@ export default function Navbar() {
               <>
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="cursor-pointer text-sm text-white bg-[var(--button-backround)] hover:bg-[var(--button-backround-hover)] px-4 py-2.5 rounded-full"
+                  className="cursor-pointer text-sm text-white bg-[var(--button-login-background)] hover:bg-[var(--button-login-background-hover)] px-4 py-2.5 rounded-full"
                 >
                   Log in
                 </button>

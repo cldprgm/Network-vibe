@@ -33,6 +33,9 @@ class UserRegistrationView(CreateAPIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = LoginUserSerializer(data=request.data)
 
@@ -66,17 +69,18 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
+
         if refresh_token:
             try:
                 refresh = RefreshToken(refresh_token)
                 refresh.blacklist()
-            except Exception as e:
-                return Response(
-                    {'error': 'Error invalidating token: ' + str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            except Exception:
+                pass
 
         response = Response(
             {'message': 'Successfully logged out!'},
