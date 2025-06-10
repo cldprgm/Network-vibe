@@ -19,13 +19,13 @@ class CommunityViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
     def get_queryset(self):
-        queryset = Community.objects.select_related('creator').prefetch_related(
-            Prefetch(
-                'owned_posts',
-                queryset=get_optimized_post_queryset(action='list')
-            )
-        )
-        return queryset
+        # queryset = Community.objects.select_related('creator').prefetch_related(
+        #     Prefetch(
+        #         'owned_posts',
+        #         queryset=get_optimized_post_queryset(action='list')
+        #     )
+        # )
+        return Community.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)

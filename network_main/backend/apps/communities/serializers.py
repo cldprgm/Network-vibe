@@ -7,7 +7,6 @@ from .models import Community
 
 
 class CommunitySerializer(serializers.ModelSerializer):
-    posts = PostListSerializer(many=True, read_only=True, source='owned_posts')
     creator = serializers.StringRelatedField(read_only=True)
     is_member = serializers.SerializerMethodField()
 
@@ -15,9 +14,9 @@ class CommunitySerializer(serializers.ModelSerializer):
         model = Community
         fields = ('id', 'slug', 'name', 'creator', 'description',
                   'banner', 'icon', 'is_nsfw', 'visibility',
-                  'created', 'updated', 'status', 'is_member', 'posts')
+                  'created', 'updated', 'status', 'is_member')
         read_only_fields = ('id', 'slug', 'creator', 'created',
-                            'updated', 'slug', 'posts')
+                            'updated', 'slug')
 
     def get_is_member(self, obj):
         request = self.context.get('request')

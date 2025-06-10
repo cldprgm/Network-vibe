@@ -13,12 +13,30 @@ export type Post = {
     slug: string;
     description: string;
     author: string;
-    community_name: string;
     created: string;
     updated: string;
     sum_rating: number;
     user_vote: number;
     media_data: any[];
+    community_id: number;
+    community_name: string;
+    community_icon: string;
+};
+
+export type Community = {
+    id: string;
+    slug: string;
+    name: string;
+    creator: string;
+    description: string;
+    banner: string;
+    icon: string;
+    is_nsfw: boolean;
+    visibility: string;
+    created: string;
+    updated: string;
+    status: string;
+    is_member: boolean;
 };
 
 export type User = {

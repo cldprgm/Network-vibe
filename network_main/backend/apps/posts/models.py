@@ -1,14 +1,14 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, FileExtensionValidator
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Sum
 from django.conf import settings
 
 from mptt.models import MPTTModel
 from mptt.fields import TreeForeignKey
 
-from PIL import Image
+from PIL import Image, ImageFile, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
+
 import os
 
 from apps.communities.models import Community
@@ -17,6 +17,9 @@ from apps.services.utils import unique_slugify, validate_file_size
 
 
 User = settings.AUTH_USER_MODEL
+
+Image.MAX_IMAGE_PIXELS = 20_000_000
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class PublishedManager(models.Manager):
@@ -66,12 +69,6 @@ class Post(models.Model):
             self.slug = unique_slugify(self, self.title)
         super().save(*args, **kwargs)
 
-    def get_sum_rating(self):
-        if hasattr(self, 'prefetched_ratings'):
-            return sum(rating.value for rating in self.prefetched_ratings) or 0
-        result = self.ratings.aggregate(total=Sum('value'))['total']
-        return result if result is not None else 0
-
     def __str__(self):
         return self.title
 
@@ -107,14 +104,6 @@ class Comment(MPTTModel):
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
 
-    def get_sum_rating(self):
-        if hasattr(self, 'sum_rating'):
-            return self.sum_rating or 0
-        content_type = ContentType.objects.get_for_model(Comment)
-        ratings = Rating.objects.filter(
-            content_type=content_type, object_id=self.id)
-        return ratings.aggregate(sum_rating=Sum('value'))['sum_rating'] or 0
-
     def __str__(self):
         return f'{self.author}:{self.content}'
 
@@ -122,7 +111,7 @@ class Comment(MPTTModel):
 class Media(models.Model):
     MEDIA_EXTENSIONS = {
         'image': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-        'video': ['mp4', 'mov', 'webm'],
+        'video': ['mp4', 'webm'],
     }
 
     post = models.ForeignKey(
@@ -138,7 +127,7 @@ class Media(models.Model):
             FileExtensionValidator(
                 allowed_extensions=sum(MEDIA_EXTENSIONS.values(), [])
             ),
-            validate_file_size
+            validate_file_size,
         ],
         verbose_name='File'
     )
@@ -160,15 +149,22 @@ class Media(models.Model):
         return 'unknown'
 
     def get_aspect_ratio(self):
-        if self.get_media_type() == 'image':
-            try:
-                from PIL import Image
-                with Image.open(self.file.path) as img:
-                    width, height = img.size
-                    return f"{width}/{height}"
-            except Exception:
-                return "16/9"
-        return "16/9"
+        if self.get_media_type() != 'image':
+            return "16/9"
+        try:
+            with self.file.open('rb') as file:
+                parser = ImageFile.Parser()
+                header = file.read(8192)
+                parser.feed(header)
+                img = parser.close()
+                width, height = img.size
+                return f'{width}/{height}'
+        except DecompressionBombError:
+            return "16/9"
+        except UnidentifiedImageError:
+            return "16/9"
+        except Exception:
+            return "16/9"
 
     def __str__(self):
         return f"{self.get_media_type()} - {self.file.name}"
