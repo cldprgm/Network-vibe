@@ -9,6 +9,7 @@ import PostMedia from './post_media_content';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
 import AuthModalController from './auth/AuthModalController';
+import Image from 'next/image';
 
 export default function PostItem({ post }: { post: Post }) {
     const { isAuthenticated } = useAuthStore();
@@ -27,9 +28,8 @@ export default function PostItem({ post }: { post: Post }) {
     const handleVote = async (slug: string, value: number) => {
         requireAuth(async () => {
             try {
-                const data = await votePost(slug, value);
-                console.log('handleVote data:', data);
-                setCurrentPost({ ...currentPost, sum_rating: data.rating_sum, user_vote: data.user_vote });
+                const { sum_rating, user_vote } = await votePost(slug, value);
+                setCurrentPost({ ...currentPost, sum_rating, user_vote });
             } catch (error) {
                 console.error('Error for voting:', error);
             }
@@ -39,21 +39,14 @@ export default function PostItem({ post }: { post: Post }) {
     const handleDelete = async (slug: string) => {
         requireAuth(async () => {
             try {
-                await deleteVotePost(slug);
-                console.log('DELETE successful, updating state');
-                setCurrentPost({
-                    ...currentPost,
-                    sum_rating: currentPost.sum_rating - (currentPost.user_vote || 0),
-                    user_vote: 0,
-                });
+                const { sum_rating, user_vote } = await deleteVotePost(slug);
+                setCurrentPost({ ...currentPost, sum_rating, user_vote });
             } catch (error) {
                 console.error('Error for delete voice:', error);
                 alert('Error for delete voice');
             }
         });
     };
-
-    console.log('currentPost.user_vote:', currentPost.user_vote);
 
     return (
         <>
@@ -64,9 +57,13 @@ export default function PostItem({ post }: { post: Post }) {
 
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center space-x-2">
-                                <img className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&q=80"
-                                    alt="User Avatar" />
+                                <Image
+                                    className="rounded-full object-cover flex-shrink-0"
+                                    src={currentPost.community_icon}
+                                    alt="Community icon"
+                                    width={32}
+                                    height={32}
+                                />
                                 <div className="min-w-0">
                                     <p className="text-xs text-secondary flex items-center">
                                         <a href="#" onClick={(e) => e.stopPropagation()} className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400">
@@ -92,7 +89,7 @@ export default function PostItem({ post }: { post: Post }) {
                                 {/* Post rating buttons */}
                                 <PostRating
                                     sum_rating={currentPost.sum_rating}
-                                    userVote={currentPost.user_vote || 0}
+                                    userVote={currentPost.user_vote}
                                     onVote={(value: number) => handleVote(currentPost.slug, value)}
                                     onDelete={() => handleDelete(currentPost.slug)}
                                 />

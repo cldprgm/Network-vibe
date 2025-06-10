@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/zustand_store/authStore";
 import { Post } from "@/services/types";
 import AuthModalController from "./auth/AuthModalController";
+import Image from "next/image";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
     const [post, setPostData] = useState(postData);
@@ -29,9 +30,8 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const handleVote = async (slug: string, value: number) => {
         requireAuth(async () => {
             try {
-                const data = await votePost(slug, value);
-                console.log('handleVote data:', data);
-                setPostData({ ...post, sum_rating: data.rating_sum, user_vote: data.user_vote });
+                const { sum_rating, user_vote } = await votePost(slug, value);
+                setPostData({ ...post, sum_rating, user_vote });
             } catch (error) {
                 console.error('Error for voting:', error);
             }
@@ -41,16 +41,10 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const handleDelete = async (slug: string) => {
         requireAuth(async () => {
             try {
-                await deleteVotePost(slug);
-                console.log('DELETE successful, updating state');
-                setPostData({
-                    ...post,
-                    sum_rating: post.sum_rating - (post.user_vote || 0),
-                    user_vote: 0,
-                });
+                const { sum_rating, user_vote } = await deleteVotePost(slug);
+                setPostData({ ...post, sum_rating, user_vote });
             } catch (error) {
                 console.error('Error for delete voice:', error);
-                alert('Error for delete voice');
             }
         })
     };
@@ -65,9 +59,13 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
 
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center space-x-2">
-                                <img className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&q=80"
-                                    alt="User Avatar" />
+                                <Image
+                                    className="rounded-full object-cover flex-shrink-0"
+                                    src={post.community_icon}
+                                    alt="Community icon"
+                                    width={32}
+                                    height={32}
+                                />
                                 <div className="min-w-0">
                                     <p className="text-xs text-secondary flex items-center">
                                         <a href="#" className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400">
@@ -94,7 +92,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
 
                                 <PostRating
                                     sum_rating={post.sum_rating}
-                                    userVote={post.user_vote || 0}
+                                    userVote={post.user_vote}
                                     onVote={(value: number) => handleVote(post.slug, value)}
                                     onDelete={() => handleDelete(post.slug)}
                                 />

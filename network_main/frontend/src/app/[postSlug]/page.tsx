@@ -1,11 +1,50 @@
-// app/[postSlug]/page.tsx
-import PostDetail from "@/components/post_detail";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import PostDetailItems from "@/components/postDetailItems";
+import { Metadata } from "next";
+
+async function getPostData(postSlug: string) {
+  const headersList = await headers();
+  const host = headersList.get('host');
+  if (!host) {
+    throw new Error('Error in getting "host"');
+  }
+  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+  const url = `${protocol}://${host}/api/proxy/posts/${postSlug}`;
+
+  const cookieHeader = headersList.get('cookie') || '';
+  const res = await fetch(url, {
+    headers: {
+      Cookie: cookieHeader,
+    },
+  });
+
+  if (res.status === 404) notFound();
+
+  const post = await res.json();
+
+  if (!post) notFound();
+
+  return post;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ postSlug: string }>; }): Promise<Metadata> {
+  const { postSlug } = await params;
+  const post = await getPostData(postSlug);
+
+  return {
+    title: post.title,
+    description: post.description?.slice(0, 100),
+  };
+}
 
 export default async function PostDetailPage({ params }: { params: Promise<{ postSlug: string }> }) {
-  const resolvedParams = await params;
+  const { postSlug } = await params;
+  const post = await getPostData(postSlug);
+
   return (
-    <div>
-      <PostDetail params={{ slug: resolvedParams.postSlug }} />
+    <div className="max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
+      <PostDetailItems postData={post} />
     </div>
   );
 }

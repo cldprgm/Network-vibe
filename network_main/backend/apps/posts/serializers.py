@@ -1,9 +1,12 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from django.contrib.contenttypes.models import ContentType
 
 from apps.communities.models import Community
 from apps.ratings.models import Rating
+
+from apps.services.utils import validate_magic_mime, validate_file_size
 
 from .models import Post, Comment, Media
 
@@ -19,6 +22,10 @@ class MediaSerializer(serializers.ModelSerializer):
                   'aspect_ratio', 'file_url', 'uploaded_at')
         read_only_fields = ('id', 'media_type',
                             'aspect_ratio', 'file_url', 'uploaded_at')
+
+    def validate_file(self, uploaded_file):
+        validate_magic_mime(uploaded_file)
+        return uploaded_file
 
     def get_media_type(self, obj):
         return obj.get_media_type()
@@ -62,10 +69,10 @@ class CommentSerializer(serializers.ModelSerializer):
             try:
                 post = Post.objects.get(slug=slug)
                 if value.post != post:
-                    serializers.ValidationError(
+                    raise ValidationError(
                         'Parent comment must belong to the same post.')
             except Post.DoesNotExist:
-                serializers.ValidationError('Post does not exist.')
+                raise ValidationError('Post does not exist.')
 
         return value
 
@@ -81,58 +88,65 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
-    community = serializers.PrimaryKeyRelatedField(
+    community_obj = serializers.PrimaryKeyRelatedField(
+        source='community',
         queryset=Community.objects.all(),
         write_only=True
     )
-    community_name = serializers.StringRelatedField(
-        source='community',
+    community_id = serializers.PrimaryKeyRelatedField(
+        source='community.id',
         read_only=True
     )
-    sum_rating = serializers.SerializerMethodField()
+    community_name = serializers.StringRelatedField(
+        source='community.name',
+        read_only=True
+    )
+    community_icon = serializers.ImageField(
+        source='community.icon',
+        read_only=True
+    )
+    sum_rating = serializers.IntegerField(read_only=True)
+    user_vote = serializers.IntegerField(read_only=True)
+
     media_data = MediaSerializer(many=True, read_only=True)
     media_files = serializers.ListField(
         child=serializers.FileField(),
         write_only=True,
         required=False
     )
-    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
-                  'community', 'community_name', 'created', 'updated',
-                  'sum_rating', 'user_vote', 'media_data', 'media_files')
+                  'created', 'updated', 'sum_rating', 'user_vote',
+                  'media_data', 'media_files', 'community_id', 'community_name',
+                  'community_icon', 'community_obj')
         read_only_fields = ('id', 'slug', 'created', 'updated',
-                            'author', 'community_name', 'media_data')
-
-    def get_sum_rating(self, obj):
-        return obj.get_sum_rating()
-
-    def get_user_vote(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            content_type = ContentType.objects.get_for_model(Post)
-            rating = Rating.objects.filter(
-                content_type=content_type,
-                object_id=obj.id,
-                user=request.user
-            ).first()
-            return rating.value if rating else 0
-        return 0
+                            'author', 'media_data')
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
-    community = serializers.PrimaryKeyRelatedField(
+    community_obj = serializers.PrimaryKeyRelatedField(
+        source='community',
         queryset=Community.objects.all(),
         write_only=True
     )
-    community_name = serializers.StringRelatedField(
-        source='community',
+    community_id = serializers.PrimaryKeyRelatedField(
+        source='community.id',
         read_only=True
     )
-    sum_rating = serializers.SerializerMethodField()
+    community_name = serializers.StringRelatedField(
+        source='community.name',
+        read_only=True
+    )
+    community_icon = serializers.ImageField(
+        source='community.icon',
+        read_only=True
+    )
+    sum_rating = serializers.IntegerField(read_only=True)
+    user_vote = serializers.IntegerField(read_only=True)
+
     media_data = MediaSerializer(many=True, read_only=True)
     media_files = serializers.ListField(
         child=serializers.FileField(),
@@ -140,17 +154,22 @@ class PostDetailSerializer(serializers.ModelSerializer):
         required=False
     )
     owned_comments = CommentSerializer(many=True, read_only=True)
-    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
-                  'community', 'community_name', 'created', 'updated',
-                  'sum_rating', 'user_vote', 'media_data', 'media_files',
-                  'owned_comments')
+                  'created', 'updated', 'sum_rating', 'user_vote',
+                  'media_data', 'media_files', 'owned_comments',
+                  'community_id', 'community_name', 'community_icon',
+                  'community_obj')
         read_only_fields = ('id', 'slug', 'created', 'updated',
-                            'author', 'community_name', 'media_data',
-                            'owned_comments')
+                            'author', 'media_data', 'owned_comments')
+
+    def validate_media_files(self, media_files):
+        for file in media_files:
+            validate_file_size(file)
+            validate_magic_mime(file)
+        return media_files
 
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
@@ -159,48 +178,23 @@ class PostDetailSerializer(serializers.ModelSerializer):
             Media.objects.create(post=post, file=file)
         return post
 
-    def update(self, validated_data):
+    def update(self, instance, validated_data):
         media_files = validated_data.pop('media_files', [])
-        post = super().update(validated_data)
+        post = super().update(instance, validated_data)
         if media_files:
             for file in media_files:
                 Media.objects.create(post=post, file=file)
         return post
 
-    def get_sum_rating(self, obj):
-        return obj.get_sum_rating()
-
-    def get_user_vote(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            content_type = ContentType.objects.get_for_model(Post)
-            rating = Rating.objects.filter(
-                content_type=content_type,
-                object_id=obj.id,
-                user=request.user
-            ).first()
-            return rating.value if rating else 0
-        return 0
-
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     value = serializers.ChoiceField(choices=[(1, 'upvote'), (-1, 'downvote')])
-    user_vote = serializers.SerializerMethodField()
-    sum_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Rating
-        fields = ('id', 'user', 'value', 'time_created',
-                  'user_vote', 'sum_rating')
-        read_only_fields = ('id', 'user', 'time_created',
-                            'user_vote', 'sum_rating')
-
-    def get_user_vote(self, obj):
-        return obj.value if obj else 0
-
-    def get_sum_rating(self, obj):
-        return obj.content_object.get_sum_rating() if obj.content_object else 0
+        fields = ('id', 'user', 'value', 'time_created')
+        read_only_fields = ('id', 'user', 'time_created')
 
     def validate(self, attrs):
         request = self.context['request']
@@ -215,17 +209,18 @@ class RatingSerializer(serializers.ModelSerializer):
                 post = Post.objects.get(slug=slug)
                 object_id = post.id
             except Post.DoesNotExist:
-                raise serializers.ValidationError('Post does not exist.')
+                raise ValidationError('Post does not exist.')
         elif 'slug' in view.kwargs and 'pk' in view.kwargs:
             content_type = ContentType.objects.get_for_model(Comment)
             object_id = view.kwargs['pk']
             try:
                 post = Post.objects.get(slug=view.kwargs['slug'])
                 if not Comment.objects.filter(pk=object_id).exists():
-                    raise serializers.ValidationError(
-                        'Comment does not exist.')
+                    raise ValidationError('Comment does not exist.')
             except Post.DoesNotExist:
-                raise serializers.ValidationError('Post does not exist.')
+                raise ValidationError('Post does not exist.')
+        else:
+            raise ValidationError('Invalid URL parameters.')
 
         attrs['content_type'] = content_type
         attrs['object_id'] = object_id

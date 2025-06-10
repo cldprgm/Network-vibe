@@ -16,8 +16,6 @@ export default function PostRating({ sum_rating, userVote, onVote, onDelete }: P
         }
     };
 
-    console.log('userVote is :', userVote)
-
     return (
         <div className="flex items-center gap-0.5 bg-gray-200/20 rounded-full ">
             <button
