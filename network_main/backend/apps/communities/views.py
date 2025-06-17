@@ -25,7 +25,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
         #         queryset=get_optimized_post_queryset(action='list')
         #     )
         # )
-        return Community.objects.all()
+        return Community.objects.select_related('creator')
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)

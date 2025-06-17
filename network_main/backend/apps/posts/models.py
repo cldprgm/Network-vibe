@@ -35,12 +35,12 @@ class Post(models.Model):
         ("PB", "Published"),
     )
 
-    title = models.CharField(max_length=255, validators=[
+    title = models.CharField(max_length=300, validators=[
                              MinLengthValidator(5)], verbose_name="Post title")
     slug = models.SlugField(
-        max_length=255, verbose_name="URL", blank=True)
+        max_length=300, verbose_name="URL", blank=True)
     description = models.TextField(
-        max_length=500, verbose_name="Post description", blank=True, default='')
+        max_length=600, verbose_name="Post description", blank=True, default='')
     status = models.CharField(choices=STATUS_OPTIONS,
                               default='PB', max_length=10, verbose_name="Post status")
     created = models.DateTimeField(
@@ -105,7 +105,7 @@ class Comment(MPTTModel):
         verbose_name_plural = 'Comments'
 
     def __str__(self):
-        return f'{self.author}:{self.content}'
+        return f'{self.content}'
 
 
 class Media(models.Model):

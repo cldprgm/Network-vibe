@@ -172,7 +172,7 @@ export default function RegisterModal({
                     <button
                         type='button'
                         onClick={onSwitchToLogin}
-                        className="text-blue-600 hover:underline dark:text-blue-400"
+                        className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400"
                     >
                         Log in
                     </button>

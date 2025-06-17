@@ -57,13 +57,15 @@ export default function PostItem({ post }: { post: Post }) {
 
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center space-x-2">
-                                <Image
-                                    className="rounded-full object-cover flex-shrink-0"
-                                    src={currentPost.community_icon}
-                                    alt="Community icon"
-                                    width={32}
-                                    height={32}
-                                />
+                                <div className="w-9 h-9 rounded-full overflow-hidden relative">
+                                    <Image
+                                        className="object-cover"
+                                        src={currentPost.community_icon}
+                                        onClick={(e) => e.stopPropagation()}
+                                        alt="Community icon"
+                                        fill
+                                    />
+                                </div>
                                 <div className="min-w-0">
                                     <p className="text-xs text-secondary flex items-center">
                                         <a href="#" onClick={(e) => e.stopPropagation()} className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400">

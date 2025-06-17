@@ -122,7 +122,8 @@ export default function CreatePost() {
 
     };
 
-    const canSubmit = title.trim().length > 0;
+    const isTitleValid = title.trim().length >= 5;
+    const canSubmit = isTitleValid && community !== null;
 
     return (
         <div className="bg-white dark:bg-[var(--background)] flex sm:mt-[30px] md:mt-[60px] justify-center p-4">
@@ -292,7 +293,7 @@ export default function CreatePost() {
                                     ? 'cursor-pointer bg-blue-600 text-white hover:bg-blue-700'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                         >
-                            Save Draft
+                            Save Draft(Not working yet)
                         </button>
                         <button
                             type="submit"
