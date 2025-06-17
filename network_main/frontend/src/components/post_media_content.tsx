@@ -29,7 +29,7 @@ export default function PostMedia({ post }: { post: Post }) {
   const currentMedia = mediaItems[currentIndex];
 
   return (
-    <div className="mb-2 relative w-full">
+    <div className="mb-2 relative w-full" onClick={(e) => e.stopPropagation()}>
       <div
         className="relative w-full border border-[var(--border)] rounded-2xl overflow-hidden bg-black"
         style={{ aspectRatio: getAspectRatio(currentMedia), maxHeight: "560px" }}
@@ -56,7 +56,7 @@ export default function PostMedia({ post }: { post: Post }) {
             className="w-full h-full object-contain"
             src={currentMedia.file}
           >
-            Your browser does not support the video tag.
+
           </video>
         )}
 
@@ -106,9 +106,8 @@ export default function PostMedia({ post }: { post: Post }) {
               {mediaItems.map((_, index) => (
                 <span
                   key={index}
-                  className={`w-2 h-2 rounded-full ${
-                    index === currentIndex ? "bg-white" : "bg-white/50"
-                  }`}
+                  className={`w-2 h-2 rounded-full ${index === currentIndex ? "bg-white" : "bg-white/50"
+                    }`}
                 />
               ))}
             </div>

@@ -23,10 +23,7 @@ from .serializers import PostDetailSerializer, PostListSerializer, CommentSerial
     RatingSerializer
 
 
-def get_optimized_post_queryset(request, action: Optional[str] = None):
-    queryset = Post.published.select_related('author', 'community')
-    content_type = ContentType.objects.get_for_model(Post)
-
+def get_annotated_ratings(queryset, request, content_type: ContentType):
     queryset = queryset.annotate(
         sum_rating=Coalesce(
             Sum('ratings__value', filter=Q(ratings__content_type=content_type)),
@@ -55,13 +52,44 @@ def get_optimized_post_queryset(request, action: Optional[str] = None):
             user_vote=Value(0, output_field=IntegerField())
         )
 
+    return queryset
+
+
+def get_optimized_post_queryset(request, action: Optional[str] = None):
+    queryset = Post.published.select_related('author', 'community')
+    post_content_type = ContentType.objects.get_for_model(Post)
+    comment_content_type = ContentType.objects.get_for_model(Comment)
+
+    queryset = get_annotated_ratings(queryset, request, post_content_type)
+
+    comments_queryset = (
+        Comment.objects
+        .filter(status='PB')
+        .select_related('author')
+        .order_by('tree_id', 'lft')
+    )
+
+    comments_queryset = get_annotated_ratings(
+        comments_queryset,
+        request,
+        comment_content_type
+    )
+
+    all_comments_prefetch = Prefetch(
+        'owned_comments',
+        queryset=comments_queryset,
+        to_attr='comments_flat'
+    )
+
     common_prefetch = [
         'media_data',
     ]
 
-    if action == 'list':
-        return queryset.prefetch_related(*common_prefetch)
-    return queryset.prefetch_related(*common_prefetch, 'owned_comments')
+    qs = queryset.prefetch_related(*common_prefetch)
+
+    if action != 'list':
+        qs = qs.prefetch_related(all_comments_prefetch)
+    return qs
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -156,16 +184,22 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    pagination_class = PageNumberPagination
+    lookup_field = 'id'
 
     def get_queryset(self):
+        content_type = ContentType.objects.get_for_model(Comment)
+        queryset = Comment.objects.select_related('author')
+        queryset = get_annotated_ratings(
+            queryset,
+            self.request,
+            content_type
+        )
         slug = self.kwargs.get('slug')
         if slug:
             post = get_object_or_404(Post, slug=slug)
-            return self.queryset.filter(post=post)
+            return queryset.filter(post=post)
         return self.queryset
 
     def perform_create(self, serializer):
@@ -179,31 +213,68 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='ratings')
-    def ratings(self, request, slug=None, pk=None):
+    def ratings(self, request, id, slug=None):
         comment = self.get_object()
-        content_type = ContentType.objects.get_for_model(Comment)
 
         if request.method == 'GET':
-            ratings = Rating.objects.filter(
-                content_type=content_type, object_id=comment.id)
-            serializer = RatingSerializer(
-                ratings, many=True, context={'request': request})
-            return Response(serializer.data)
+            return Response({
+                'sum_rating': comment.sum_rating,
+                'user_vote': comment.user_vote,
+            })
 
         elif request.method == 'POST':
-            serializer = RatingSerializer(data=request.data, context={
-                                          'request': request, 'view': self})
+            serializer = RatingSerializer(
+                data=request.data,
+                context={'request': request, 'view': self}
+            )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
-            if serializer.created:
-                return Response(serializer.data, status=201)
-            else:
-                return Response(serializer.data, status=200)
+            rating = serializer.save()
+
+            comment = Comment.objects.filter(pk=comment.pk).annotate(
+                sum_rating=Coalesce(
+                    Sum('ratings__value', filter=Q(
+                        ratings__content_type=ContentType.objects.get_for_model(Comment))),
+                    Value(0),
+                    output_field=IntegerField()
+                ),
+                user_vote=Coalesce(
+                    Subquery(
+                        Rating.objects.filter(
+                            content_type=ContentType.objects.get_for_model(
+                                Comment),
+                            object_id=OuterRef('pk'),
+                            user=request.user
+                        ).order_by('-time_created').values('value')[:1],
+                        output_field=IntegerField()
+                    ),
+                    Value(0),
+                    output_field=IntegerField()
+                )
+            ).first()
+
+            return Response({
+                'rating': serializer.data,
+                'sum_rating': comment.sum_rating,
+                'user_vote': comment.user_vote,
+            }, status=status.HTTP_201_CREATED if serializer.created else status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
             Rating.objects.filter(
-                content_type=content_type,
+                content_type=ContentType.objects.get_for_model(Comment),
                 object_id=comment.id,
                 user=request.user
             ).delete()
-            return Response(status=204)
+            comment = Comment.objects.filter(pk=comment.pk).annotate(
+                sum_rating=Coalesce(
+                    Sum('ratings__value', filter=Q(
+                        ratings__content_type=ContentType.objects.get_for_model(Comment))),
+                    Value(0),
+                    output_field=IntegerField()
+                ),
+                user_vote=Value(0, output_field=IntegerField())
+            ).first()
+
+            return Response({
+                'sum_rating': comment.sum_rating,
+                'user_vote': comment.user_vote,
+            }, status=status.HTTP_202_ACCEPTED)

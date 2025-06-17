@@ -7,6 +7,7 @@ import { logoutUser, getUserInfo } from '@/services/auth';
 import IconComponent from './icon_component';
 import AuthModalController from '../auth/AuthModalController';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Navbar() {
   const router = useRouter();
@@ -87,16 +88,19 @@ export default function Navbar() {
                   onClick={toggleDropdown}
                   className="flex items-center text-sm rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                 >
-                  <span className="sr-only">Open user menu</span>
-                  <img
-                    className="w-9 h-9 rounded-full object-cover"
-                    src={user.avatar || '/default-avatar.png'}
-                    alt={`${user.username}'s avatar`}
-                  />
+                  <div className="w-9 h-9 rounded-full overflow-hidden relative">
+                    <span className="sr-only">Open user menu</span>
+                    <Image
+                      src={user.avatar || '/default-avatar.png'}
+                      alt={`${user.username}'s avatar`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
 
                 </button>
                 <div
-                  className={`absolute right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg dark:bg-gray-700 dark:divide-gray-600 ${isDropdownOpen ? '' : 'hidden'}`}
+                  className={`absolute right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg shadow-black dark:bg-gray-700 dark:divide-gray-600 ${isDropdownOpen ? '' : 'hidden'}`}
                   id="dropdown-user"
                 >
                   <div className="px-4 py-3">

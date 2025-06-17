@@ -21,6 +21,18 @@ export type Post = {
     community_id: number;
     community_name: string;
     community_icon: string;
+    owned_comments: CommentType[];
+};
+
+export type CommentType = {
+    id: number;
+    author: string;
+    content: string;
+    time_created: string;
+    time_updated: string;
+    sum_rating: number;
+    user_vote: number;
+    children: CommentType[];
 };
 
 export type Community = {
