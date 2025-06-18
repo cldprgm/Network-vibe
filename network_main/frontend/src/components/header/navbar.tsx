@@ -61,12 +61,12 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
 
           <div className="flex items-center">
-            <a href="/" className="flex items-center ms-2">
+            <Link href="/" className="flex items-center ms-2">
               <IconComponent />
               <span className="ml-2 py-2 text-2xl font-semibold whitespace-nowrap dark:text-white">
                 Network
               </span>
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -113,20 +113,20 @@ export default function Navbar() {
                   </div>
                   <ul className="py-1">
                     <li>
-                      <a
-                        href="/dashboard"
+                      <Link
+                        href="/"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                       >
                         Dashboard
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a
-                        href="/settings"
+                      <Link
+                        href="/"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                       >
                         Settings
-                      </a>
+                      </Link>
                     </li>
                     <li>
                       <button
