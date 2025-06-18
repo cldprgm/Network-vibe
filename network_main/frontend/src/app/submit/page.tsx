@@ -2,9 +2,8 @@
 
 import { useState, FormEvent, useRef, useCallback, useEffect } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
-import { Metadata } from 'next';
 import { getCommunities } from '@/services/api';
-import { Community, Post } from '@/services/types';
+import { Community } from '@/services/types';
 import { apiCreatePost } from '@/services/api';
 
 interface FileWithPreview extends File {

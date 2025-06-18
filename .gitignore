@@ -175,4 +175,5 @@ cython_debug/
 *.jpg
 *.png
 *.mp4
-!network_main/network/media/uploads/community/icons/default_icon.png
+!network_main/backend/media/uploads/community/icons/default_icon.png
+!network_main/backend/media/uploads/avatars/default.png
