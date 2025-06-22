@@ -21,7 +21,6 @@ export type Post = {
     community_id: number;
     community_name: string;
     community_icon: string;
-    owned_comments: CommentType[];
 };
 
 export type CommentType = {
@@ -32,6 +31,7 @@ export type CommentType = {
     time_updated: string;
     sum_rating: number;
     user_vote: number;
+    replies_count: number;
     children: CommentType[];
 };
 
