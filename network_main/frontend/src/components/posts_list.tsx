@@ -9,6 +9,7 @@ export default async function PostList() {
     throw new Error('Error in getting "host"');
   }
 
+  // fix later
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
   const url = `http://${host}/api/proxy/posts`;
 
@@ -19,7 +20,8 @@ export default async function PostList() {
     },
   });
 
-  const posts = await res.json();
+  const data = await res.json();
+  const posts = data.results;
 
   return (
     <div className="max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">

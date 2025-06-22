@@ -30,6 +30,36 @@ export async function deleteVotePost(slug: string): Promise<VoteResult> {
     }
 };
 
+export async function fetchComments(
+    slug: string,
+    page: number = 1,
+    pageSize: number = 10
+): Promise<{ results: CommentType[]; next: string | null }> {
+    try {
+        const response = await api.get(`/posts/${slug}/comments/`, {
+            params: { page, page_size: pageSize }
+        });
+        return {
+            results: response.data.results,
+            next: response.data.next,
+        };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch comments.');
+    }
+}
+
+export async function fetchReplies(
+    slug: string,
+    parentId: number
+): Promise<CommentType[]> {
+    try {
+        const response = await api.get(`/posts/${slug}/comments/${parentId}/replies/`);
+        return response.data.results;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch replies.');
+    }
+}
+
 export async function createComment(slug: string, content: string, parentId?: number | null): Promise<CommentType> {
     try {
         const payload: { content: string; parent_id?: number | null } = { content };

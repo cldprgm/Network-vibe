@@ -2,6 +2,12 @@ from django.db import models
 from django.core.validators import MinLengthValidator, FileExtensionValidator
 from django.contrib.contenttypes.fields import GenericRelation
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import (
+    Q, Sum, Value, IntegerField,
+    Subquery, OuterRef
+)
+from django.db.models.functions import Coalesce
 
 from mptt.models import MPTTModel
 from mptt.fields import TreeForeignKey
@@ -25,6 +31,41 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class PublishedManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().select_related('author', 'community').filter(status='PB').order_by('-created')
+
+
+class CommentQuerySet(models.QuerySet):
+    def with_ratings(self, user):
+        comment_content_type = ContentType.objects.get_for_model(Comment)
+        qs = self.annotate(
+            sum_rating=Coalesce(
+                Sum('ratings__value', filter=Q(
+                    ratings__content_type=comment_content_type)),
+                Value(0),
+                output_field=IntegerField()
+            )
+        )
+        if user.is_authenticated:
+            latest = Rating.objects.filter(
+                content_type=comment_content_type, object_id=OuterRef('pk'), user=user
+            )
+            qs = qs.annotate(
+                user_vote=Coalesce(
+                    Subquery(latest.values('value')[:1]),
+                    Value(0),
+                    output_field=IntegerField()
+                )
+            )
+        else:
+            qs = qs.annotate(user_vote=Value(0, IntegerField()))
+        return qs
+
+
+class CommentManager(models.Manager):
+    def get_queryset(self):
+        return CommentQuerySet(self.model, using=self.db)
+
+    def with_ratings(self, user):
+        return self.get_queryset().with_ratings(user)
 
 
 class Post(models.Model):
@@ -94,6 +135,8 @@ class Comment(MPTTModel):
                             null=True, blank=True, related_name='children')
     ratings = GenericRelation(to=Rating)
 
+    objects = CommentManager()
+
     class MPTTMeta:
         order_insertion_by = ('-time_created', )
 
@@ -103,6 +146,9 @@ class Comment(MPTTModel):
         ordering = ('-time_created', )
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
+
+    def get_children_count(self):
+        return self.get_descendant_count()
 
     def __str__(self):
         return f'{self.content}'

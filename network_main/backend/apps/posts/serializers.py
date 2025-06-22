@@ -40,7 +40,21 @@ class MediaSerializer(serializers.ModelSerializer):
         return obj.file.url
 
 
-class CommentSerializer(serializers.ModelSerializer):
+class CommentSummarySerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    replies_count = serializers.IntegerField(
+        source='get_children_count', read_only=True)
+    sum_rating = serializers.IntegerField(read_only=True)
+    user_vote = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'author', 'content', 'time_created',
+                  'time_updated', 'sum_rating', 'user_vote', 'replies_count')
+        read_only_fields = fields
+
+
+class CommentDetailSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     parent_id = serializers.PrimaryKeyRelatedField(
         queryset=Comment.objects.all(),
@@ -48,8 +62,8 @@ class CommentSerializer(serializers.ModelSerializer):
         allow_null=True,
         write_only=True
     )
-
-    children = serializers.SerializerMethodField()
+    replies_count = serializers.IntegerField(
+        source='get_children_count', read_only=True)
 
     sum_rating = serializers.IntegerField(read_only=True)
     user_vote = serializers.IntegerField(read_only=True)
@@ -57,14 +71,9 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'author', 'content', 'time_created',
-                  'time_updated', 'parent_id', 'sum_rating',
-                  'user_vote', 'children')
-        read_only_fields = ('id', 'author', 'time_created',
-                            'time_updated', )
-
-    # fix ?
-    def get_children(self, obj):
-        return []
+                  'time_updated', 'sum_rating', 'user_vote',
+                  'parent_id', 'replies_count')
+        read_only_fields = ('id', 'author', 'time_created', 'time_updated', )
 
     def validate_content(self, content):
         return clean(content, tags=[], attributes={}, strip=True)
@@ -160,18 +169,15 @@ class PostDetailSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    owned_comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote',
                   'community_id', 'community_name', 'community_icon',
-                  'community_obj', 'media_data',  'media_files',
-                  'owned_comments',
-                  )
+                  'community_obj', 'media_data',  'media_files',)
         read_only_fields = ('id', 'slug', 'created', 'updated',
-                            'author', 'media_data', 'owned_comments')
+                            'author', 'media_data')
 
     def validate_title(self, value):
         return clean(value, tags=[], attributes={}, strip=True)
@@ -187,22 +193,22 @@ class PostDetailSerializer(serializers.ModelSerializer):
             validate_magic_mime(file)
         return media_files
 
-    def get_owned_comments(self, post):
-        flat = getattr(post, 'comments_flat', [])
-        tree = defaultdict(list)
+    # def get_owned_comments(self, post):
+    #     flat = getattr(post, 'comments_flat', [])
+    #     tree = defaultdict(list)
 
-        for c in flat:
-            tree[c.parent_id].append(c)
+    #     for c in flat:
+    #         tree[c.parent_id].append(c)
 
-        def build(nodes):
-            output = []
-            for node in nodes:
-                data = CommentSerializer(node, context=self.context).data
-                data['children'] = build(tree.get(node.id, []))
-                output.append(data)
-            return output
+    #     def build(nodes):
+    #         output = []
+    #         for node in nodes:
+    #             data = CommentSerializer(node, context=self.context).data
+    #             data['children'] = build(tree.get(node.id, []))
+    #             output.append(data)
+    #         return output
 
-        return build(tree.get(None, []))
+    #     return build(tree.get(None, []))
 
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
@@ -235,7 +241,7 @@ class RatingSerializer(serializers.ModelSerializer):
         content_type = None
         object_id = None
 
-        if 'slug' in view.kwargs and 'id' not in view.kwargs:
+        if 'slug' in view.kwargs and 'pk' not in view.kwargs:
             content_type = ContentType.objects.get_for_model(Post)
             slug = view.kwargs['slug']
             try:
@@ -243,9 +249,9 @@ class RatingSerializer(serializers.ModelSerializer):
                 object_id = post.id
             except Post.DoesNotExist:
                 raise ValidationError('Post does not exist.')
-        elif 'slug' in view.kwargs and 'id' in view.kwargs:
+        elif 'slug' in view.kwargs and 'pk' in view.kwargs:
             content_type = ContentType.objects.get_for_model(Comment)
-            object_id = view.kwargs['id']
+            object_id = view.kwargs['pk']
             try:
                 post = Post.objects.get(slug=view.kwargs['slug'])
                 if not Comment.objects.filter(pk=object_id).exists():

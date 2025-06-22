@@ -1,26 +1,22 @@
 from rest_framework import viewsets, status
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework import mixins
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import OuterRef, Subquery, IntegerField, Value, Sum, Q
 from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Prefetch
 from django.db.models.functions import Coalesce
-
-from typing import Optional
 
 from apps.ratings.models import Rating
 
 from .models import Post, Comment
-from .serializers import PostDetailSerializer, PostListSerializer, CommentSerializer, \
-    RatingSerializer
+from .serializers import PostDetailSerializer, PostListSerializer, CommentDetailSerializer, \
+    RatingSerializer, CommentSummarySerializer
 
 
 def get_annotated_ratings(queryset, request, content_type: ContentType):
@@ -55,31 +51,11 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
     return queryset
 
 
-def get_optimized_post_queryset(request, action: Optional[str] = None):
+def get_optimized_post_queryset(request, action):
     queryset = Post.published.select_related('author', 'community')
     post_content_type = ContentType.objects.get_for_model(Post)
-    comment_content_type = ContentType.objects.get_for_model(Comment)
 
     queryset = get_annotated_ratings(queryset, request, post_content_type)
-
-    comments_queryset = (
-        Comment.objects
-        .filter(status='PB')
-        .select_related('author')
-        .order_by('tree_id', 'lft')
-    )
-
-    comments_queryset = get_annotated_ratings(
-        comments_queryset,
-        request,
-        comment_content_type
-    )
-
-    all_comments_prefetch = Prefetch(
-        'owned_comments',
-        queryset=comments_queryset,
-        to_attr='comments_flat'
-    )
 
     common_prefetch = [
         'media_data',
@@ -87,8 +63,6 @@ def get_optimized_post_queryset(request, action: Optional[str] = None):
 
     qs = queryset.prefetch_related(*common_prefetch)
 
-    if action != 'list':
-        qs = qs.prefetch_related(all_comments_prefetch)
     return qs
 
 
@@ -183,24 +157,33 @@ class PostViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_202_ACCEPTED)
 
 
+class CommentPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+
 class CommentViewSet(viewsets.ModelViewSet):
-    serializer_class = CommentSerializer
+    serializer_class = CommentDetailSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    lookup_field = 'id'
+    pagination_class = CommentPagination
+    lookup_field = 'pk'
 
     def get_queryset(self):
-        content_type = ContentType.objects.get_for_model(Comment)
-        queryset = Comment.objects.select_related('author')
-        queryset = get_annotated_ratings(
-            queryset,
-            self.request,
-            content_type
+        slug = self.kwargs['slug']
+        post = get_object_or_404(Post, slug=slug)
+
+        queryset = (
+            Comment.objects
+            .filter(post=post, status='PB')
+            .select_related('author')
+            .with_ratings(self.request.user)
+            .order_by('-time_created')
         )
-        slug = self.kwargs.get('slug')
-        if slug:
-            post = get_object_or_404(Post, slug=slug)
-            return queryset.filter(post=post)
-        return self.queryset
+
+        if self.action == 'list':
+            return queryset.filter(parent__isnull=True)
+        return queryset
 
     def perform_create(self, serializer):
         slug = self.kwargs.get('slug')
@@ -213,7 +196,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='ratings')
-    def ratings(self, request, id, slug=None):
+    def ratings(self, request, pk, slug=None):
         comment = self.get_object()
 
         if request.method == 'GET':
@@ -230,27 +213,8 @@ class CommentViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             rating = serializer.save()
 
-            comment = Comment.objects.filter(pk=comment.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Comment))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Coalesce(
-                    Subquery(
-                        Rating.objects.filter(
-                            content_type=ContentType.objects.get_for_model(
-                                Comment),
-                            object_id=OuterRef('pk'),
-                            user=request.user
-                        ).order_by('-time_created').values('value')[:1],
-                        output_field=IntegerField()
-                    ),
-                    Value(0),
-                    output_field=IntegerField()
-                )
-            ).first()
+            comment = Comment.objects.filter(
+                pk=comment.pk).with_ratings(request.user).first()
 
             return Response({
                 'rating': serializer.data,
@@ -259,22 +223,29 @@ class CommentViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED if serializer.created else status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
-            Rating.objects.filter(
-                content_type=ContentType.objects.get_for_model(Comment),
-                object_id=comment.id,
-                user=request.user
-            ).delete()
-            comment = Comment.objects.filter(pk=comment.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Comment))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Value(0, output_field=IntegerField())
-            ).first()
+            comment.ratings.filter(user=request.user).delete()
+            comment = Comment.objects.filter(
+                pk=comment.pk).with_ratings(request.user).first()
 
             return Response({
                 'sum_rating': comment.sum_rating,
                 'user_vote': comment.user_vote,
             }, status=status.HTTP_202_ACCEPTED)
+
+
+class CommentRepliesViewSet(mixins.ListModelMixin,
+                            viewsets.GenericViewSet):
+    serializer_class = CommentSummarySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class = CommentPagination
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        parent_id = self.kwargs['pk']
+        return (
+            Comment.objects
+            .filter(parent_id=parent_id, status='PB')
+            .select_related('author')
+            .with_ratings(self.request.user)
+            .order_by('time_created')
+        )
