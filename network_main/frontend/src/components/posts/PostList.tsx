@@ -1,4 +1,4 @@
-import PostItem from './postItems';
+import PostListItems from './PostListItems';
 import { headers } from 'next/headers';
 import { Post } from '@/services/types';
 
@@ -27,7 +27,7 @@ export default async function PostList() {
     <div className="max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
       <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
       {posts.map((post: Post) => (
-        <PostItem key={post.id} post={post} />
+        <PostListItems key={post.id} post={post} />
       ))}
     </div>
   );
