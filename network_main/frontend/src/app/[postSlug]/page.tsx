@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import PostDetailItems from "@/components/postDetailItems";
+import PostDetailItems from "@/components/posts/PostDetailItems";
 import { Metadata } from "next";
 
 async function getPostData(postSlug: string) {

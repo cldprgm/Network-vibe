@@ -4,14 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { votePost, deleteVotePost } from '@/services/api';
 import { Post } from '@/services/types';
-import PostRating from './post_rating';
-import PostMedia from './post_media_content';
+import PostRating from './PostRating';
+import PostMedia from './PostMedia';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
-import AuthModalController from './auth/AuthModalController';
+import AuthModalController from '../auth/AuthModalController';
 import Image from 'next/image';
 
-export default function PostItem({ post }: { post: Post }) {
+export default function PostListItems({ post }: { post: Post }) {
     const { isAuthenticated } = useAuthStore();
     const [currentPost, setCurrentPost] = useState(post);
     const [showAuthModal, setShowAuthModal] = useState(false);
