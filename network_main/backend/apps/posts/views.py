@@ -66,9 +66,15 @@ def get_optimized_post_queryset(request, action):
     return qs
 
 
+class PostPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+
 class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    pagination_class = PageNumberPagination
+    pagination_class = PostPagination
     lookup_field = 'slug'
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
