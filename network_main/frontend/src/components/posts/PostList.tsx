@@ -1,4 +1,4 @@
-import PostListItems from './PostListItems';
+import PostsSection from './PostSection';
 import { headers } from 'next/headers';
 import { Post } from '@/services/types';
 
@@ -11,7 +11,8 @@ export default async function PostList() {
 
   // fix later
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-  const url = `http://${host}/api/proxy/posts`;
+  const url = new URL(`http://${host}/api/proxy/posts`);
+  url.searchParams.append('page', '1')
 
   const cookieHeader = headersList.get('cookie') || '';
   const res = await fetch(url, {
@@ -20,15 +21,11 @@ export default async function PostList() {
     },
   });
 
-  const data = await res.json();
-  const posts = data.results;
+  const data: { results: Post[]; next: string | null } = await res.json();
 
-  return (
-    <div className="max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
-      <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
-      {posts.map((post: Post) => (
-        <PostListItems key={post.id} post={post} />
-      ))}
-    </div>
-  );
+  const nextPage = data.next
+    ? Number(new URL(data.next).searchParams.get('page'))
+    : null;
+
+  return <PostsSection initialPosts={data.results} initialNextPage={nextPage} />;
 }

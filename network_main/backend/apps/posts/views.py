@@ -7,7 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import mixins
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import OuterRef, Subquery, IntegerField, Value, Sum, Q
+from django.db.models import OuterRef, Subquery, IntegerField, Value, Sum, Q, Count, Max
 from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Coalesce
@@ -20,9 +20,16 @@ from .serializers import PostDetailSerializer, PostListSerializer, CommentDetail
 
 
 def get_annotated_ratings(queryset, request, content_type: ContentType):
+    ratings_sum_subquery = (
+        Rating.objects.filter(
+            content_type=content_type,
+            object_id=OuterRef('pk')
+        ).values('object_id').annotate(total=Coalesce(Sum('value'), Value(0))).values('total')[:1]
+    )
+
     queryset = queryset.annotate(
         sum_rating=Coalesce(
-            Sum('ratings__value', filter=Q(ratings__content_type=content_type)),
+            Subquery(ratings_sum_subquery, output_field=IntegerField()),
             Value(0),
             output_field=IntegerField()
         )
@@ -30,15 +37,15 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
 
     user = request.user
     if user.is_authenticated:
-        latest_rating = Rating.objects.filter(
-            content_type=content_type,
-            object_id=OuterRef('pk'),
-            user=user
-        )
         queryset = queryset.annotate(
             user_vote=Coalesce(
-                Subquery(latest_rating.values('value')[
-                         :1], output_field=IntegerField()),
+                Max(
+                    'ratings__value',
+                    filter=Q(
+                        ratings__content_type=content_type,
+                        ratings__user=user
+                    )
+                ),
                 Value(0),
                 output_field=IntegerField()
             )
@@ -52,10 +59,15 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
 
 
 def get_optimized_post_queryset(request, action):
-    queryset = Post.published.select_related('author', 'community')
+    queryset = Post.published.all()
     post_content_type = ContentType.objects.get_for_model(Post)
 
     queryset = get_annotated_ratings(queryset, request, post_content_type)
+    queryset = queryset.annotate(
+        comment_count=Count(
+            'owned_comments', filter=Q(owned_comments__status='PB')
+        )
+    )
 
     common_prefetch = [
         'media_data',

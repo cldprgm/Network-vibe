@@ -120,6 +120,7 @@ class PostListSerializer(serializers.ModelSerializer):
         source='community.icon',
         read_only=True
     )
+    comment_count = serializers.IntegerField(read_only=True)
     sum_rating = serializers.IntegerField(read_only=True)
     user_vote = serializers.IntegerField(read_only=True)
 
@@ -133,10 +134,9 @@ class PostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
-                  'created', 'updated', 'sum_rating', 'user_vote',
+                  'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
                   'community_id', 'community_name', 'community_icon',
-                  'community_obj', 'media_data', 'media_files'
-                  )
+                  'community_obj', 'media_data', 'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
 
@@ -160,6 +160,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
         source='community.icon',
         read_only=True
     )
+    comment_count = serializers.IntegerField(read_only=True)
     sum_rating = serializers.IntegerField(read_only=True)
     user_vote = serializers.IntegerField(read_only=True)
 
@@ -173,9 +174,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
-                  'created', 'updated', 'sum_rating', 'user_vote',
+                  'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
                   'community_id', 'community_name', 'community_icon',
-                  'community_obj', 'media_data',  'media_files',)
+                  'community_obj', 'media_data',  'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
 

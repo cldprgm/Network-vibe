@@ -17,6 +17,7 @@ export type Post = {
     updated: string;
     sum_rating: number;
     user_vote: number;
+    comment_count: number;
     media_data: any[];
     community_id: number;
     community_name: string;

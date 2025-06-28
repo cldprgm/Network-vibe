@@ -10,6 +10,25 @@ export interface VoteResult {
     user_vote: number;
 }
 
+export interface PaginatedResponse<T> {
+    results: T[];
+    next: string | null;
+}
+
+export async function fetchPosts(page: number): Promise<{ results: Post[]; nextPage: number | null }> {
+    try {
+        const response = await api.get<PaginatedResponse<Post>>(
+            `/posts/`,
+            { params: { page } }
+        );
+        const { results, next } = response.data;
+        const nextPage = next ? Number(new URL(next).searchParams.get('page')) : null;
+        return { results, nextPage };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch posts in client.');
+    }
+}
+
 export async function votePost(slug: string, value: number): Promise<VoteResult> {
     try {
         const response = await api.post(`/posts/${slug}/ratings/`, { value });
