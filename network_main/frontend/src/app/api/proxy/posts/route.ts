@@ -56,6 +56,8 @@ async function refreshAccessToken(cookies: string): Promise<RefreshResult> {
 
 export async function GET(req: NextRequest) {
     const cookieHeader = req.headers.get('cookie') || '';
+    const { searchParams } = req.nextUrl;
+    const page = parseInt(searchParams.get('page') || '1', 10);
 
     try {
         const authApi = axios.create({
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
             headers: { Cookie: cookieHeader },
             withCredentials: true,
         });
-        const authRes = await authApi.get('/posts/');
+        const authRes = await authApi.get('/posts/', { params: { page } });
         return NextResponse.json(authRes.data);
     } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
