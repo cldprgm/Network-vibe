@@ -1,6 +1,6 @@
 import { api } from './auth';
 import axios from 'axios';
-import { Post, CommentType } from './types';
+import { Post, CommentType, CommunityType } from './types';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -26,6 +26,15 @@ export async function fetchPosts(page: number): Promise<{ results: Post[]; nextP
         return { results, nextPage };
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to fetch posts in client.');
+    }
+}
+
+export async function apiCreatePost(postData: FormData): Promise<Post> {
+    try {
+        const response = await api.post(`${baseUrl}/posts/`, postData);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to create post.');
     }
 }
 
@@ -88,8 +97,6 @@ export async function createComment(slug: string, content: string, parentId?: nu
             `/posts/${slug}/comments/`,
             payload
         );
-        console.log(payload)
-        console.log(response.data)
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to create comment.');
@@ -116,21 +123,34 @@ export async function deleteVoteComment(slug: string, comment_id: number): Promi
     }
 };
 
-export async function getCommunities() {
+export async function getCommunities(page: number): Promise<{ results: CommunityType[]; nextPage: number | null }> {
     try {
-        const response = await axios.get(`${baseUrl}/communities/`);
-        return response.data;
+        const response = await axios.get<PaginatedResponse<CommunityType>>(`${baseUrl}/communities/`);
+        const { results, next } = response.data;
+        const nextPage = next ? Number(new URL(next).searchParams.get('page')) : null;
+        return { results, nextPage };
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to get communities.');
     }
 }
 
-export async function apiCreatePost(postData: FormData): Promise<Post> {
+export async function joinCommunity(community_id: number) {
     try {
-        const response = await api.post(`${baseUrl}/posts/`, postData);
+        const response = await api.post(`/communities/${community_id}/memberships/`);
         return response.data;
     } catch (error: any) {
-        throw new Error(error.response?.data?.message || 'Failed to create post.');
+        throw new Error(error.response?.data?.message || 'Failed to join community.');
     }
 }
+
+export async function leaveCommunity(community_id: number) {
+    try {
+        const response = await api.delete(`/communities/${community_id}/memberships/leave/`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to leave community.');
+    }
+}
+
+
 

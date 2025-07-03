@@ -42,7 +42,6 @@ export default function RootLayout({
           <main className="flex-[5] mt-[60px] sm:mt-[30px] md:mt-[0px]">
             {children}
           </main>
-          <div className="flex-[1] hidden lg:block"></div>
         </div>
         <ClientRoot />
 

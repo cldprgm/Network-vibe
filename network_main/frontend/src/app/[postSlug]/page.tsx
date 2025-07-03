@@ -43,8 +43,13 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
   const post = await getPostData(postSlug);
 
   return (
-    <div className="max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
-      <PostDetailItems postData={post} />
+    <div className="flex">
+      <div className="flex-[5] max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
+        <PostDetailItems postData={post} />
+      </div>
+      <div className="w-[250px] hidden xl:block"></div>
+
     </div>
+
   );
 }

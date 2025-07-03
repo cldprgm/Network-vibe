@@ -13,7 +13,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = ParentCategorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     http_method_names = ['get']
-    lookup_field = 'slug'
+    lookup_field = 'id'
 
     def get_queryset(self):
         queryset = Category.objects.filter(parent__isnull=True).prefetch_related(

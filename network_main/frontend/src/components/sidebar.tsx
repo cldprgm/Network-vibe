@@ -76,7 +76,7 @@ export default function Sidebar() {
                         </li>
                         <li>
                             <Link
-                                href="#"
+                                href={'/communities/'}
                                 className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 hover:bg-gray-200/30 group"
                             >
                                 <svg className='ms-3' fill="currentColor" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
