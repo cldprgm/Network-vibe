@@ -47,17 +47,21 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
     }, [nextPage, loading]);
 
     return (
-        <section className="mt-5 max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
-            <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
-            {posts.map(post => (
-                <PostListItems key={post.id} post={post} />
-            ))}
-            {loading && (
-                <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-200" />
-                </div>
-            )}
-            {nextPage && !loading && <div ref={observerTarget} className="h-2" />}
-        </section>
+        <div className='flex'>
+            <section className="mt-5 max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
+                <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
+                {posts.map(post => (
+                    <PostListItems key={post.id} post={post} />
+                ))}
+                {loading && (
+                    <div className="flex justify-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-200" />
+                    </div>
+                )}
+                {nextPage && !loading && <div ref={observerTarget} className="h-2" />}
+            </section>
+            <div className="w-[250px] hidden xl:block"></div>
+
+        </div>
     );
 }

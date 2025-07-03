@@ -8,10 +8,10 @@ from .views import CommunityViewSet, MembershipViewSet
 
 router = DefaultRouter()
 router.register(r'', CommunityViewSet, basename='community')
+router.register(r'(?P<community_pk>\d+)/memberships',
+                MembershipViewSet, basename='community-members')
+
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('<slug:slug>/memberships/',
-         MembershipViewSet.as_view({'post': 'create', 'delete': 'destroy'}),
-         name='membership'),
 ]

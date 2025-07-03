@@ -36,8 +36,8 @@ export type CommentType = {
     children: CommentType[];
 };
 
-export type Community = {
-    id: string;
+export type CommunityType = {
+    id: number;
     slug: string;
     name: string;
     creator: string;
@@ -50,7 +50,22 @@ export type Community = {
     updated: string;
     status: string;
     is_member: boolean;
+    members_count: number;
 };
+
+export interface Category {
+    id: number;
+    title: string;
+    slug: string;
+    subcategories: Subcategory[];
+}
+
+export interface Subcategory {
+    id: number;
+    title: string;
+    slug: string;
+    communities: CommunityType[];
+}
 
 export type User = {
     id: number;

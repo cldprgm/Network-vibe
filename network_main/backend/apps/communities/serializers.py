@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.shortcuts import get_object_or_404
 
 from apps.posts.serializers import PostListSerializer
 from apps.memberships.models import Membership
@@ -28,11 +29,20 @@ class CommunitySerializer(serializers.ModelSerializer):
         return obj.get_moderators()
 
 
+class CurrentCommunityDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        view = serializer_field.context['view']
+        community_pk = view.kwargs.get('community_pk')
+        return get_object_or_404(Community, pk=community_pk)
+
+    def __repr__(self):
+        return '<CurrentCommunityDefault>'
+
+
 class MembershipSerializer(serializers.ModelSerializer):
-    community = serializers.SlugRelatedField(
-        queryset=Community.objects.all(),
-        slug_field='slug'
-    )
+    community = serializers.HiddenField(default=CurrentCommunityDefault())
 
     class Meta:
         model = Membership

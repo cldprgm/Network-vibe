@@ -1,6 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
@@ -16,7 +17,7 @@ from .serializers import CommunitySerializer, MembershipSerializer
 class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    lookup_field = 'slug'
+    lookup_field = 'id'
 
     def get_queryset(self):
         # queryset = Community.objects.select_related('creator').prefetch_related(
@@ -39,37 +40,32 @@ class CommunityViewSet(viewsets.ModelViewSet):
         return {'request': self.request}
 
 
-class MembershipViewSet(viewsets.ModelViewSet):
+class MembershipViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = MembershipSerializer
     permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = 'pk'
 
-    def get_community(self, slug):
-        return get_object_or_404(Community, slug=slug)
-
-    def create(self, request, slug=None):
-        community = self.get_community(slug)
-
-        membership, created = Membership.objects.get_or_create(
-            user=request.user,
-            community=community
+    def get_queryset(self):
+        return Membership.objects.filter(
+            user=self.request.user,
+            community_id=self.kwargs['community_pk']
         )
 
-        if created:
-            serializer = MembershipSerializer(
-                membership,
-                context={'request': request}
-            )
-            return Response(serializer.data, status=201)
-        return Response({'detail': 'Already a member'}, status=400)
+    def perform_create(self, serializer):
+        community = get_object_or_404(
+            Community, pk=self.kwargs['community_pk'])
+        serializer.save(user=self.request.user, community=community)
 
-    def destroy(self, request, slug=None):
-        community = self.get_community(slug)
+    @action(detail=False, methods=['delete'], url_path='leave', url_name='leave')
+    def leave_community(self, request, community_pk=None):
+        membership = self.get_queryset().first()
 
-        try:
-            membership = Membership.objects.get(
-                user=request.user,
-                community=community
-            )
-            membership.delete()
-            return Response(status=204)
-        except Membership.DoesNotExist:
-            return Response({'detail': 'Not a member'}, status=400)
+        if not membership:
+            return Response({'detail': 'membership not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        membership.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
