@@ -21,11 +21,6 @@ class CustomUserView(RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-    def perform_update(self, serializer):
-        if self.get_object() != self.request.user:
-            raise PermissionDenied('You cannot edit this profile.')
-        serializer.save()
-
 
 class UserRegistrationView(CreateAPIView):
     serializer_class = RegisterUserSerializer
