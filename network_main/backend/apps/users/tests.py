@@ -130,3 +130,24 @@ class TestUserLogout:
         assert response.status_code == status.HTTP_200_OK
         assert response.cookies['access_token'].value == ''
         assert response.cookies['refresh_token'].value == ''
+
+
+@pytest.mark.django_db
+class TestRefreshToken:
+    url = reverse('refresh')
+
+    def test_refresh_success(self, authenticated_client):
+        response = authenticated_client.post(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        assert 'access_token' in response.cookies
+        assert response.cookies['access_token'] != ''
+
+    def test_refresh_Invalid_token(self):
+        client = APIClient()
+        client.cookies['refresh_token'] = 'invalidtoken'
+        response = client.post(self.url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_missing_token(self, api_client):
+        response = api_client.post(self.url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
