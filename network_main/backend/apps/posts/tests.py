@@ -76,6 +76,14 @@ def comment(test_user, post):
     )
 
 
+@pytest.fixture
+def media_file(post):
+    return Media.objects.create(
+        post=post,
+        file='backend/media/uploads/avatars/default.png'
+    )
+
+
 @pytest.mark.django_db
 class TestPostView:
     url = reverse('post-list')
@@ -180,7 +188,7 @@ class TestPostView:
             user=test_user
         ).exists()
 
-    def test_post_ratings_create_unauthorization(self, api_client, test_user, post):
+    def test_post_ratings_create_unauthenticated(self, api_client, test_user, post):
         url = reverse('post-ratings', kwargs={'slug': post.slug})
         data = {'value': 1}
         response = api_client.post(url, data)
@@ -229,7 +237,7 @@ class TestCommentView:
         assert response.status_code == status.HTTP_201_CREATED
         assert Comment.objects.filter(content='testcreatecomment').exists()
 
-    def test_create_comment_unauthorization(self, api_client, post):
+    def test_create_comment_unauthenticated(self, api_client, post):
         url = self.get_url(post)
         data = {'content': 'testcreatecomment'}
         response = api_client.post(url, data)
@@ -256,7 +264,7 @@ class TestCommentView:
         comment.refresh_from_db()
         assert comment.content == 'new content'
 
-    def test_update_comment_unauthorization(self, api_client, post, comment):
+    def test_update_comment_unauthenticated(self, api_client, post, comment):
         url = reverse(
             'post-comments-detail',
             kwargs={'slug': post.slug, 'pk': comment.pk}
@@ -299,9 +307,173 @@ class TestCommentView:
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Comment.objects.filter(id=comment.id).exists()
 
-    def test_delete_comment_unauthorization(self, api_client, post, comment):
+    def test_delete_comment_unauthenticated(self, api_client, post, comment):
         url = reverse('post-comments-detail',
                       kwargs={'slug': post.slug, 'pk': comment.pk})
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert Comment.objects.filter(id=comment.id).exists()
+
+    def test_comment_ratings_get(self, api_client, post,  comment):
+        url = reverse(
+            'post-comments-ratings',
+            kwargs={'slug': post.slug, 'pk': comment.pk}
+        )
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert 'user_vote' in response.data
+        assert 'sum_rating' in response.data
+
+    def test_comment_ratings_create(self, authenticated_client, test_user, post, comment):
+        url = reverse(
+            'post-comments-ratings',
+            kwargs={'slug': post.slug, 'pk': comment.pk}
+        )
+        data = {'value': 1}
+        response = authenticated_client.post(url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Rating.objects.filter(
+            content_type__model='comment',
+            object_id=comment.id,
+            user=test_user
+        ).exists()
+
+    def test_comment_ratings_create_unauthenticated(self, api_client, test_user, post, comment):
+        url = reverse(
+            'post-comments-ratings',
+            kwargs={'slug': post.slug, 'pk': comment.pk}
+        )
+        data = {'value': 1}
+        response = api_client.post(url, data)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert not Rating.objects.filter(
+            content_type__model='comment',
+            object_id=comment.id,
+            user=test_user
+        ).exists()
+
+    def test_comment_rating_delete(self, authenticated_client, test_user, post, comment):
+        Rating.objects.create(
+            content_type=ContentType.objects.get_for_model(Comment),
+            object_id=comment.id,
+            user=test_user,
+            ip_address='192.168.0.1',
+            value=1
+        )
+
+        url = reverse(
+            'post-comments-ratings',
+            kwargs={'slug': post.slug, 'pk': comment.pk}
+        )
+        response = authenticated_client.delete(url)
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert not Rating.objects.filter(
+            content_type__model='comment',
+            object_id=comment.id,
+            user=test_user
+        ).exists()
+
+
+@pytest.mark.django_db
+class TestCommentRepliesView:
+    def get_url(self, post, comment):
+        return reverse('post-comment-replies', kwargs={'slug': post.slug, 'pk': comment.pk})
+
+    def test_list_replies(self, api_client, post, comment):
+        Comment.objects.create(
+            post=post,
+            author=comment.author,
+            content='Reply comment',
+            parent=comment
+        )
+
+        url = self.get_url(post, comment)
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 1
+        assert response.data['results'][0]['content'] == 'Reply comment'
+
+    def test_no_replies(self, api_client, post, comment):
+        url = self.get_url(post, comment)
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 0
+
+
+@pytest.mark.django_db
+class TestAnnotations:
+    def test_post_annotations(self, api_client, post, test_user):
+        Rating.objects.create(
+            content_type=ContentType.objects.get_for_model(Post),
+            object_id=post.id,
+            user=test_user,
+            ip_address='192.168.0.1',
+            value=1
+        )
+
+        new_user = CustomUser.objects.create_user(
+            username='newuser',
+            email='new@example.com',
+            password='newpassword'
+        )
+
+        Rating.objects.create(
+            content_type=ContentType.objects.get_for_model(Post),
+            object_id=post.id,
+            ip_address='192.168.1.1',
+            user=new_user,
+            value=1
+        )
+
+        url = reverse('post-detail', kwargs={'slug': post.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert 'sum_rating' in response.data
+        assert response.data['sum_rating'] == 2
+        assert 'user_vote' in response.data
+        assert 'comment_count' in response.data
+
+    def test_comment_annotations(self, api_client, post, comment, test_user):
+        Rating.objects.create(
+            content_type=ContentType.objects.get_for_model(Comment),
+            object_id=comment.id,
+            user=test_user,
+            ip_address='192.168.0.1',
+            value=1
+        )
+
+        new_user = CustomUser.objects.create_user(
+            username='newuser',
+            email='new@example.com',
+            password='newpassword'
+        )
+
+        Rating.objects.create(
+            content_type=ContentType.objects.get_for_model(Comment),
+            object_id=comment.id,
+            ip_address='192.168.1.1',
+            user=new_user,
+            value=1
+        )
+
+        url = reverse('post-comments-detail',
+                      kwargs={'slug': post.slug, 'pk': comment.pk})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert 'sum_rating' in response.data
+        assert response.data['sum_rating'] == 2
+        assert 'user_vote' in response.data
+
+
+@pytest.mark.django_db
+class TestPostMedia:
+    def test_media_in_post(self, api_client, post, media_file):
+        url = reverse('post-detail', kwargs={'slug': post.slug})
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert 'media_data' in response.data
+        assert len(response.data['media_data']) == 1
+        expected_url = f'http://testserver{media_file.file.url}'
+        assert response.data['media_data'][0]['file'] == expected_url

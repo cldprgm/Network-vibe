@@ -82,7 +82,7 @@ class TestUserLogin:
 class TestCustomUserView:
     url = reverse('user-info')
 
-    def test_get_user_info_unathenticated(self, api_client):
+    def test_get_user_info_unauthenticated(self, api_client):
         response = api_client.get(self.url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
