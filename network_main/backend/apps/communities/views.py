@@ -4,10 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
-from apps.posts.views import get_optimized_post_queryset
 from apps.memberships.models import Membership
 
 from .models import Community
@@ -20,12 +18,6 @@ class CommunityViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_queryset(self):
-        # queryset = Community.objects.select_related('creator').prefetch_related(
-        #     Prefetch(
-        #         'owned_posts',
-        #         queryset=get_optimized_post_queryset(action='list')
-        #     )
-        # )
         return Community.objects.select_related('creator')
 
     def perform_create(self, serializer):
