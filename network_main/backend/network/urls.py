@@ -3,8 +3,6 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
-
 urlpatterns = [
     path('', include('apps.social_network.urls')),
     path('accounts/', include('apps.accounts.urls')),
