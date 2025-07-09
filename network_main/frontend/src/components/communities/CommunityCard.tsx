@@ -46,7 +46,7 @@ export const CommunityCard = ({ community }: Props) => {
                         />
                         <div className="flex-grow">
                             <p className="font-bold text-white">{community.name}</p>
-                            <p className="text-gray-400 text-sm">Members: nothing</p>
+                            <p className="text-gray-400 text-sm">{community.members_count} members</p>
                         </div>
                         <button
                             disabled={loading}
