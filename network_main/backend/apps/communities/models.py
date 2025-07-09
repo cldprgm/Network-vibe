@@ -75,8 +75,5 @@ class Community(models.Model):
             self.slug = unique_slugify(self, self.name)
         super().save(*args, **kwargs)
 
-    # def get_moderators(self):
-    #     return User.objects.filter(memberships__community=self, memberships__is_moderator=True)
-
     def __str__(self):
         return self.name

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 
-from apps.posts.serializers import PostListSerializer
 from apps.memberships.models import Membership
 
 from .models import Community
@@ -9,21 +8,16 @@ from .models import Community
 
 class CommunitySerializer(serializers.ModelSerializer):
     creator = serializers.StringRelatedField(read_only=True)
-    is_member = serializers.SerializerMethodField()
+    is_member = serializers.BooleanField(read_only=True)
+    members_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Community
         fields = ('id', 'slug', 'name', 'creator', 'description',
                   'banner', 'icon', 'is_nsfw', 'visibility',
-                  'created', 'updated', 'status', 'is_member')
+                  'created', 'updated', 'status', 'is_member', 'members_count')
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug')
-
-    def get_is_member(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return Membership.objects.filter(user=request.user, community=obj).exists()
-        return False
 
     def get_moderators(self, obj):
         return obj.get_moderators()

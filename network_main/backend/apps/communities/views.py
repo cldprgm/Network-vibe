@@ -5,6 +5,8 @@ from rest_framework.decorators import action
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.db.models import Count, OuterRef, Exists, Value
+from django.db.models.fields import BooleanField
 
 from apps.memberships.models import Membership
 
@@ -18,7 +20,23 @@ class CommunityViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_queryset(self):
-        return Community.objects.select_related('creator')
+        queryset = Community.objects.select_related(
+            'creator').annotate(members_count=Count('members'))
+
+        user = self.request.user
+        # add (members__is_approved=True) later
+        if user.is_authenticated:
+            membership_qs = Membership.objects.filter(
+                user=user,
+                community=OuterRef('pk')
+            )
+            queryset = queryset.annotate(is_member=Exists(membership_qs))
+        else:
+            queryset = queryset.annotate(
+                is_member=Value(False, output_field=BooleanField())
+            )
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
