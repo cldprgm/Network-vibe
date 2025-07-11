@@ -2,6 +2,7 @@ from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -14,9 +15,16 @@ from .models import Community
 from .serializers import CommunitySerializer, MembershipSerializer
 
 
+class CommunityPagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'page_size'
+    max_page_size = 12
+
+
 class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class = CommunityPagination
     lookup_field = 'id'
 
     def get_queryset(self):
