@@ -6,6 +6,7 @@ from .models import Category
 
 
 class ChildCategorySerializer(serializers.ModelSerializer):
+    communities = CommunitySerializer(many=True, read_only=True)
     parent_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         required=False,
@@ -15,7 +16,7 @@ class ChildCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'title', 'slug', 'parent_id')
+        fields = ('id', 'title', 'slug', 'parent_id', 'communities')
         read_only_fields = ('id', 'title', 'slug', 'parent_id')
 
 
