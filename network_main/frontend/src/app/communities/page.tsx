@@ -14,7 +14,7 @@ export default function ExplorePage() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await api.get('/categories-with-communities/');
+                const res = await api.get('/categories-tree/');
                 setCategories(res.data.results);
             } catch (err: any) {
                 console.error(err);
