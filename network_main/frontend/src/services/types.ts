@@ -65,6 +65,7 @@ export interface Subcategory {
     title: string;
     slug: string;
     communities: CommunityType[];
+    nextPage: string | null;
 }
 
 export type User = {

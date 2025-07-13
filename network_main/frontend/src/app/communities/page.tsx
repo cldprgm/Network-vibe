@@ -15,10 +15,19 @@ export default function ExplorePage() {
         const load = async () => {
             try {
                 const res = await api.get('/categories-tree/');
-                setCategories(res.data.results);
+                const categoriesWithPagination: Category[] = res.data.results.map((category: Category) => ({
+                    ...category,
+                    subcategories: category.subcategories.map(sub => ({
+                        ...sub,
+                        nextPage: (sub as any).next
+                            ?? (sub.communities.length >= 6
+                                ? `/categories-tree/subcategories/${sub.id}/communities/?page=2`
+                                : null)
+                    }))
+                }));
+                setCategories(categoriesWithPagination);
             } catch (err: any) {
-                console.error(err);
-                setError(err.message || 'Ошибка при загрузке');
+                setError(err.message || 'loading error');
             } finally {
                 setLoading(false);
             }

@@ -56,7 +56,7 @@ def community(test_user, child_category):
 
 @pytest.mark.django_db
 class TestCategoryViewSet:
-    def test_list_categories_only_top_level(self, api_client, parent_category, child_category):
+    def test_list_categories(self, api_client, parent_category, child_category):
         url = reverse('category-list')
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
@@ -72,13 +72,14 @@ class TestCategoryViewSet:
         sub = subs[0]
         assert sub['id'] == child_category.id
 
-    def test_retrieve_parent_category(self, api_client, parent_category, child_category):
-        url = reverse('category-detail', kwargs={'id': parent_category.id})
+
+@pytest.mark.django_db
+class TestCategoryCommunityListView:
+    def test_list_communities(self, api_client,  parent_category, child_category, community):
+        url = reverse(
+            'subcategory-communities',
+            kwargs={'subcategory_id': child_category.id}
+        )
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
-        data = response.data
-        assert data['id'] == parent_category.id
-
-        assert len(data['subcategories']) == 1
-        sub = data['subcategories'][0]
-        assert sub['id'] == child_category.id
+        assert response.data['results'][0]['id'] == community.id
