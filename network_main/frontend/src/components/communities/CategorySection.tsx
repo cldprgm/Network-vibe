@@ -2,14 +2,35 @@
 import { CommunityCard } from './CommunityCard';
 import { useState } from 'react';
 import { Subcategory } from '@/services/types';
+import { api } from '@/services/auth';
 
 interface Props {
-    subcategory: Subcategory;
+    subcategory: Subcategory & { nextPage: string | null };
 }
 
 export const CategorySection = ({ subcategory }: Props) => {
-    const [showAll, setShowAll] = useState(false);
-    const communities = showAll ? subcategory.communities : subcategory.communities.slice(0, 6);
+    const [communities, setCommunities] = useState(subcategory.communities);
+    const [nextPage, setNextPage] = useState<string | null>(subcategory.nextPage);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const shouldShowButton = nextPage !== null;
+
+    const loadMoreCommunities = async () => {
+        if (!nextPage) return;
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            const res = await api.get(nextPage);
+            setCommunities(prev => [...prev, ...res.data.results]);
+            setNextPage(res.data.next);
+        } catch (err) {
+            setError('Error loading communities');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="mb-6">
@@ -19,14 +40,17 @@ export const CategorySection = ({ subcategory }: Props) => {
                     <CommunityCard key={comm.id} community={comm} />
                 ))}
             </div>
-            {subcategory.communities.length > 6 && (
+
+            {shouldShowButton && (
                 <div className="text-center mt-2">
                     <button
-                        className="text-indigo-400 hover:underline text-sm cursor-pointer"
-                        onClick={() => setShowAll(!showAll)}
+                        className="text-indigo-400 hover:underline text-sm cursor-pointer disabled:text-gray-500"
+                        onClick={loadMoreCommunities}
+                        disabled={isLoading}
                     >
-                        {showAll ? 'Show less' : 'Show more'}
+                        {isLoading ? 'Loading...' : 'Show more'}
                     </button>
+                    {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
                 </div>
             )}
         </div>

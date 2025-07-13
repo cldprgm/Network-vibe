@@ -11,6 +11,6 @@ router.register(r'', CategoryViewSet, basename='category')
 
 urlpatterns = [
     path('subcategories/<int:subcategory_id>/communities/',
-         CategoryCommunityListView.as_view(), name='category-communities'),
+         CategoryCommunityListView.as_view(), name='subcategory-communities'),
     path('', include(router.urls)),
 ]
