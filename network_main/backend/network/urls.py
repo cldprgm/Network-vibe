@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('', include('apps.social_network.urls')),
@@ -14,6 +15,12 @@ urlpatterns = [
     path('api/v1/categories-tree/', include('apps.categories.urls')),
     path('api/v1/communities/', include('apps.communities.urls')),
     # path('api/v1/memberships/', include('apps.memberships.urls')),
+
+    path('api/v1/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/v1/schema/swagger-ui/',
+         SpectacularSwaggerView.as_view(url_name='schema')),
+    path('api/v1/schema/redoc/', SpectacularRedocView.as_view(url_name='schema')),
+
 
 ]
 

@@ -56,10 +56,12 @@ INSTALLED_APPS = [
     'apps.posts.apps.PostsConfig',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,7 +70,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'network.urls'
@@ -170,6 +171,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
@@ -185,8 +187,8 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
-# for testing (not secure):
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+# for testing (not secure):
 CORS_ALLOW_CREDENTIALS = True

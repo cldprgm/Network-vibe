@@ -25,7 +25,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = CommunityPagination
-    lookup_field = 'id'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         queryset = Community.objects.select_related(
