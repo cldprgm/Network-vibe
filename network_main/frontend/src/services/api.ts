@@ -134,6 +134,16 @@ export async function getCommunities(page: number): Promise<{ results: Community
     }
 }
 
+export async function getCommunityBySlug(slug: string): Promise<CommunityType> {
+    try {
+        const res = await api.get(`/communities/${encodeURIComponent(slug)}`);
+        return res.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to get community.');
+    }
+
+}
+
 export async function joinCommunity(community_id: number) {
     try {
         const response = await api.post(`/communities/${community_id}/memberships/`);

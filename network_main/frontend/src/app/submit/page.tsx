@@ -5,6 +5,8 @@ import { useDropzone, FileRejection } from 'react-dropzone';
 import { getCommunities } from '@/services/api';
 import { CommunityType } from '@/services/types';
 import { apiCreatePost } from '@/services/api';
+import { useSearchParams } from 'next/navigation';
+import { getCommunityBySlug } from '@/services/api';
 
 interface FileWithPreview extends File {
     preview: string;
@@ -18,6 +20,9 @@ export default function CreatePost() {
     const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
     const [files, setFiles] = useState<FileWithPreview[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+
+    const searchParams = useSearchParams();
+    const slug = searchParams.get('communitySlug');
 
     const titleRef = useRef<HTMLTextAreaElement>(null);
     const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -35,6 +40,13 @@ export default function CreatePost() {
         };
         fetchCommunities();
     }, []);
+
+    useEffect(() => {
+        if (!slug) return;
+        getCommunityBySlug(slug)
+            .then(c => setCommunity(c))
+            .catch(err => console.error(err));
+    }, [slug]);
 
     const adjustHeight = (el?: HTMLTextAreaElement | null) => {
         if (!el) return;

@@ -36,7 +36,7 @@ export const CommunityCard = ({ community }: Props) => {
 
     return (
         <div className="p-1 w-full">
-            <Link href={`/community/${community.slug}`}>
+            <Link href={`/communities/${community.slug}`}>
                 <div className="h-[120px] border dark:border-[var(--border)] rounded-lg p-4 bg-gray-800 dark:bg-[var(--background)] hover:bg-gray-700/20 transition-colors">
                     <div className="flex items-center mb-2">
                         <img

@@ -80,8 +80,8 @@ class TestCommunityViewSet():
         assert len(response.data['results']) == 1
         assert response.data['results'][0]['name'] == community.name
 
-    def test_retrieve_communities(self, api_client, community):
-        url = reverse('community-detail', kwargs={'id': community.id})
+    def test_retrieve_community(self, api_client, community):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['name'] == community.name
@@ -111,7 +111,7 @@ class TestCommunityViewSet():
         assert not Community.objects.filter(slug='newcommunity').exists()
 
     def test_update_community_owner(self, authenticated_client, community):
-        url = reverse('community-detail', kwargs={'id': community.id})
+        url = reverse('community-detail', kwargs={'slug': community.slug})
         data = {'description': 'updated'}
         response = authenticated_client.patch(url, data)
         assert response.status_code == status.HTTP_200_OK
@@ -127,23 +127,23 @@ class TestCommunityViewSet():
         client2 = APIClient()
         client2.cookies = api_client.cookies
 
-        url = reverse('community-detail', kwargs={'id': community.id})
+        url = reverse('community-detail', kwargs={'slug': community.slug})
         response = client2.patch(url, {'description': 'updated'})
         assert response.status_code == status.HTTP_403_FORBIDDEN
         community.refresh_from_db()
         assert community.description != 'updated'
 
     def test_delete_community_owner(self, authenticated_client, community):
-        url = reverse('community-detail', kwargs={'id': community.id})
+        url = reverse('community-detail', kwargs={'slug': community.slug})
         response = authenticated_client.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not Community.objects.filter(id=community.id).exists()
+        assert not Community.objects.filter(pk=community.pk).exists()
 
     def test_delete_community_not_authenticated(self, api_client, community):
-        url = reverse('community-detail', kwargs={'id': community.id})
+        url = reverse('community-detail', kwargs={'slug': community.slug})
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert Community.objects.filter(id=community.id).exists()
+        assert Community.objects.filter(pk=community.pk).exists()
 
 
 @pytest.mark.django_db
