@@ -6,10 +6,14 @@ from rest_framework.pagination import PageNumberPagination
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, OuterRef, Exists, Value
+from django.db.models import Count, OuterRef, Exists, Value, Q
 from django.db.models.fields import BooleanField
+from django.contrib.contenttypes.models import ContentType
 
 from apps.memberships.models import Membership
+from apps.posts.models import Post
+from apps.posts.serializers import PostListSerializer
+from apps.posts.views import PostPagination, get_annotated_ratings
 
 from .models import Community
 from .serializers import CommunitySerializer, MembershipSerializer
@@ -56,6 +60,24 @@ class CommunityViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         return {'request': self.request}
+
+
+class CommunityPostsListView(viewsets.GenericViewSet, mixins.ListModelMixin):
+    serializer_class = PostListSerializer
+    pagination_class = PostPagination
+
+    def get_queryset(self):
+        queryset = Post.published.filter(
+            community__slug=self.kwargs['community_slug']
+        ).prefetch_related('media_data')
+        queryset = get_annotated_ratings(
+            queryset, self.request, ContentType.objects.get_for_model(Post))
+        queryset = queryset.annotate(
+            comment_count=Count(
+                'owned_comments', filter=Q(owned_comments__status='PB')
+            )
+        )
+        return queryset
 
 
 class MembershipViewSet(

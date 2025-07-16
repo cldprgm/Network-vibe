@@ -22,6 +22,7 @@ export default function PostRating({ sum_rating, userVote, onVote, onDelete }: P
                 className={`rounded-full cursor-pointer border border-transparent p-1.5 hover:bg-gray-300/40
             ${userVote === 1 ? 'bg-blue-500 text-white' : ''}`}
                 onClick={(e) => { e.stopPropagation(), handleClick(1) }}
+                aria-label="Upvote"
             >
                 <svg
                     width="18"
@@ -38,6 +39,7 @@ export default function PostRating({ sum_rating, userVote, onVote, onDelete }: P
                 className={`rounded-full cursor-pointer border border-transparent p-1.5 hover:bg-gray-300/40
             ${userVote === -1 ? 'bg-red-500 text-white' : ''}`}
                 onClick={(e) => { e.stopPropagation(), handleClick(-1) }}
+                aria-label="Downvote"
             >
                 <svg
                     width="18"
