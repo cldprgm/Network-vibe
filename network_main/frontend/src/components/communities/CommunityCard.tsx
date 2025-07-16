@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CommunityType } from '@/services/types';
 import { joinCommunity, leaveCommunity } from '@/services/api';
+import Image from 'next/image';
+import { Loader } from 'lucide-react';
 
 interface Props {
     community: CommunityType;
@@ -38,22 +40,28 @@ export const CommunityCard = ({ community }: Props) => {
         <div className="p-1 w-full">
             <Link href={`/communities/${community.slug}`}>
                 <div className="h-[120px] border dark:border-[var(--border)] rounded-lg p-4 bg-gray-800 dark:bg-[var(--background)] hover:bg-gray-700/20 transition-colors">
-                    <div className="flex items-center mb-2">
-                        <img
-                            src={community.icon}
-                            alt={`${community.name} icon`}
-                            className="w-10 h-10 rounded-full mr-3"
-                        />
-                        <div className="flex-grow">
-                            <p className="font-bold text-white">{community.name}</p>
-                            <p className="text-gray-400 text-sm">{community.members_count} members</p>
+                    <div className="flex items-center gap-4 mb-3">
+                        <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden ring-1 ring-gray-500">
+                            <Image
+                                src={community.icon}
+                                alt={`${community.name} icon`}
+                                fill
+                                style={{ objectFit: 'cover' }}
+                            />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-bold text-white line-clamp-2">{community.name}</p>
+                            <p className="text-gray-400 text-sm">{memberCount.toLocaleString()} members</p>
                         </div>
                         <button
                             disabled={loading}
-                            className={`ml-2 rounded-2xl px-4 py-1.5 text-sm cursor-pointer disabled:opacity-50 ${joined ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                                }`}
                             onClick={handleJoinToggle}
+                            className={`cursor-pointer flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed ${joined
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                }`}
                         >
+                            {loading && <Loader className="w-4 h-4 animate-spin" />}
                             {joined ? 'Joined' : 'Join'}
                         </button>
                     </div>

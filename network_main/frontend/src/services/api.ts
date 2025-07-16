@@ -134,6 +134,20 @@ export async function getCommunities(page: number): Promise<{ results: Community
     }
 }
 
+export async function fetchPostsForCommunity(communitySlug: string, page: number): Promise<{ results: Post[]; nextPage: number | null }> {
+    try {
+        const response = await api.get<PaginatedResponse<Post>>(
+            `communities/${communitySlug}/posts/`,
+            { params: { page } }
+        );
+        const { results, next } = response.data;
+        const nextPage = next ? Number(new URL(next).searchParams.get('page')) : null;
+        return { results, nextPage };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch community posts in client.');
+    }
+}
+
 export async function getCommunityBySlug(slug: string): Promise<CommunityType> {
     try {
         const res = await api.get(`/communities/${encodeURIComponent(slug)}`);

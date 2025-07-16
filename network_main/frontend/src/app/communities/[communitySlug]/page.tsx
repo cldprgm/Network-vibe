@@ -6,6 +6,8 @@ import { enUS } from "date-fns/locale";
 import Image from "next/image";
 import CommunityActions from "@/components/communities/CommunityActions";
 import { Calendar, Lock, Globe, Flag, ArrowUp, MessageCircle, Share } from "lucide-react";
+import { Post } from "@/services/types";
+import CommunityPostList from '@/components/communities/CommunityPostList';
 
 async function getCommunityData(communitySlug: string) {
     const headersList = await headers();
@@ -32,6 +34,37 @@ async function getCommunityData(communitySlug: string) {
     return community;
 }
 
+async function getCommunityPosts(communitySlug: string) {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    if (!host) {
+        throw new Error('Error in getting "host"');
+    }
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const url = new URL(`http://${host}/api/proxy/communities/${communitySlug}/posts`);
+    url.searchParams.append('page', '1')
+
+
+    const cookieHeader = headersList.get('cookie') || '';
+    const res = await fetch(url, {
+        headers: {
+            Cookie: cookieHeader,
+        },
+    });
+
+    if (res.status === 404) notFound();
+
+    const data: { results: Post[]; next: string | null } = await res.json();
+
+    const nextPage = data.next
+        ? Number(new URL(data.next).searchParams.get('page'))
+        : null;
+
+    if (!data) notFound();
+
+    return { data, nextPage };
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ communitySlug: string }>; }): Promise<Metadata> {
     const { communitySlug } = await params;
     const community = await getCommunityData(communitySlug);
@@ -45,33 +78,36 @@ export async function generateMetadata({ params }: { params: Promise<{ community
 export default async function CommunityDetailPage({ params }: { params: Promise<{ communitySlug: string }> }) {
     const { communitySlug } = await params;
     const community = await getCommunityData(communitySlug);
+    const postList = await getCommunityPosts(communitySlug)
 
     const formattedDate = format(new Date(community.created), "d MMMM yyyy", { locale: enUS });
 
     return (
         <div className="min-h-screen bg-gray-900 dark:bg-[var(--background)] text-gray-100 ">
             {/* Banner */}
-            <div
-                className="relative h-64 bg-gray-800"
-                style={{
-                    backgroundImage: `url(${community.banner})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                }}
-            >
+            <div className="relative h-64">
+                <Image
+                    src={community.banner}
+                    alt={`${community.name} banner`}
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover"
+                />
+
                 <div
                     className="absolute inset-0"
                     style={{
                         background: `
         linear-gradient(
-          to bottom, 
-          rgba(0, 0, 0, 0.2) 0%, 
-          rgba(22, 26, 29, 0.6) 60%, 
+          to bottom,
+          rgba(0, 0, 0, 0.2) 0%,
+          rgba(22, 26, 29, 0.6) 60%,
           rgba(22, 26, 29, 1) 100%
         )
-      `
+    `,
                     }}
-                ></div>
+                />
 
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-10">
                     <div className="relative w-27 h-27 rounded-full border-4 border-[var(--background)] overflow-hidden bg-[var(--background)]">
@@ -102,7 +138,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
             <div className="flex flex-col lg:flex-row max-w-6xl mx-auto mt-10 px-4 lg:px-0">
                 {/* Posts Column */}
                 <div className="flex-1 lg:pr-8 space-y-6">
-                    {/* Test Post */}
+
                     <div className="bg-gray-800 rounded-lg overflow-hidden mb-6">
                         <div className="p-4">
                             <div className="flex items-center text-gray-500 text-xs mb-2">
@@ -154,6 +190,13 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                             </button>
                         </div>
                     </div>
+
+                    <CommunityPostList
+                        initialPosts={postList.data.results}
+                        initialNextPage={postList.nextPage}
+                        communitySlug={communitySlug}
+                    />
+
                 </div>
 
 
