@@ -43,7 +43,7 @@ export default function CommunityActions({ community, isMember, creator }: Commu
     };
 
     const handleCreatePost = () => {
-        router.push(`/submit?communitySlug=${encodeURIComponent(community.name)}`);
+        router.push(`/submit?communitySlug=${encodeURIComponent(community.slug)}`);
     };
 
     const handleShare = async () => {

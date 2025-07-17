@@ -7,6 +7,7 @@ from apps.users.models import CustomUser
 from apps.categories.models import Category
 from apps.communities.models import Community
 from apps.memberships.models import Membership
+from apps.posts.models import Post
 
 
 @pytest.fixture
@@ -60,6 +61,15 @@ def community(test_user, category):
     )
     community.categories.add(category)
     return community
+
+
+@pytest.fixture
+def post(test_user, community):
+    return Post.objects.create(
+        title='testpost',
+        author=test_user,
+        community=community
+    )
 
 
 @pytest.fixture
@@ -144,6 +154,20 @@ class TestCommunityViewSet():
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert Community.objects.filter(pk=community.pk).exists()
+
+
+@pytest.mark.django_db
+class TestCommunityPostsListView():
+
+    def test_list_community_posts(self, api_client, community, post):
+        url = reverse('community-posts-list',
+                      kwargs={'community_slug': community.slug})
+
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 1
+        assert response.data['results'][0]['id'] == post.id
+        assert response.data['results'][0]['community_id'] == community.id
 
 
 @pytest.mark.django_db
