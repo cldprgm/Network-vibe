@@ -4,9 +4,10 @@ from django.shortcuts import get_object_or_404
 from apps.memberships.models import Membership
 
 from .models import Community
+from .community_permissions import PERMISSONS_MAP
 
 
-class CommunitySerializer(serializers.ModelSerializer):
+class CommunityListSerializer(serializers.ModelSerializer):
     creator = serializers.StringRelatedField(read_only=True)
     is_member = serializers.BooleanField(read_only=True)
     members_count = serializers.IntegerField(read_only=True)
@@ -19,8 +20,33 @@ class CommunitySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug')
 
-    def get_moderators(self, obj):
-        return obj.get_moderators()
+
+class CommunityDetailSerializer(serializers.ModelSerializer):
+    creator = serializers.StringRelatedField(read_only=True)
+    is_member = serializers.BooleanField(read_only=True)
+    members_count = serializers.IntegerField(read_only=True)
+    current_user_roles = serializers.SerializerMethodField()
+    current_user_permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Community
+        fields = ('id', 'slug', 'name', 'creator', 'description',
+                  'banner', 'icon', 'is_nsfw', 'visibility',
+                  'created', 'updated', 'status', 'is_member', 'members_count',
+                  'current_user_roles', 'current_user_permissions')
+        read_only_fields = ('id', 'slug', 'creator', 'created',
+                            'updated', 'slug',
+                            'current_user_roles', 'current_user_permissions')
+
+    def get_current_user_roles(self, obj):
+        return [m.role for m in getattr(obj, 'current_user_memberships', [])]
+
+    def get_current_user_permissions(self, obj):
+        roles = self.get_current_user_roles(obj)
+        permissions = set()
+        for role in roles:
+            permissions.update(PERMISSONS_MAP.get(role, []))
+        return list(permissions)
 
 
 class CurrentCommunityDefault:

@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
-from apps.communities.serializers import CommunitySerializer
+from apps.communities.serializers import CommunityListSerializer
 
 from .models import Category
 
 
 class ChildCategorySerializer(serializers.ModelSerializer):
-    communities = CommunitySerializer(many=True, read_only=True)
+    communities = CommunityListSerializer(many=True, read_only=True)
     parent_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         required=False,

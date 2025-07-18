@@ -6,7 +6,7 @@ from django.db.models import Count, Exists, Value, OuterRef, Prefetch, Subquery
 from django.db.models.fields import BooleanField
 
 from apps.communities.models import Community
-from apps.communities.serializers import CommunitySerializer
+from apps.communities.serializers import CommunityListSerializer
 from apps.communities.views import CommunityPagination
 from apps.memberships.models import Membership
 
@@ -60,7 +60,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class CategoryCommunityListView(generics.ListAPIView):
-    serializer_class = CommunitySerializer
+    serializer_class = CommunityListSerializer
     pagination_class = CommunityPagination
 
     def get_queryset(self):
