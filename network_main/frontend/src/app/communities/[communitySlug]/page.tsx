@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import Image from "next/image";
 import CommunityActions from "@/components/communities/CommunityActions";
-import { Calendar, Lock, Globe, Flag, ArrowUp, MessageCircle, Share } from "lucide-react";
+import { Calendar, Lock, Globe, Flag } from "lucide-react";
 import { Post } from "@/services/types";
 import CommunityPostList from '@/components/communities/CommunityPostList';
 
@@ -139,58 +139,6 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                 {/* Posts Column */}
                 <div className="flex-1 lg:pr-8 space-y-6">
 
-                    <div className="bg-gray-800 rounded-lg overflow-hidden mb-6">
-                        <div className="p-4">
-                            <div className="flex items-center text-gray-500 text-xs mb-2">
-                                <span className="bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded mr-2">BEST</span>
-                                <span>Posted by <span className="text-blue-400">u/Worddspace</span></span>
-                                <span className="mx-1">•</span>
-                                <span>7 hours ago</span>
-                            </div>
-                            <h2 className="text-xl font-bold text-white mb-3">Peruvian jockeys racing without horses for charity</h2>
-                            <div className="text-gray-400 text-sm mb-3">
-                                <p className="font-bold mb-1">Note:</p>
-                                <p>CARREERA DE JINETES A PIE 2025</p>
-                                <p>22-06-25</p>
-                                <p className="mt-2">Time: 4:43</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-black aspect-video flex items-center justify-center relative">
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-50"></div>
-                            <div className="bg-gray-800 w-full h-full flex items-center justify-center">
-                                <div className="text-center">
-                                    <div className="bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-white">0:21 / 0:32</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 flex items-center">
-                            <div className="flex items-center mr-4">
-                                <button className="bg-gray-700 p-1.5 rounded-l hover:bg-gray-600">
-                                    <ArrowUp className="w-5 h-5 text-gray-300" />
-                                </button>
-                                <span className="bg-gray-700 px-3 py-1.5 text-gray-300 font-medium">42</span>
-                                <button className="bg-gray-700 p-1.5 rounded-r hover:bg-gray-600">
-                                    <ArrowUp className="w-5 h-5 text-gray-300 rotate-180" />
-                                </button>
-                            </div>
-                            <button className="flex items-center text-gray-400 hover:text-gray-300 mr-4">
-                                <MessageCircle className="w-5 h-5 mr-1" />
-                                <span>42 comments</span>
-                            </button>
-                            <button className="flex items-center text-gray-400 hover:text-gray-300">
-                                <Share className="w-5 h-5 mr-1" />
-                                <span>Share</span>
-                            </button>
-                        </div>
-                    </div>
-
                     <CommunityPostList
                         initialPosts={postList.data.results}
                         initialNextPage={postList.nextPage}
@@ -220,7 +168,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                             </div>
                             <div className="text-center">
                                 <div className="text-white font-bold">Top 1%</div>
-                                <div className="text-gray-400 text-xs">Rating</div>
+                                <div className="text-gray-400 text-xs">Rank by size</div>
                             </div>
                         </div>
 

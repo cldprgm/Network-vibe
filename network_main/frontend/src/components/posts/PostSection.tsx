@@ -20,8 +20,8 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
     const [posts, setPosts] = useState<Post[]>(initialPosts);
     const [nextPage, setNextPage] = useState<number | null>(initialNextPage);
     const [loading, setLoading] = useState(false);
-    const observerTarget = useRef<HTMLDivElement>(null);
 
+    const observerTarget = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (!observerTarget.current) return;
         const observer = new IntersectionObserver(

@@ -1,0 +1,13 @@
+Django
+djangorestframework-simplejwt
+bleach
+Unidecode
+Pillow
+django-mptt
+django-cors-headers
+django-debug-toolbar
+drf-spectacular
+python-magic
+python-dotenv
+pytest
+pytest-django
