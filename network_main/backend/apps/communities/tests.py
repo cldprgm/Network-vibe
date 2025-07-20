@@ -25,6 +25,33 @@ def test_user():
 
 
 @pytest.fixture
+def test_user_creator():
+    return CustomUser.objects.create_user(
+        username='testuserCr',
+        email='testCr@example.com',
+        password='testpassword'
+    )
+
+
+@pytest.fixture
+def test_user_moderator():
+    return CustomUser.objects.create_user(
+        username='testuserModerator',
+        email='testModerato@example.com',
+        password='testpassword'
+    )
+
+
+@pytest.fixture
+def test_user_member():
+    return CustomUser.objects.create_user(
+        username='testuserMember',
+        email='testMember@example.com',
+        password='testpassword'
+    )
+
+
+@pytest.fixture
 def second_user():
     return CustomUser.objects.create_user(
         username='seconduser',
@@ -44,6 +71,36 @@ def authenticated_client(api_client, test_user):
 
 
 @pytest.fixture
+def authenticated_client_creator(api_client, test_user_creator):
+    login_url = reverse('login')
+    api_client.post(login_url, {
+        'email': 'testCr@example.com',
+        'password': 'testpassword'
+    })
+    return api_client
+
+
+@pytest.fixture
+def authenticated_client_moderator(api_client, test_user_moderator):
+    login_url = reverse('login')
+    api_client.post(login_url, {
+        'email': 'testModerato@example.com',
+        'password': 'testpassword'
+    })
+    return api_client
+
+
+@pytest.fixture
+def authenticated_client_member(api_client, test_user_member):
+    login_url = reverse('login')
+    api_client.post(login_url, {
+        'email': 'testMember@example.com',
+        'password': 'testpassword'
+    })
+    return api_client
+
+
+@pytest.fixture
 def category():
     return Category.objects.create(
         title='testcategory',
@@ -52,9 +109,9 @@ def category():
 
 
 @pytest.fixture
-def community(test_user, category):
+def community(test_user_creator, category):
     community = Community.objects.create(
-        creator=test_user,
+        creator=test_user_creator,
         name='testcommunity',
         slug='testcommunity',
         description='desc',
@@ -64,20 +121,38 @@ def community(test_user, category):
 
 
 @pytest.fixture
-def post(test_user, community):
+def post(test_user_creator, community):
     return Post.objects.create(
         title='testpost',
-        author=test_user,
+        author=test_user_creator,
         community=community
     )
 
 
 @pytest.fixture
-def membership(test_user, community):
+def membership_creator(test_user_creator, community):
     return Membership.objects.create(
-        user=test_user,
+        user=test_user_creator,
         community=community,
-        is_approved=True
+        role=Membership.Role.CREATOR
+    )
+
+
+@pytest.fixture
+def membership_moderator(test_user_moderator, community):
+    return Membership.objects.create(
+        user=test_user_moderator,
+        community=community,
+        role=Membership.Role.MODERATOR
+    )
+
+
+@pytest.fixture
+def membership_member(test_user_member, community):
+    return Membership.objects.create(
+        user=test_user_member,
+        community=community,
+        role=Membership.Role.MEMBER
     )
 
 
@@ -96,7 +171,7 @@ class TestCommunityViewSet():
         assert response.status_code == status.HTTP_200_OK
         assert response.data['name'] == community.name
 
-    def test_create_community(self, authenticated_client, category):
+    def test_create_community(self, authenticated_client, test_user, category):
         url = reverse('community-list')
         data = {
             'name': 'newcommunity',
@@ -106,7 +181,14 @@ class TestCommunityViewSet():
         }
         response = authenticated_client.post(url, data)
         assert response.status_code == status.HTTP_201_CREATED
-        assert Community.objects.filter(slug='newcommunity').exists()
+
+        community = Community.objects.get(slug='newcommunity')
+
+        assert Membership.objects.filter(
+            user=test_user,
+            community=community,
+            role='CREATOR'
+        ).exists()
 
     def test_create_community_unauthenticated(self, api_client, category):
         url = reverse('community-list')
@@ -120,10 +202,10 @@ class TestCommunityViewSet():
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert not Community.objects.filter(slug='newcommunity').exists()
 
-    def test_update_community_owner(self, authenticated_client, community):
+    def test_update_community_owner(self, authenticated_client_creator, community, membership_creator):
         url = reverse('community-detail', kwargs={'slug': community.slug})
         data = {'description': 'updated'}
-        response = authenticated_client.patch(url, data)
+        response = authenticated_client_creator.patch(url, data)
         assert response.status_code == status.HTTP_200_OK
         community.refresh_from_db()
         assert community.description == 'updated'
@@ -143,9 +225,9 @@ class TestCommunityViewSet():
         community.refresh_from_db()
         assert community.description != 'updated'
 
-    def test_delete_community_owner(self, authenticated_client, community):
+    def test_delete_community_owner(self, authenticated_client_creator, community, membership_creator):
         url = reverse('community-detail', kwargs={'slug': community.slug})
-        response = authenticated_client.delete(url)
+        response = authenticated_client_creator.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Community.objects.filter(pk=community.pk).exists()
 
@@ -179,8 +261,15 @@ class TestMembershipViewSet():
         )
         response = authenticated_client.post(url)
         assert response.status_code == status.HTTP_201_CREATED
+
+        memberships = Membership.objects.filter(
+            user=test_user, community=community)
         assert Membership.objects.filter(
-            user=test_user, community=community).exists
+            user=test_user,
+            community=community,
+            role=Membership.Role.MEMBER
+        ).exists()
+        assert memberships.count() == 1
 
     def test_join_community_unauthenticated(self, api_client, community):
         url = reverse(
@@ -191,14 +280,23 @@ class TestMembershipViewSet():
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert not Membership.objects.filter(community=community).exists()
 
-    def test_leave_community(self, authenticated_client, membership, community):
+    def test_leave_member_community(self, authenticated_client_member, membership_member, community):
         url = reverse(
             'community-members-leave',
             kwargs={'community_pk': community.id}
         )
-        response = authenticated_client.delete(url)
+        response = authenticated_client_member.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not Membership.objects.filter(id=membership.id).exists()
+        assert not Membership.objects.filter(id=membership_member.id).exists()
+
+    def test_leave_creator_community(self, authenticated_client_creator, membership_creator, community):
+        url = reverse(
+            'community-members-leave',
+            kwargs={'community_pk': community.id}
+        )
+        response = authenticated_client_creator.delete(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Membership.objects.filter(id=membership_creator.id).exists()
 
     def test_leave_community_not_member(self, authenticated_client, community):
         url = reverse(
@@ -208,11 +306,11 @@ class TestMembershipViewSet():
         response = authenticated_client.delete(url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_destroy_membership(self, authenticated_client, membership, community):
+    def test_destroy_membership(self, authenticated_client_member, membership_member, community):
         url = reverse('community-members-detail', kwargs={
             'community_pk': community.id,
-            'pk': membership.id
+            'pk': membership_member.id
         })
-        response = authenticated_client.delete(url)
+        response = authenticated_client_member.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not Membership.objects.filter(id=membership.id).exists()
+        assert not Membership.objects.filter(id=membership_member.id).exists()

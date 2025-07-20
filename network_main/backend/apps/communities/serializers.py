@@ -63,11 +63,11 @@ class CurrentCommunityDefault:
 
 class MembershipSerializer(serializers.ModelSerializer):
     community = serializers.HiddenField(default=CurrentCommunityDefault())
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = Membership
-        fields = ('id', 'user', 'community', 'is_moderator',
-                  'is_approved', 'joined_at')
+        fields = ('id', 'user', 'community', 'joined_at', 'role')
         read_only_fields = ('id', 'user', 'joined_at')
 
     def create(self, validated_data):

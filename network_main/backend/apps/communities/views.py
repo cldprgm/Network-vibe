@@ -18,41 +18,7 @@ from apps.posts.views import PostPagination, get_annotated_ratings
 
 from .models import Community
 from .serializers import CommunityListSerializer, CommunityDetailSerializer, MembershipSerializer
-from .community_permissions import PERMISSONS_MAP
-
-
-class IsCommunityCreator(BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        for m in getattr(obj, 'current_user_memberships', []):
-            if m.role == Membership.Role.CREATOR:
-                return True
-        return False
-
-
-class HasCommunityPermission(BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        permission = getattr(view, 'requiered_permission', None)
-        if not permission or not request.user.is_authenticated:
-            return False
-        roles = obj.members.filter(
-            user=request.user).values_list('role', flat=True)
-        user_permissions = {
-            permission
-            for role in roles
-            for permission in PERMISSONS_MAP.get(role, [])
-        }
-        print(user_permissions)
-        return permission in user_permissions
-
-
-class CannotLeaveIfCreator(BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        if obj.role == Membership.Role.CREATOR:
-            return False
-        return True
+from .community_permissions import IsCommunityCreator, HasCommunityPermission, CannotLeaveIfCreator
 
 
 class CommunityPagination(PageNumberPagination):
@@ -168,7 +134,11 @@ class MembershipViewSet(
     def perform_create(self, serializer):
         community = get_object_or_404(
             Community, pk=self.kwargs['community_pk'])
-        serializer.save(user=self.request.user, community=community)
+        serializer.save(
+            user=self.request.user,
+            community=community,
+            role=Membership.Role.MEMBER
+        )
 
     @action(detail=False, methods=['delete'], url_path='leave', url_name='leave')
     def leave_community(self, request, community_pk=None):
