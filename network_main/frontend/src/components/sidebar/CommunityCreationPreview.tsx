@@ -10,9 +10,9 @@ interface CommunityCreationPreviewProps {
 export default function CommunityCreationPreview({ name, description, iconPreview, bannerPreview }: CommunityCreationPreviewProps) {
     return (
         <div className="w-full bg-white dark:bg-zinc-800 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 flex flex-col">
-            <div className="h-10 bg-zinc-200 dark:bg-zinc-700 bg-cover bg-center" style={{ backgroundImage: `url(${bannerPreview})` }}></div>
+            <div className="h-12 bg-zinc-200 dark:bg-zinc-700 bg-cover bg-center" style={{ backgroundImage: `url(${bannerPreview})` }}></div>
             <div className="p-4 flex flex-col flex-grow">
-                <div className="flex items-center space-x-3 mb-4 -mt-12">
+                <div className="flex items-center space-x-3 mb-4 -mt-10">
                     <div className="w-16 h-16 bg-zinc-300 dark:bg-zinc-600 rounded-full flex-shrink-0 border-4 border-white dark:border-zinc-800 bg-cover bg-center"
                         style={{ backgroundImage: `url(${iconPreview})` }}
                     />

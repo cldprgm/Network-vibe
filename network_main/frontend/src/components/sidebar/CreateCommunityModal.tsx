@@ -1,21 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, Description, DialogPanel } from '@headlessui/react';
-import { CommunityType } from '@/services/types';
+import { CommunityType, Category, Subcategory } from '@/services/types';
+import { getCategoriesTree } from '@/services/api';
 import CommunityCreationPreview from './CommunityCreationPreview';
 import Link from 'next/link';
+import '@/styles/CustomScrollbar.css'
 
 interface CreateCommunityModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreate: (community: Omit<CommunityType, 'id' | 'slug' | 'creator' | 'created' | 'updated' | 'status' | 'is_member' | 'members_count'>) => void;
+    onCreate: (community: Omit<CommunityType, 'id' | 'slug' | 'creator' | 'created' | 'updated' | 'status' | 'is_member' | 'members_count'> & { subcategories: number[] }) => void;
 }
 
 const steps = [
     "Tell us about your community",
     "Add icon and banner",
-    "Add topics",
+    "Add up to 3 topics to help interested users find your community.",
     "Final Touches",
 ];
 
@@ -23,12 +25,31 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     const [step, setStep] = useState(0);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [category, setCategory] = useState('');
+    const [selectedSubcategories, setSelectedSubcategories] = useState<number[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [isNsfw, setIsNsfw] = useState(false);
     const [icon, setIcon] = useState<File | null>(null);
     const [banner, setBanner] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await getCategoriesTree();
+                if (data && data.results) {
+                    setCategories(data.results);
+                }
+            } catch (error) {
+                console.error("Failed to fetch categories:", error);
+                setCategories([]);
+            }
+        };
+
+        if (isOpen && step === 2) {
+            fetchCategories();
+        }
+    }, [isOpen, step]);
 
     const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -46,17 +67,32 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
         }
     };
 
+    const handleSubcategoryChange = (subcategoryId: number) => {
+        setSelectedSubcategories(prevSelected => {
+            const isSelected = prevSelected.includes(subcategoryId);
+            if (isSelected) {
+                return prevSelected.filter(id => id !== subcategoryId);
+            } else {
+                if (prevSelected.length < 3) {
+                    return [...prevSelected, subcategoryId];
+                }
+                return prevSelected;
+            }
+        });
+    };
+
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!isFormValid) return;
-        // file loading logic
         onCreate({
             name,
             description,
-            visibility: category,
-            banner: banner ? banner.name : '', // url after loading
-            icon: icon ? icon.name : '', // url after loading
-            is_nsfw: isNsfw
+            visibility: 'public', // fix later
+            banner: banner ? banner.name : '',
+            icon: icon ? icon.name : '',
+            is_nsfw: isNsfw,
+            subcategories: selectedSubcategories,
         });
         onClose();
     };
@@ -71,10 +107,10 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
             isCurrentStepValid = name.trim() !== '' && description.trim() !== '';
             break;
         case 1:
-            isCurrentStepValid = true; // add verification
+            isCurrentStepValid = true;
             break;
         case 2:
-            isCurrentStepValid = category !== '';
+            isCurrentStepValid = selectedSubcategories.length > 0 && selectedSubcategories.length <= 3;
             break;
         case 3:
             isCurrentStepValid = true;
@@ -83,7 +119,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
             isCurrentStepValid = false;
     }
 
-    const isFormValid = name.trim() !== '' && description.trim() !== '' && category !== '';
+    const isFormValid = name.trim() !== '' && description.trim() !== '' && selectedSubcategories.length > 0;
 
 
     return (
@@ -107,7 +143,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
 
                     <div className="flex p-6 min-h-[350px]">
                         {/* Left Column: Form */}
-                        <div className="w-3/5 pr-8 space-y-6">
+                        <div className="w-3/5 pr-1 space-y-6">
                             {step === 0 && (
                                 <>
                                     <div>
@@ -172,22 +208,61 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                             )}
                             {step === 2 && (
                                 <div>
-                                    <label htmlFor="category" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                        Category
+                                    {selectedSubcategories.length > 0 && (
+                                        <div className="mb-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                                            <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Selected topics:</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {categories.flatMap(cat => cat.subcategories)
+                                                    .filter(sub => selectedSubcategories.includes(sub.id))
+                                                    .map(subcategory => (
+                                                        <div key={`selected-${subcategory.id}`} className="flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl">
+                                                            <span className="text-sm text-indigo-800 dark:text-indigo-200">{subcategory.title}</span>
+                                                            <button onClick={() => handleSubcategoryChange(subcategory.id)} className="cursor-pointer text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-100">
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                }
+                                            </div>
+                                        </div>
+                                    )}
+                                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                        Topics (Select 1-3)
                                     </label>
-                                    <select
-                                        id="category"
-                                        required
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">Select a category</option>
-                                        <option value="tech">Tech</option>
-                                        <option value="gaming">Gaming</option>
-                                        <option value="art">Art</option>
-                                        <option value="music">Music</option>
-                                    </select>
+                                    <div className="space-y-4 max-h-90 overflow-y-auto pr-2 custom-scrollbar">
+                                        {categories.map((category) => (
+                                            <div key={category.id}>
+                                                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">{category.title}</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {category.subcategories.map((subcategory) => {
+                                                        const isSelected = selectedSubcategories.includes(subcategory.id);
+                                                        const isDisabled = !isSelected && selectedSubcategories.length >= 3;
+
+                                                        return (
+                                                            <button
+                                                                key={subcategory.id}
+                                                                type="button"
+                                                                onClick={() => handleSubcategoryChange(subcategory.id)}
+                                                                disabled={isDisabled}
+                                                                className={`cursor-pointer px-4 py-2 rounded-full border text-sm font-medium transition-colors
+                                        ${isSelected
+                                                                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                                        : 'bg-transparent border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                                                    }
+                                        ${isDisabled ? 'cursor-pointer opacity-50 cursor-not-allowed' : ''}
+                                    `}
+                                                            >
+                                                                {subcategory.title}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-zinc-500 mt-4">{selectedSubcategories.length} / 3 selected</p>
                                 </div>
                             )}
                             {step === 3 && (
