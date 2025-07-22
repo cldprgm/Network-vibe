@@ -123,6 +123,15 @@ export async function deleteVoteComment(slug: string, comment_id: number): Promi
     }
 };
 
+export async function getCategoriesTree() {
+    try {
+        const response = await axios.get(`${baseUrl}/categories-tree/`); // fix later(communities dont needed here)
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to get categories-tree.');
+    }
+}
+
 export async function getCommunities(page: number): Promise<{ results: CommunityType[]; nextPage: number | null }> {
     try {
         const response = await axios.get<PaginatedResponse<CommunityType>>(`${baseUrl}/communities/`);
