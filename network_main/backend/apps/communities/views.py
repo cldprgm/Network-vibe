@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins, status
+from rest_framework import viewsets, mixins, status, views
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -114,6 +114,15 @@ class CommunityPostsListView(viewsets.GenericViewSet, mixins.ListModelMixin):
             )
         )
         return queryset
+
+
+class CommunityNameCheck(views.APIView):
+    def get(self, request):
+        name = request.query_params.get('name', None)
+        if not name:
+            return Response({'error': 'Name not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        is_taken = Community.objects.filter(name__iexact=name).exists()
+        return Response({'is_taken': is_taken}, status=status.HTTP_200_OK)
 
 
 class MembershipViewSet(
