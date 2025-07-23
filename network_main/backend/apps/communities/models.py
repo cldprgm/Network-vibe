@@ -30,9 +30,9 @@ class Community(models.Model):
         verbose_name='Creator',
         null=True
     )
-    name = models.CharField(max_length=25, validators=[
+    name = models.CharField(max_length=21, validators=[
                             MinLengthValidator(4)], unique=True, verbose_name='Community name')
-    description = models.TextField(max_length=450, verbose_name='Description')
+    description = models.TextField(max_length=420, verbose_name='Description')
     banner = models.ImageField(
         upload_to='uploads/community/banners/%Y/%m/%d',
         verbose_name="Banner",
@@ -59,7 +59,7 @@ class Community(models.Model):
     created = models.DateTimeField(
         auto_now_add=True, verbose_name='Create time')
     updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
-    slug = models.SlugField(max_length=255, verbose_name='URL', blank=True)
+    slug = models.SlugField(max_length=100, verbose_name='URL', blank=True)
     status = models.CharField(choices=Status.choices, default=Status.PUBLISHED,
                               max_length=10, verbose_name="Community status")
 
