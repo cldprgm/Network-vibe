@@ -10,6 +10,10 @@ import { Post } from "@/services/types";
 import CommunityPostList from '@/components/communities/CommunityPostList';
 
 async function getCommunityData(communitySlug: string) {
+    if (!communitySlug || communitySlug === 'null') {
+        return notFound();
+    }
+
     const headersList = await headers();
     const host = headersList.get('host');
     if (!host) {

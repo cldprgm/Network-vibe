@@ -12,6 +12,10 @@ import AuthModalController from '../auth/AuthModalController';
 import Image from 'next/image';
 
 export default function PostListItems({ post }: { post: Post }) {
+    if (!post || !post.slug) {
+        return null;
+    }
+
     const { isAuthenticated } = useAuthStore();
     const [currentPost, setCurrentPost] = useState(post);
     const [showAuthModal, setShowAuthModal] = useState(false);

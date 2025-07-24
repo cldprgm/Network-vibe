@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
+from django.core.validators import RegexValidator, MinLengthValidator
 
 from apps.memberships.models import Membership
 
@@ -7,7 +8,17 @@ from .models import Community
 from .community_permissions import PERMISSONS_MAP
 
 
+name_validator = RegexValidator(
+    regex=r'^[A-Za-zА-Яа-яЁё0-9_]+$',
+    message='Name can contain only letters, numbers, and underscores.'
+)
+
+
 class CommunityListSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(
+        max_length=21,
+        validators=[MinLengthValidator(4), name_validator]
+    )
     creator = serializers.StringRelatedField(read_only=True)
     is_member = serializers.BooleanField(read_only=True)
     members_count = serializers.IntegerField(read_only=True)
@@ -22,6 +33,10 @@ class CommunityListSerializer(serializers.ModelSerializer):
 
 
 class CommunityDetailSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(
+        max_length=21,
+        validators=[MinLengthValidator(4), name_validator]
+    )
     creator = serializers.StringRelatedField(read_only=True)
     is_member = serializers.BooleanField(read_only=True)
     members_count = serializers.IntegerField(read_only=True)

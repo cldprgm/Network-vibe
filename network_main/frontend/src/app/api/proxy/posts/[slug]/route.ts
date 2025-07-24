@@ -56,6 +56,10 @@ export async function GET(req: NextRequest) {
     const match = req.nextUrl.pathname.match(/\/api\/proxy\/posts\/([^/]+)/);
     const slug = match ? match[1] : null;
 
+    if (!slug || slug === 'null') {
+        return NextResponse.json({ error: 'Invalid slug provided' }, { status: 400 });
+    }
+
     const cookieHeader = req.headers.get('cookie') || '';
 
     try {
