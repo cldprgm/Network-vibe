@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinLengthValidator, FileExtensionValidator
+from django.core.validators import MinLengthValidator, FileExtensionValidator, RegexValidator
 from django.conf import settings
 
 from mptt.fields import TreeManyToManyField
@@ -23,6 +23,11 @@ class Community(models.Model):
         DRAFT = 'DF', 'Draft'
         PUBLISHED = 'PB', 'Published'
 
+    name_validator = RegexValidator(
+        regex=r'^[A-Za-zА-Яа-яЁё0-9_]+$',
+        message='Name can contain only letters, numbers, and underscores.'
+    )
+
     creator = models.ForeignKey(
         to=User,
         on_delete=models.SET_NULL,
@@ -30,8 +35,12 @@ class Community(models.Model):
         verbose_name='Creator',
         null=True
     )
-    name = models.CharField(max_length=21, validators=[
-                            MinLengthValidator(4)], unique=True, verbose_name='Community name')
+    name = models.CharField(
+        max_length=21,
+        validators=[MinLengthValidator(4), name_validator],
+        unique=True,
+        verbose_name='Community name'
+    )
     description = models.TextField(max_length=420, verbose_name='Description')
     banner = models.ImageField(
         upload_to='uploads/community/banners/%Y/%m/%d',

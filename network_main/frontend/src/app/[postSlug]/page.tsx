@@ -4,6 +4,10 @@ import PostDetailItems from "@/components/posts/PostDetailItems";
 import { Metadata } from "next";
 
 async function getPostData(postSlug: string) {
+  if (!postSlug || postSlug === 'null') {
+    return notFound();
+  }
+
   const headersList = await headers();
   const host = headersList.get('host');
   if (!host) {
@@ -19,7 +23,9 @@ async function getPostData(postSlug: string) {
     },
   });
 
-  if (res.status === 404) notFound();
+  if (!res.ok) {
+    return notFound();
+  }
 
   const post = await res.json();
 

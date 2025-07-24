@@ -77,6 +77,13 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                 setNameError(null);
                 return;
             }
+
+            const nameRegex = /^[a-zA-Z0-9_а-яА-Я]+$/;
+            if (!nameRegex.test(debouncedName)) {
+                setNameError("Name can only contain letters, numbers, and underscores.");
+                return;
+            }
+
             setIsNameChecking(true);
             setNameError(null);
             try {
@@ -95,7 +102,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
         };
 
         checkName();
-    }, [debouncedName]);
+    }, [debouncedName, name]);
 
     useEffect(() => {
         const fetchCategories = async () => {

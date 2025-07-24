@@ -11,6 +11,10 @@ import AuthModalController from "../auth/AuthModalController";
 import Image from "next/image";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
+    if (!postData || !postData.slug) {
+        return null;
+    }
+
     const [post, setPostData] = useState(postData);
     const { isAuthenticated } = useAuthStore();
     const [showAuthModal, setShowAuthModal] = useState(false);
