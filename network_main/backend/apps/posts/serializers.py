@@ -194,23 +194,6 @@ class PostDetailSerializer(serializers.ModelSerializer):
             validate_magic_mime(file)
         return media_files
 
-    # def get_owned_comments(self, post):
-    #     flat = getattr(post, 'comments_flat', [])
-    #     tree = defaultdict(list)
-
-    #     for c in flat:
-    #         tree[c.parent_id].append(c)
-
-    #     def build(nodes):
-    #         output = []
-    #         for node in nodes:
-    #             data = CommentSerializer(node, context=self.context).data
-    #             data['children'] = build(tree.get(node.id, []))
-    #             output.append(data)
-    #         return output
-
-    #     return build(tree.get(None, []))
-
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
         post = Post.objects.create(**validated_data)
