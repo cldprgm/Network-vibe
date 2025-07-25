@@ -14,16 +14,13 @@ ALLOWED_MIME_TYPES = {
 
 @deconstructible
 class MimeTypeValidator:
-    def __init__(self, allowed_types_keys):
-        self.allowed_mime_types = []
-        for key in allowed_types_keys:
-            self.allowed_mime_types.extend(ALLOWED_MIME_TYPES.get(key, []))
+    def __init__(self, allowed_mime_types):
+        self.allowed_mime_types = allowed_mime_types
 
     def __call__(self, value):
         value.seek(0)
         mime_type = magic.from_buffer(value.read(2048), mime=True)
         value.seek(0)
-        print('mime_type:', mime_type)
         if mime_type not in self.allowed_mime_types:
             raise ValidationError(f'Invalid file type: {mime_type}')
 

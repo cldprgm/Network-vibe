@@ -2,6 +2,9 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+import io
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.users.models import CustomUser
 from apps.categories.models import Category
@@ -153,6 +156,52 @@ def membership_member(test_user_member, community):
         user=test_user_member,
         community=community,
         role=Membership.Role.MEMBER
+    )
+
+
+@pytest.fixture
+def valid_image_file():
+    file = io.BytesIO()
+    image = Image.new('RGB', (10, 10), 'red')
+    image.save(file, 'PNG')
+    file.seek(0)
+    return SimpleUploadedFile(
+        name='valid_icon.png',
+        content=file.read(),
+        content_type='image/png'
+    )
+
+
+@pytest.fixture
+def oversized_image_file():
+    file = io.BytesIO()
+    large_content = b'0' * (8 * 1024 * 1024)
+    file.write(large_content)
+    file.seek(0)
+    return SimpleUploadedFile(
+        name='oversized_icon.png',
+        content=file.read(),
+        content_type='image/png'
+    )
+
+
+@pytest.fixture
+def wrong_mime_type_file():
+    return SimpleUploadedFile(
+        name='document.txt',
+        content=b'just a text file.',
+        content_type='text/plain'
+    )
+
+
+@pytest.fixture
+def corrupted_image_file():
+    png_signature = b'\x89PNG\r\n\x1a\n'
+    garbage_data = b'This part is corrupted and not a valid image stream.'
+    return SimpleUploadedFile(
+        name='corrupted.png',
+        content=png_signature + garbage_data,
+        content_type='image/png'
     )
 
 
@@ -314,3 +363,51 @@ class TestMembershipViewSet():
         response = authenticated_client_member.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Membership.objects.filter(id=membership_member.id).exists()
+
+
+@pytest.mark.django_db
+class TestCommunityFileUploads:
+    def test_update_community_icon_with_valid_file(self, authenticated_client_creator, community, membership_creator, valid_image_file):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        data = {'icon_upload': valid_image_file}
+
+        response = authenticated_client_creator.patch(
+            url, data, format='multipart')
+
+        assert response.status_code == status.HTTP_200_OK
+        community.refresh_from_db()
+        assert community.icon is not None
+        assert 'valid_icon' in community.icon.name
+
+    def test_update_community_icon_with_wrong_mime_type(self, authenticated_client_creator, community, membership_creator, wrong_mime_type_file):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        data = {'icon_upload': wrong_mime_type_file}
+
+        response = authenticated_client_creator.patch(
+            url, data, format='multipart')
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'icon_upload' in response.data
+        assert 'Invalid file type: text/plain' in response.data['icon_upload'][0]
+
+    def test_update_community_icon_with_oversized_file(self, authenticated_client_creator, community, membership_creator, oversized_image_file):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        data = {'icon_upload': oversized_image_file}
+
+        response = authenticated_client_creator.patch(
+            url, data, format='multipart')
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'icon_upload' in response.data
+        assert 'Invalid file type: text/plain' in response.data['icon_upload'][0]
+
+    def test_update_community_icon_with_corrupted_file(self, authenticated_client_creator, community, membership_creator, corrupted_image_file):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        data = {'icon_upload': corrupted_image_file}
+
+        response = authenticated_client_creator.patch(
+            url, data, format='multipart')
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'icon_upload' in response.data
+        assert 'Invalid file type: application/octet-stream' in response.data['icon_upload'][0]
