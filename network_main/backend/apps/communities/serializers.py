@@ -1,9 +1,12 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.core.validators import RegexValidator, MinLengthValidator
+import magic
 
 from apps.memberships.models import Membership
 
+from apps.services.utils import FileSizeValidator, MimeTypeValidator
 from .models import Community
 from .community_permissions import PERMISSONS_MAP
 
@@ -12,6 +15,11 @@ name_validator = RegexValidator(
     regex=r'^[A-Za-zА-Яа-яЁё0-9_]+$',
     message='Name can contain only letters, numbers, and underscores.'
 )
+
+
+ALLOWED_COMMUNITY_IMAGE_TYPES = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+]
 
 
 class CommunityListSerializer(serializers.ModelSerializer):
@@ -43,15 +51,62 @@ class CommunityDetailSerializer(serializers.ModelSerializer):
     current_user_roles = serializers.SerializerMethodField()
     current_user_permissions = serializers.SerializerMethodField()
 
+    icon = serializers.ImageField(read_only=True)
+    banner = serializers.ImageField(read_only=True)
+
+    icon_upload = serializers.FileField(
+        write_only=True, required=False, source='icon'
+    )
+    banner_upload = serializers.FileField(
+        write_only=True, required=False, source='banner'
+    )
+
     class Meta:
         model = Community
         fields = ('id', 'slug', 'name', 'creator', 'description',
                   'banner', 'icon', 'is_nsfw', 'visibility',
                   'created', 'updated', 'status', 'is_member', 'members_count',
-                  'current_user_roles', 'current_user_permissions')
+                  'current_user_roles', 'current_user_permissions',
+                  'icon_upload', 'banner_upload')
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug',
                             'current_user_roles', 'current_user_permissions')
+
+    def validate_icon_upload(self, value):
+        MimeTypeValidator(
+            allowed_mime_types=ALLOWED_COMMUNITY_IMAGE_TYPES
+        )(value)
+
+        FileSizeValidator(max_size_mb=7)(value)
+
+        try:
+            from PIL import Image
+            img = Image.open(value)
+            img.verify()
+        except Exception:
+            raise ValidationError(
+                ("Upload a valid image. The file you uploaded was either not an image or a corrupted image."),
+            )
+        value.seek(0)
+        return value
+
+    def validate_banner_upload(self, value):
+        MimeTypeValidator(
+            allowed_mime_types=ALLOWED_COMMUNITY_IMAGE_TYPES
+        )(value)
+
+        FileSizeValidator(max_size_mb=10)(value)
+
+        try:
+            from PIL import Image
+            img = Image.open(value)
+            img.verify()
+        except Exception:
+            raise ValidationError(
+                ("Upload a valid image. The file you uploaded was either not an image or a corrupted image."),
+            )
+        value.seek(0)
+        return value
 
     def get_current_user_roles(self, obj):
         return [m.role for m in getattr(obj, 'current_user_memberships', [])]

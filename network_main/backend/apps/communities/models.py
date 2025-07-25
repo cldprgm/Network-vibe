@@ -53,7 +53,6 @@ class Community(models.Model):
         blank=True,
         default='uploads/community/icons/default_icon.png',
         validators=[
-            MimeTypeValidator(allowed_types_keys=['image']),
             FileSizeValidator(max_size_mb=10),
             FileExtensionValidator(allowed_extensions=(
                 'jpg', 'png', 'jpeg', 'webp')),
@@ -66,7 +65,6 @@ class Community(models.Model):
         blank=True,
         default='uploads/community/icons/default_icon.png',
         validators=[
-            MimeTypeValidator(allowed_types_keys=['image']),
             FileSizeValidator(max_size_mb=7),
             FileExtensionValidator(allowed_extensions=(
                 'jpg', 'png', 'jpeg', 'webp')),

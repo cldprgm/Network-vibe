@@ -15,11 +15,13 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='community',
             name='banner',
-            field=models.ImageField(blank=True, default='uploads/community/icons/default_icon.png', null=True, upload_to='uploads/community/banners/%Y/%m/%d', validators=[apps.services.utils.MimeTypeValidator(allowed_types_keys=['image']), apps.services.utils.FileSizeValidator(max_size_mb=10), django.core.validators.FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg', 'webp'))], verbose_name='Banner'),
+            field=models.ImageField(blank=True, default='uploads/community/icons/default_icon.png', null=True, upload_to='uploads/community/banners/%Y/%m/%d', validators=[apps.services.utils.MimeTypeValidator(
+                allowed_mime_types=['image']), apps.services.utils.FileSizeValidator(max_size_mb=10), django.core.validators.FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg', 'webp'))], verbose_name='Banner'),
         ),
         migrations.AlterField(
             model_name='community',
             name='icon',
-            field=models.ImageField(blank=True, default='uploads/community/icons/default_icon.png', null=True, upload_to='uploads/community/icons/%Y/%m/%d', validators=[apps.services.utils.MimeTypeValidator(allowed_types_keys=['image']), apps.services.utils.FileSizeValidator(max_size_mb=7), django.core.validators.FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg', 'webp'))], verbose_name='Icon'),
+            field=models.ImageField(blank=True, default='uploads/community/icons/default_icon.png', null=True, upload_to='uploads/community/icons/%Y/%m/%d', validators=[apps.services.utils.MimeTypeValidator(
+                allowed_mime_types=['image']), apps.services.utils.FileSizeValidator(max_size_mb=7), django.core.validators.FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg', 'webp'))], verbose_name='Icon'),
         ),
     ]
