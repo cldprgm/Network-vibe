@@ -5,7 +5,7 @@ from django.conf import settings
 from mptt.fields import TreeManyToManyField
 
 from apps.categories.models import Category
-from apps.services.utils import unique_slugify
+from apps.services.utils import unique_slugify, MimeTypeValidator, FileSizeValidator
 
 
 User = settings.AUTH_USER_MODEL
@@ -41,15 +41,23 @@ class Community(models.Model):
         unique=True,
         verbose_name='Community name'
     )
-    description = models.TextField(max_length=420, verbose_name='Description')
+    description = models.TextField(
+        max_length=420,
+        validators=[MinLengthValidator(4)],
+        verbose_name='Description'
+    )
     banner = models.ImageField(
         upload_to='uploads/community/banners/%Y/%m/%d',
         verbose_name="Banner",
         null=True,
         blank=True,
         default='uploads/community/icons/default_icon.png',
-        validators=[FileExtensionValidator(
-            allowed_extensions=('jpg', 'png', 'jpeg'))]
+        validators=[
+            MimeTypeValidator(allowed_types_keys=['image']),
+            FileSizeValidator(max_size_mb=10),
+            FileExtensionValidator(allowed_extensions=(
+                'jpg', 'png', 'jpeg', 'webp')),
+        ]
     )
     icon = models.ImageField(
         upload_to='uploads/community/icons/%Y/%m/%d',
@@ -57,8 +65,12 @@ class Community(models.Model):
         null=True,
         blank=True,
         default='uploads/community/icons/default_icon.png',
-        validators=[FileExtensionValidator(
-            allowed_extensions=('jpg', 'png', 'jpeg'))]
+        validators=[
+            MimeTypeValidator(allowed_types_keys=['image']),
+            FileSizeValidator(max_size_mb=7),
+            FileExtensionValidator(allowed_extensions=(
+                'jpg', 'png', 'jpeg', 'webp')),
+        ]
     )
     categories = TreeManyToManyField(
         to=Category, related_name='communities', verbose_name='Categories')

@@ -73,8 +73,13 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
 
     useEffect(() => {
         const checkName = async () => {
-            if (debouncedName.trim() === '') {
+            if (debouncedName.trim().length === 0) {
                 setNameError(null);
+                return;
+            }
+
+            if (debouncedName.trim().length < 4) {
+                setNameError('Name must be at least 4 characters long.');
                 return;
             }
 
@@ -175,7 +180,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     let isCurrentStepValid = false;
     switch (step) {
         case 0:
-            isCurrentStepValid = name.trim() !== '' && description.trim() !== '' && !isNameChecking && !nameError;
+            isCurrentStepValid = name.trim().length >= 4 && description.trim().length >= 4 && !isNameChecking && !nameError;
             break;
         case 1:
             isCurrentStepValid = true;
@@ -190,7 +195,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
             isCurrentStepValid = false;
     }
 
-    const isFormValid = name.trim() !== '' && description.trim() !== '' && selectedSubcategories.length > 0 && !nameError && !isNameChecking;
+    const isFormValid = name.trim().length >= 4 && description.trim().length >= 4 && selectedSubcategories.length > 0 && !nameError && !isNameChecking;
 
 
     return (
@@ -218,13 +223,14 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                             {step === 0 && (
                                 <>
                                     <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                            Name
+                                        <label htmlFor="name" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                            Name <span className="text-red-500 ml-1">*</span>
                                         </label>
                                         <input
                                             id="name"
                                             type="text"
                                             required
+                                            minLength={4}
                                             maxLength={21}
                                             placeholder="AwesomeGamers"
                                             value={name}
@@ -232,24 +238,29 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                                             className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 
                                                 ${nameError ? 'border-red-500 focus:ring-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:ring-indigo-500'}`}
                                         />
-                                        <div className="text-xs mt-1 h-4">
+                                        <div className="text-xs mt-1 h-4 flex justify-between">
                                             {nameError && <p className="text-red-500">{nameError}</p>}
-                                            <p className="text-zinc-500">{21 - name.length} characters remaining</p>
+                                            <p className="text-zinc-500 ml-auto">{21 - name.length} characters remaining</p>
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                            Description
+                                        <label htmlFor="description" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                            Description <span className="text-red-500 ml-1">*</span>
                                         </label>
                                         <textarea
                                             id="description"
                                             required
+                                            minLength={4}
+                                            maxLength={420}
                                             rows={4}
                                             placeholder="A brief description of your community"
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
-                                            className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${description.trim().length > 0 && description.trim().length < 4 ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`}
                                         />
+                                        {description.trim().length > 0 && description.trim().length < 4 && (
+                                            <p className="text-xs text-red-500 mt-1">Description must be at least 4 characters long.</p>
+                                        )}
                                     </div>
                                 </>
                             )}

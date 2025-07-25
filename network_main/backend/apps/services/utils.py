@@ -1,5 +1,6 @@
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
 from unidecode import unidecode
 from uuid import uuid4
 import magic
@@ -9,6 +10,39 @@ ALLOWED_MIME_TYPES = {
     'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     'video': ['video/mp4', 'video/webm'],
 }
+
+
+@deconstructible
+class MimeTypeValidator:
+    def __init__(self, allowed_types_keys):
+        self.allowed_mime_types = []
+        for key in allowed_types_keys:
+            self.allowed_mime_types.extend(ALLOWED_MIME_TYPES.get(key, []))
+
+    def __call__(self, value):
+        value.seek(0)
+        mime_type = magic.from_buffer(value.read(2048), mime=True)
+        value.seek(0)
+        print('mime_type:', mime_type)
+        if mime_type not in self.allowed_mime_types:
+            raise ValidationError(f'Invalid file type: {mime_type}')
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.allowed_mime_types == other.allowed_mime_types
+
+
+@deconstructible
+class FileSizeValidator:
+    def __init__(self, max_size_mb=10):
+        self.max_size = max_size_mb * 1024 * 1024
+
+    def __call__(self, value):
+        if value.size > self.max_size:
+            raise ValidationError(
+                f'File size cannot exceed {self.max_size/1024/1024}MB.')
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.max_size == other.max_size
 
 
 def unique_slugify(instance, content):
