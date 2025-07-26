@@ -44,6 +44,8 @@ export type CommunityType = {
     description: string;
     banner: string;
     icon: string;
+    banner_upload: string;
+    icon_upload: string;
     is_nsfw: boolean;
     visibility: string;
     created: string;

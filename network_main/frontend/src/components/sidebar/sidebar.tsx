@@ -4,10 +4,13 @@ import React, { useState, useEffect } from "react"
 import Link from "next/link";
 import clsx from "clsx"
 import CreateCommunityModal from "./CreateCommunityModal";
+import { useRouter } from "next/navigation";
+import { CommunityType } from "@/services/types";
 
 export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const handleResize = () => {
@@ -21,6 +24,14 @@ export default function Sidebar() {
 
     const toggleSidebar = () => {
         setCollapsed((prev) => !prev);
+    };
+
+    const handleCommunityCreate = (community: CommunityType) => {
+        setIsModalOpen(false);
+
+        if (community?.slug) {
+            router.push(`/communities/${community.slug}`);
+        }
     };
 
     return (
@@ -165,10 +176,7 @@ export default function Sidebar() {
             <CreateCommunityModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onCreate={(community) => {
-                    // call your API or handle the created community
-                    console.log('Creating community:', community);
-                }}
+                onCreate={handleCommunityCreate}
             />
         </div>
 

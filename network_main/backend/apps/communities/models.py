@@ -71,7 +71,11 @@ class Community(models.Model):
         ]
     )
     categories = TreeManyToManyField(
-        to=Category, related_name='communities', verbose_name='Categories')
+        to=Category,
+        related_name='communities',
+        blank=False,
+        verbose_name='Categories'
+    )
     is_nsfw = models.BooleanField(default=False, verbose_name='is_NSFW')
     visibility = models.CharField(
         max_length=10, choices=Visibility.choices, default=Visibility.PUBLIC, verbose_name='Visibility')

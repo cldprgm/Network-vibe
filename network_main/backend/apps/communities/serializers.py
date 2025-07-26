@@ -2,9 +2,9 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.core.validators import RegexValidator, MinLengthValidator
-import magic
 
 from apps.memberships.models import Membership
+from apps.categories.models import Category
 
 from apps.services.utils import FileSizeValidator, MimeTypeValidator
 from .models import Community
@@ -50,6 +50,10 @@ class CommunityDetailSerializer(serializers.ModelSerializer):
     members_count = serializers.IntegerField(read_only=True)
     current_user_roles = serializers.SerializerMethodField()
     current_user_permissions = serializers.SerializerMethodField()
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        many=True
+    )
 
     icon = serializers.ImageField(read_only=True)
     banner = serializers.ImageField(read_only=True)
@@ -66,11 +70,18 @@ class CommunityDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'slug', 'name', 'creator', 'description',
                   'banner', 'icon', 'is_nsfw', 'visibility',
                   'created', 'updated', 'status', 'is_member', 'members_count',
-                  'current_user_roles', 'current_user_permissions',
+                  'categories', 'current_user_roles', 'current_user_permissions',
                   'icon_upload', 'banner_upload')
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug',
                             'current_user_roles', 'current_user_permissions')
+
+    def validate_categories(self, value):
+        if not value:
+            raise ValidationError('At least one catgory is required.')
+        if len(value) > 3:
+            raise ValidationError('You can select up to three categories.')
+        return value
 
     def validate_icon_upload(self, value):
         MimeTypeValidator(
