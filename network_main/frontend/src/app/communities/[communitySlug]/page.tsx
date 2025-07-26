@@ -181,6 +181,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                                 <Calendar className="w-4 h-4 mr-2" />
                                 <span>Created {formattedDate}</span>
                             </div>
+                            {/* fix later */}
                             <div className="flex items-center text-gray-400 text-sm">
                                 {community.visibility === "PRIVATE" ? (
                                     <Lock className="w-4 h-4 mr-2" />
