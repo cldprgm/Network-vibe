@@ -226,7 +226,7 @@ class TestCommunityViewSet():
             'name': 'newcommunity',
             'slug': 'newcommunity',
             'description': 'newdesc',
-            'categories': category
+            'categories': category.pk
         }
         response = authenticated_client.post(url, data)
         assert response.status_code == status.HTTP_201_CREATED

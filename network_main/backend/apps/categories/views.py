@@ -29,7 +29,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
         base_communities_qs = Community.objects.filter(
             id__in=Subquery(limited_communities.values('id'))
-        ).select_related('creator').annotate(members_count=Count('members'))
+        ).select_related('creator').annotate(members_count=Count('members', distinct=True))
 
         # add (members__is_approved=True) later
         if user.is_authenticated:

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { CommunityType } from '@/services/types';
 import { joinCommunity, leaveCommunity } from '@/services/api';
@@ -47,6 +47,7 @@ export const CommunityCard = ({ community }: Props) => {
                                 alt={`${community.name} icon`}
                                 fill
                                 style={{ objectFit: 'cover' }}
+                                sizes='48'
                             />
                         </div>
                         <div className="flex-1 min-w-0">
