@@ -5,10 +5,6 @@ from django.conf import settings
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
-    path('', include('apps.social_network.urls')),
-    path('accounts/', include('apps.accounts.urls')),
-    path("select2/", include("django_select2.urls")),
-
     path('admin/', admin.site.urls),
     path('api/v1/users/', include('apps.users.urls')),
     path('api/v1/posts/', include('apps.posts.urls')),
