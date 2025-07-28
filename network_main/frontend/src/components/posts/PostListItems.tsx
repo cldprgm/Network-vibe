@@ -68,7 +68,7 @@ export default function PostListItems({ post }: { post: Post }) {
                                         onClick={(e) => e.stopPropagation()}
                                         alt="Community icon"
                                         fill
-                                        sizes="36px"
+                                        sizes="36"
                                     />
                                 </div>
                                 <div className="min-w-0">

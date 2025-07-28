@@ -42,11 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.social_network.apps.SocialNetworkConfig',
-    'apps.accounts.apps.AccountsConfig',
     'mptt',
     'debug_toolbar',
-    'django_select2',
     'rest_framework',
     'apps.users.apps.UsersConfig',
     'apps.communities.apps.CommunitiesConfig',
@@ -138,13 +135,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static/js"),
-    os.path.join(BASE_DIR, 'static')
-]
-
 MEDIA_URL = 'media/'
 MEDIA_ROOT = (BASE_DIR / 'media')
 
@@ -153,11 +143,6 @@ MEDIA_ROOT = (BASE_DIR / 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-INTERNAL_IPS = [
-    '127.0.0.1',
-]
 
 
 AUTH_USER_MODEL = 'users.CustomUser'
