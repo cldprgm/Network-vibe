@@ -182,7 +182,10 @@ class Media(models.Model):
 
     class Meta:
         db_table = 'api_network_media'
-        indexes = [models.Index(fields=['post'])]
+        indexes = [
+            models.Index(fields=['post']),
+            models.Index(fields=['post', '-uploaded_at'])
+        ]
         ordering = ['-uploaded_at']
         verbose_name = 'Mediafile'
         verbose_name_plural = 'Mediafiles'
