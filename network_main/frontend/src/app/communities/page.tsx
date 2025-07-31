@@ -2,10 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { CategoryToolbar } from '@/components/communities/CategoryToolbar';
 import { CategorySection } from '@/components/communities/CategorySection';
-import { Category } from '@/services/types';
+import { Category, CommunityType } from '@/services/types';
+import { RecommendedSection } from '@/components/communities/RecommendedSection';
 import { api } from '@/services/auth';
 
 export default function ExplorePage() {
+    const [recommendedCommunities, setRecommendedCommunities] = useState<CommunityType[]>([]);
+    const [recommendedNextPage, setRecommendedNextPage] = useState<string | null>(null);
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [selected, setSelected] = useState<string>('all');
     const [loading, setLoading] = useState<boolean>(true);
@@ -14,6 +18,10 @@ export default function ExplorePage() {
     useEffect(() => {
         const load = async () => {
             try {
+                const recommendedRes = await api.get('/recommendations/communities/');
+                setRecommendedCommunities(recommendedRes.data.recommendations);
+                setRecommendedNextPage(recommendedRes.data.next);
+
                 const res = await api.get('/categories-tree/');
                 const categoriesWithPagination: Category[] = res.data.results.map((category: Category) => ({
                     ...category,
@@ -25,7 +33,10 @@ export default function ExplorePage() {
                                 : null)
                     }))
                 }));
-                setCategories(categoriesWithPagination);
+                setCategories([
+                    { id: 'all', slug: 'all', title: 'All', subcategories: [] },
+                    ...categoriesWithPagination
+                ]);
             } catch (err: any) {
                 setError(err.message || 'loading error');
             } finally {
@@ -64,7 +75,14 @@ export default function ExplorePage() {
 
             <hr className="border-gray-700 mb-6" />
 
-            {current ? (
+            {selected === 'all' ? (
+                <RecommendedSection
+                    communities={recommendedCommunities}
+                    nextPage={recommendedNextPage}
+                    setCommunities={setRecommendedCommunities}
+                    setNextPage={setRecommendedNextPage}
+                />
+            ) : current ? (
                 current.subcategories.map(sub => (
                     <CategorySection key={sub.id} subcategory={sub} />
                 ))

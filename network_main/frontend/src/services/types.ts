@@ -56,7 +56,7 @@ export type CommunityType = {
 };
 
 export interface Category {
-    id: number;
+    id: number | string;
     title: string;
     slug: string;
     subcategories: Subcategory[];
