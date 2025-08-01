@@ -123,7 +123,8 @@ class TestCommunityRecommendationsView:
     def test_recommendations_unauthenticated(self, api_client):
         url = reverse('community-recommendations')
         response = api_client.get(url)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['type'] == 'unauthenticated_recommendations'
 
     def test_recommendations_for_new_user_cold_start(self, authenticated_client, popular_community, second_user, test_user_creator):
         Membership.objects.create(
