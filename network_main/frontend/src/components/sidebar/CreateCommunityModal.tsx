@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import { Point, Area } from 'react-easy-crop';
 import { Dialog, DialogTitle, Description, DialogPanel } from '@headlessui/react';
-import { CommunityType, Category, Subcategory } from '@/services/types';
+import { CommunityType, Category } from '@/services/types';
 import { getCategoriesTree } from '@/services/api';
 import CommunityCreationPreview from './CommunityCreationPreview';
-import { Eye, Lock, Shield } from 'lucide-react';
+import { Eye, Lock, Shield, UploadCloud, RotateCw, X } from 'lucide-react';
 import useDebounce from './hooks/useDebounce';
 import { api } from '@/services/auth';
 import axios from 'axios';
 import Link from 'next/link';
+import getCroppedImg from '@/components/sidebar/cropImage';
 import '@/styles/CustomScrollbar.css'
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -70,6 +73,12 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [iconError, setIconError] = useState<string | null>(null);
     const [bannerError, setBannerError] = useState<string | null>(null);
+
+    const [uncroppedBanner, setUncroppedBanner] = useState<string | null>(null);
+    const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [isCropperOpen, setIsCropperOpen] = useState(false);
 
     const [isNameChecking, setIsNameChecking] = useState(false);
     const [nameError, setNameError] = useState<string | null>(null);
@@ -172,14 +181,46 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
             const file = e.target.files[0];
             const allowedTypes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
             if (validateImage(file, 10, allowedTypes, setBannerError)) {
-                setBanner(file);
-                setBannerPreview(URL.createObjectURL(file));
-            } else {
-                setBanner(null);
-                setBannerPreview(null);
+                setUncroppedBanner(URL.createObjectURL(file));
+                setIsCropperOpen(true);
             }
         }
     };
+
+    const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const showCroppedImage = useCallback(async () => {
+        if (!croppedAreaPixels || !uncroppedBanner) {
+            return;
+        }
+        try {
+            const croppedImage = await getCroppedImg(
+                uncroppedBanner,
+                croppedAreaPixels
+            );
+            if (croppedImage) {
+                setBannerPreview(croppedImage.url);
+                setBanner(croppedImage.file);
+            }
+        } catch (e) {
+            console.error(e);
+            setBannerError("Could not crop the image. Please try again.");
+        } finally {
+            setIsCropperOpen(false);
+            setUncroppedBanner(null);
+            setZoom(1);
+            setCrop({ x: 0, y: 0 });
+        }
+    }, [croppedAreaPixels, uncroppedBanner]);
+
+    const handleCloseCropper = () => {
+        setIsCropperOpen(false);
+        setUncroppedBanner(null);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+    }
 
     const handleSubcategoryChange = (subcategoryId: number) => {
         setSelectedSubcategories(prevSelected => {
@@ -255,274 +296,331 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
 
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-            <div className="flex items-center justify-center min-h-screen p-4">
-                <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-4xl mx-auto transition-all duration-300 ease-in-out">
-                    <form onSubmit={handleSubmit}>
-                        <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
-                            <div className="flex justify-between items-start">
-                                <DialogTitle className="text-2xl font-bold text-zinc-900 dark:text-white">
-                                    Create a community
-                                </DialogTitle>
-                                <button type="button" onClick={onClose} aria-label="Close" className="cursor-pointer text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
+        <>
+            <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+                <div className="flex items-center justify-center min-h-screen p-4">
+                    <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-4xl mx-auto transition-all duration-300 ease-in-out">
+                        <form onSubmit={handleSubmit}>
+                            <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
+                                <div className="flex justify-between items-start">
+                                    <DialogTitle className="text-2xl font-bold text-zinc-900 dark:text-white">
+                                        Create a community
+                                    </DialogTitle>
+                                    <button type="button" onClick={onClose} aria-label="Close" className="cursor-pointer text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <Description className="text-zinc-600 dark:text-zinc-400 mt-1">Step {step + 1} of {steps.length}: {steps[step]}</Description>
                             </div>
-                            <Description className="text-zinc-600 dark:text-zinc-400 mt-1">Step {step + 1} of {steps.length}: {steps[step]}</Description>
-                        </div>
 
-                        <div className="flex p-6 min-h-[350px]">
-                            {/* Left Column */}
-                            <div className="w-3/5 pr-1 space-y-6">
-                                {step === 0 && (
-                                    <>
-                                        <div>
-                                            <label htmlFor="name" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                                Name <span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <input
-                                                id="name"
-                                                type="text"
-                                                required
-                                                minLength={4}
-                                                maxLength={21}
-                                                placeholder="AwesomeGamers"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 
+                            <div className="flex p-6 min-h-[350px]">
+                                {/* Left Column */}
+                                <div className="w-3/5 pr-1 space-y-6">
+                                    {step === 0 && (
+                                        <>
+                                            <div>
+                                                <label htmlFor="name" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                    Name <span className="text-red-500 ml-1">*</span>
+                                                </label>
+                                                <input
+                                                    id="name"
+                                                    type="text"
+                                                    required
+                                                    minLength={4}
+                                                    maxLength={21}
+                                                    placeholder="AwesomeGamers"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 
                                                 ${nameError ? 'border-red-500 focus:ring-red-500' : 'border-zinc-300 dark:border-zinc-700 focus:ring-indigo-500'}`}
-                                            />
-                                            <div className="text-xs mt-1 h-4 flex justify-between">
-                                                {nameError && <p className="text-red-500">{nameError}</p>}
-                                                <p className="text-zinc-500 ml-auto">{21 - name.length} characters remaining</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label htmlFor="description" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                                Description <span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <textarea
-                                                id="description"
-                                                required
-                                                minLength={4}
-                                                maxLength={420}
-                                                rows={4}
-                                                placeholder="A brief description of your community"
-                                                value={description}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                                className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${description.trim().length > 0 && description.trim().length < 4 ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`}
-                                            />
-                                            {description.trim().length > 0 && description.trim().length < 4 && (
-                                                <p className="text-xs text-red-500 mt-1">Description must be at least 4 characters long.</p>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                                {step === 1 && (
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label htmlFor="icon" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                                Icon
-                                            </label>
-                                            <input
-                                                id="icon"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleIconChange}
-                                                className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-200"
-                                            />
-                                            {iconError && <p className="text-xs text-red-500 mt-1">{iconError}</p>}
-                                        </div>
-                                        <div>
-                                            <label htmlFor="banner" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                                Banner
-                                            </label>
-                                            <input
-                                                id="banner"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleBannerChange}
-                                                className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-200"
-                                            />
-                                            {bannerError && <p className="text-xs text-red-500 mt-1">{bannerError}</p>}
-                                        </div>
-                                    </div>
-                                )}
-                                {step === 2 && (
-                                    <div>
-                                        {selectedSubcategories.length > 0 && (
-                                            <div className="mb-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                                                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Selected topics:</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {categories.flatMap(cat => cat.subcategories)
-                                                        .filter(sub => selectedSubcategories.includes(sub.id))
-                                                        .map(subcategory => (
-                                                            <div key={`selected-${subcategory.id}`} className="flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl">
-                                                                <span className="text-sm text-indigo-800 dark:text-indigo-200">{subcategory.title}</span>
-                                                                <button type="button" onClick={() => handleSubcategoryChange(subcategory.id)} className="cursor-pointer text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-100">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                        ))
-                                                    }
+                                                />
+                                                <div className="text-xs mt-1 h-4 flex justify-between">
+                                                    {nameError && <p className="text-red-500">{nameError}</p>}
+                                                    <p className="text-zinc-500 ml-auto">{21 - name.length} characters remaining</p>
                                                 </div>
                                             </div>
-                                        )}
-                                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                            Topics (Select 1-3)
-                                        </label>
-                                        <div className="space-y-4 max-h-90 overflow-y-auto pr-2 custom-scrollbar">
-                                            {categories.map((category) => (
-                                                <div key={category.id}>
-                                                    <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">{category.title}</h3>
+                                            <div>
+                                                <label htmlFor="description" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                    Description <span className="text-red-500 ml-1">*</span>
+                                                </label>
+                                                <textarea
+                                                    id="description"
+                                                    required
+                                                    minLength={4}
+                                                    maxLength={420}
+                                                    rows={4}
+                                                    placeholder="A brief description of your community"
+                                                    value={description}
+                                                    onChange={(e) => setDescription(e.target.value)}
+                                                    className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${description.trim().length > 0 && description.trim().length < 4 ? 'border-red-500' : 'border-zinc-300 dark:border-zinc-700'}`}
+                                                />
+                                                {description.trim().length > 0 && description.trim().length < 4 && (
+                                                    <p className="text-xs text-red-500 mt-1">Description must be at least 4 characters long.</p>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                    {step === 1 && (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label htmlFor="icon" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                    Icon
+                                                </label>
+                                                <input
+                                                    id="icon"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleIconChange}
+                                                    className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-200"
+                                                />
+                                                {iconError && <p className="text-xs text-red-500 mt-1">{iconError}</p>}
+                                            </div>
+                                            <div>
+                                                <label htmlFor="banner" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                    Banner
+                                                </label>
+                                                <input
+                                                    id="banner"
+                                                    type="file"
+                                                    accept="image/webp,image/png,image/jpeg,image/jpg"
+                                                    onChange={handleBannerChange}
+                                                    className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-200"
+                                                />
+                                                {bannerError && <p className="text-xs text-red-500 mt-1">{bannerError}</p>}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {step === 2 && (
+                                        <div>
+                                            {selectedSubcategories.length > 0 && (
+                                                <div className="mb-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                                                    <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Selected topics:</h4>
                                                     <div className="flex flex-wrap gap-2">
-                                                        {category.subcategories.map((subcategory) => {
-                                                            const isSelected = selectedSubcategories.includes(subcategory.id);
-                                                            const isDisabled = !isSelected && selectedSubcategories.length >= 3;
-
-                                                            return (
-                                                                <button
-                                                                    key={subcategory.id}
-                                                                    type="button"
-                                                                    onClick={() => handleSubcategoryChange(subcategory.id)}
-                                                                    disabled={isDisabled}
-                                                                    className={`cursor-pointer px-4 py-2 rounded-full border text-sm font-medium transition-colors
-                                        ${isSelected
-                                                                            ? 'bg-indigo-600 border-indigo-600 text-white'
-                                                                            : 'bg-transparent border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                                                        }
-                                        ${isDisabled ? 'cursor-pointer opacity-50 cursor-not-allowed' : ''}
-                                    `}
-                                                                >
-                                                                    {subcategory.title}
-                                                                </button>
-                                                            );
-                                                        })}
+                                                        {categories.flatMap(cat => cat.subcategories)
+                                                            .filter(sub => selectedSubcategories.includes(sub.id))
+                                                            .map(subcategory => (
+                                                                <div key={`selected-${subcategory.id}`} className="flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl">
+                                                                    <span className="text-sm text-indigo-800 dark:text-indigo-200">{subcategory.title}</span>
+                                                                    <button type="button" onClick={() => handleSubcategoryChange(subcategory.id)} className="cursor-pointer text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-100">
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            ))
+                                                        }
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                        <p className="text-xs text-zinc-500 mt-4">{selectedSubcategories.length} / 3 selected</p>
-                                    </div>
-                                )}
-                                {step === 3 && (
-                                    <div className="space-y-6">
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Community type</h3>
-                                            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Choose who can see and participate in your community.</p>
+                                            )}
+                                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                Topics (Select 1-3)
+                                            </label>
+                                            <div className="space-y-4 max-h-90 overflow-y-auto pr-2 custom-scrollbar">
+                                                {categories.map((category) => (
+                                                    <div key={category.id}>
+                                                        <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">{category.title}</h3>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {category.subcategories.map((subcategory) => {
+                                                                const isSelected = selectedSubcategories.includes(subcategory.id);
+                                                                const isDisabled = !isSelected && selectedSubcategories.length >= 3;
 
-                                            <div className="space-y-3">
-                                                <VisibilityOption
-                                                    type="PUBLIC"
-                                                    title="Public"
-                                                    description="Anyone can view, post, and comment in this community."
-                                                    icon={<Eye />}
-                                                    selected={visibility === 'PUBLIC'}
-                                                    onClick={setVisibility}
-                                                />
-                                                <VisibilityOption
-                                                    type="RESTRICTED"
-                                                    title="Restricted"
-                                                    description="Anyone can view this community, but only approved users can post."
-                                                    icon={<Shield />}
-                                                    selected={visibility === 'RESTRICTED'}
-                                                    onClick={setVisibility}
-                                                />
-                                                <VisibilityOption
-                                                    type="PRIVATE"
-                                                    title="Private"
-                                                    description="Only approved users can view and submit to this community."
-                                                    icon={<Lock />}
-                                                    selected={visibility === 'PRIVATE'}
-                                                    onClick={setVisibility}
-                                                />
+                                                                return (
+                                                                    <button
+                                                                        key={subcategory.id}
+                                                                        type="button"
+                                                                        onClick={() => handleSubcategoryChange(subcategory.id)}
+                                                                        disabled={isDisabled}
+                                                                        className={`cursor-pointer px-4 py-2 rounded-full border text-sm font-medium transition-colors
+                                        ${isSelected
+                                                                                ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                                                : 'bg-transparent border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                                                            }
+                                        ${isDisabled ? 'cursor-pointer opacity-50 cursor-not-allowed' : ''}
+                                    `}
+                                                                    >
+                                                                        {subcategory.title}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
+                                            <p className="text-xs text-zinc-500 mt-4">{selectedSubcategories.length} / 3 selected</p>
                                         </div>
+                                    )}
+                                    {step === 3 && (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Community type</h3>
+                                                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Choose who can see and participate in your community.</p>
 
-                                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                                            <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">Content Tag</h3>
-                                            <div className="flex items-start p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                                                <input
-                                                    id="is_nsfw"
-                                                    type="checkbox"
-                                                    checked={isNsfw}
-                                                    onChange={(e) => setIsNsfw(e.target.checked)}
-                                                    className="h-4 w-4 mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                                />
-                                                <div className="ml-3">
-                                                    <label htmlFor="is_nsfw" className="cursor-pointer font-medium text-gray-900 dark:text-gray-200">
-                                                        NSFW (18+ content)
-                                                    </label>
-                                                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                                        Tag your community as Not Safe For Work if it contains adult content.
-                                                    </p>
+                                                <div className="space-y-3">
+                                                    <VisibilityOption
+                                                        type="PUBLIC"
+                                                        title="Public"
+                                                        description="Anyone can view, post, and comment in this community."
+                                                        icon={<Eye />}
+                                                        selected={visibility === 'PUBLIC'}
+                                                        onClick={setVisibility}
+                                                    />
+                                                    <VisibilityOption
+                                                        type="RESTRICTED"
+                                                        title="Restricted"
+                                                        description="Anyone can view this community, but only approved users can post."
+                                                        icon={<Shield />}
+                                                        selected={visibility === 'RESTRICTED'}
+                                                        onClick={setVisibility}
+                                                    />
+                                                    <VisibilityOption
+                                                        type="PRIVATE"
+                                                        title="Private"
+                                                        description="Only approved users can view and submit to this community."
+                                                        icon={<Lock />}
+                                                        selected={visibility === 'PRIVATE'}
+                                                        onClick={setVisibility}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                                                <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">Content Tag</h3>
+                                                <div className="flex items-start p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                                                    <input
+                                                        id="is_nsfw"
+                                                        type="checkbox"
+                                                        checked={isNsfw}
+                                                        onChange={(e) => setIsNsfw(e.target.checked)}
+                                                        className="h-4 w-4 mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                    <div className="ml-3">
+                                                        <label htmlFor="is_nsfw" className="cursor-pointer font-medium text-gray-900 dark:text-gray-200">
+                                                            NSFW (18+ content)
+                                                        </label>
+                                                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                                            Tag your community as Not Safe For Work if it contains adult content.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Right Column: Preview */}
-                            <div className="w-2/5 pl-8 border-l border-zinc-200 dark:border-zinc-700">
-                                <CommunityCreationPreview
-                                    name={name}
-                                    description={description}
-                                    iconPreview={iconPreview}
-                                    bannerPreview={bannerPreview}
-                                />
-                            </div>
-                        </div>
-
-                        {/* navigation buttons */}
-                        <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-b-2xl border-t border-zinc-200 dark:border-zinc-700">
-
-                            <div className="flex justify-end items-center">
-                                {step === steps.length - 1 && (
-                                    <p className="mr-auto text-sm text-zinc-500 dark:text-zinc-400">
-                                        By continuing, you agree to our <Link href="#" className="text-indigo-500 hover:underline">Network Rules</Link>.
-                                    </p>
-                                )}
-                                <div className="flex items-center space-x-4">
-                                    {step > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={prevStep}
-                                            className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
-                                        >
-                                            Back
-                                        </button>
-                                    )}
-                                    {step < steps.length - 1 ? (
-                                        <button
-                                            type="button"
-                                            onClick={nextStep}
-                                            disabled={!isCurrentStepValid}
-                                            className="cursor-pointer px-6 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:dark:bg-gray-800 disabled:cursor-not-allowed"
-                                        >
-                                            Next
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={handleSubmit}
-                                            disabled={!isFormValid}
-                                            className="cursor-pointer px-6 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:dark:bg-indigo-800 disabled:cursor-not-allowed"
-                                        >
-                                            Create Community
-                                        </button>
                                     )}
                                 </div>
+
+                                {/* Right Column: Preview */}
+                                <div className="w-2/5 pl-8 border-l border-zinc-200 dark:border-zinc-700">
+                                    <CommunityCreationPreview
+                                        name={name}
+                                        description={description}
+                                        iconPreview={iconPreview}
+                                        bannerPreview={bannerPreview}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* navigation buttons */}
+                            <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-b-2xl border-t border-zinc-200 dark:border-zinc-700">
+
+                                <div className="flex justify-end items-center">
+                                    {step === steps.length - 1 && (
+                                        <p className="mr-auto text-sm text-zinc-500 dark:text-zinc-400">
+                                            By continuing, you agree to our <Link href="#" className="text-indigo-500 hover:underline">Network Rules</Link>.
+                                        </p>
+                                    )}
+                                    <div className="flex items-center space-x-4">
+                                        {step > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={prevStep}
+                                                className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                                            >
+                                                Back
+                                            </button>
+                                        )}
+                                        {step < steps.length - 1 ? (
+                                            <button
+                                                type="button"
+                                                onClick={nextStep}
+                                                disabled={!isCurrentStepValid}
+                                                className="cursor-pointer px-6 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:dark:bg-gray-800 disabled:cursor-not-allowed"
+                                            >
+                                                Next
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={handleSubmit}
+                                                disabled={!isFormValid}
+                                                className="cursor-pointer px-6 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:dark:bg-indigo-800 disabled:cursor-not-allowed"
+                                            >
+                                                Create Community
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            <Dialog open={isCropperOpen} onClose={handleCloseCropper} className="fixed inset-0 z-[60] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+                <div className="flex items-center justify-center min-h-screen p-4">
+                    <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-2xl mx-auto transition-all duration-300 ease-in-out">
+                        <DialogTitle className="p-4 text-lg font-bold text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-700">
+                            Adjust Banner
+                        </DialogTitle>
+                        <div className="relative w-full h-80 bg-zinc-200 dark:bg-zinc-800">
+                            {uncroppedBanner && (
+                                <Cropper
+                                    image={uncroppedBanner}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={16 / 5}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                />
+                            )}
+                        </div>
+                        <div className="p-4 space-y-4 border-t border-zinc-200 dark:border-zinc-700">
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Zoom</label>
+                                <input
+                                    type="range"
+                                    value={zoom}
+                                    min={1}
+                                    max={3}
+                                    step={0.01}
+                                    aria-labelledby="Zoom"
+                                    onChange={(e) => setZoom(Number(e.target.value))}
+                                    className="w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseCropper}
+                                    className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={showCroppedImage}
+                                    className="cursor-pointer px-6 py-2 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
+                                >
+                                    Apply
+                                </button>
                             </div>
                         </div>
-                    </form>
-                </DialogPanel>
-            </div>
-        </Dialog>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+        </>
     );
 }

@@ -173,6 +173,7 @@ cython_debug/
 
 
 *.jpg
+*.jpeg
 *.png
 *.mp4
 !network_main/backend/media/uploads/community/icons/default_icon.png
