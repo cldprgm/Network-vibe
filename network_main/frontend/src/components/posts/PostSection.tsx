@@ -48,7 +48,7 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
 
     return (
         <div className='flex'>
-            <section className="mt-5 max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
+            <section className="mt-5 max-w-[875px] mx-auto p-5 sm:p-10 md:p-16">
                 <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
                 {posts.map(post => (
                     <PostListItems key={post.id} post={post} />

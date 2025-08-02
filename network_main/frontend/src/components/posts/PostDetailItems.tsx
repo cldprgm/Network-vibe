@@ -9,6 +9,7 @@ import { useAuthStore } from "@/zustand_store/authStore";
 import { Post } from "@/services/types";
 import AuthModalController from "../auth/AuthModalController";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
     if (!postData || !postData.slug) {
@@ -69,9 +70,12 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-xs text-secondary flex items-center">
-                                        <a href="#" className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400">
+                                        <Link
+                                            href={`communities/${post.community_slug}`}
+                                            className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400"
+                                        >
                                             n/{post.community_name}
-                                        </a>
+                                        </Link>
                                         • {new Date(post.created).toLocaleDateString()}
                                     </p>
                                 </div>

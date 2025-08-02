@@ -112,6 +112,10 @@ class PostListSerializer(serializers.ModelSerializer):
         source='community.id',
         read_only=True
     )
+    community_slug = serializers.StringRelatedField(
+        source='community.slug',
+        read_only=True
+    )
     community_name = serializers.StringRelatedField(
         source='community.name',
         read_only=True
@@ -135,7 +139,7 @@ class PostListSerializer(serializers.ModelSerializer):
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
-                  'community_id', 'community_name', 'community_icon',
+                  'community_id', 'community_slug', 'community_name', 'community_icon',
                   'community_obj', 'media_data', 'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
@@ -152,6 +156,10 @@ class PostDetailSerializer(serializers.ModelSerializer):
         source='community.id',
         read_only=True
     )
+    community_slug = serializers.StringRelatedField(
+        source='community.slug',
+        read_only=True
+    )
     community_name = serializers.StringRelatedField(
         source='community.name',
         read_only=True
@@ -175,7 +183,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
-                  'community_id', 'community_name', 'community_icon',
+                  'community_id', 'community_slug', 'community_name', 'community_icon',
                   'community_obj', 'media_data',  'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')

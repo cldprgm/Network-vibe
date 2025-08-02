@@ -73,9 +73,13 @@ export default function PostListItems({ post }: { post: Post }) {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-xs text-secondary flex items-center">
-                                        <a href="#" onClick={(e) => e.stopPropagation()} className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400">
+                                        <Link
+                                            href={`communities/${currentPost.community_slug}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400"
+                                        >
                                             n/{currentPost.community_name}
-                                        </a>
+                                        </Link>
                                         • {new Date(currentPost.created).toLocaleDateString()}
                                     </p>
                                 </div>
