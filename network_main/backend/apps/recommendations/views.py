@@ -1,5 +1,5 @@
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
 
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -7,12 +7,17 @@ from django.utils import timezone
 from datetime import timedelta
 
 from apps.communities.models import Community
-from apps.communities.views import CommunityPagination
 from apps.communities.serializers import CommunityListSerializer
 
 
+class CommunityRecommendationPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 12
+
+
 class CommunityRecommendationView(generics.ListAPIView):
-    pagination_class = CommunityPagination
+    pagination_class = CommunityRecommendationPagination
     serializer_class = CommunityListSerializer
 
     def get_queryset(self):
@@ -22,8 +27,9 @@ class CommunityRecommendationView(generics.ListAPIView):
             since = timezone.now() - timedelta(days=3)
             queryset = (
                 Community.objects
-                .annotate(posts_last_days=Count('owned_posts', filter=Q(owned_posts__created__gte=since)))
-                .order_by('-posts_last_days')
+                .annotate(posts_last_days=Count('owned_posts', filter=Q(owned_posts__created__gte=since)),
+                          members_count=Count('members', distinct=True))
+                .order_by('-posts_last_days', '-members_count', '-pk')
                 .select_related('creator')
             )
             self._response_type = 'unauthenticated_recommendations'

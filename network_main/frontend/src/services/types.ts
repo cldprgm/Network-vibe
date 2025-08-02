@@ -21,6 +21,7 @@ export type Post = {
     media_data: any[];
     community_id: number;
     community_name: string;
+    community_slug: string;
     community_icon: string;
 };
 

@@ -50,7 +50,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ pos
 
   return (
     <div className="flex">
-      <div className="flex-[5] max-w-[865px] mx-auto p-5 sm:p-10 md:p-16">
+      <div className="flex-[5] max-w-[875px] mx-auto p-5 sm:p-10 md:p-16">
         <PostDetailItems postData={post} />
       </div>
       <div className="w-[250px] hidden xl:block"></div>
