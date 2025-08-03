@@ -48,6 +48,7 @@ export default function CommunityPostList({ initialPosts, initialNextPage, commu
     }, [nextPage, loading]);
 
     return (
+        // fix (community Link) in post
         <section className="mt-5 mx-auto sm:p-2 md:p-1">
             <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
             {posts.map(post => (
