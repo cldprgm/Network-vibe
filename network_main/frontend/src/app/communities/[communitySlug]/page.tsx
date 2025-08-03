@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import Image from "next/image";
 import CommunityActions from "@/components/communities/CommunityActions";
-import { Calendar, Lock, Globe, Flag } from "lucide-react";
+import { Calendar, Lock, Globe, Flag, Shield } from "lucide-react";
 import { Post } from "@/services/types";
 import CommunityPostList from '@/components/communities/CommunityPostList';
 
@@ -89,7 +89,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
     return (
         <div className="min-h-screen bg-gray-900 dark:bg-[var(--background)] text-gray-100 ">
             {/* Banner */}
-            <div className="relative h-64">
+            <div className="relative h-90 sm:h-64 md:h-90">
                 <Image
                     src={community.banner}
                     alt={`${community.name} banner`}
@@ -106,7 +106,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
         linear-gradient(
           to bottom,
           rgba(0, 0, 0, 0.2) 0%,
-          rgba(22, 26, 29, 0.6) 60%,
+          rgba(22, 26, 29, 0.4) 95%,
           rgba(22, 26, 29, 1) 100%
         )
     `,
@@ -163,12 +163,12 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                         <div className="text-sm text-gray-500">Created by u/{community.creator}</div>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                             <div className="text-center">
-                                <div className="text-white font-bold">15M</div>
+                                <div className="text-white font-bold">{community.members_count}</div>
                                 <div className="text-gray-400 text-xs">Members</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-white font-bold">2.4K</div>
-                                <div className="text-gray-400 text-xs">Online</div>
+                                <div className="text-gray-400 text-xs">Online(Not Working yet)</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-white font-bold">Top 1%</div>
@@ -181,14 +181,22 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                                 <Calendar className="w-4 h-4 mr-2" />
                                 <span>Created {formattedDate}</span>
                             </div>
-                            {/* fix later */}
                             <div className="flex items-center text-gray-400 text-sm">
                                 {community.visibility === "PRIVATE" ? (
                                     <Lock className="w-4 h-4 mr-2" />
+                                ) : community.visibility === "RESTRICTED" ? (
+                                    <Shield className="w-4 h-4 mr-2" />
                                 ) : (
                                     <Globe className="w-4 h-4 mr-2" />
                                 )}
-                                <span>{community.visibility === "PRIVATE" ? "Private" : "Public"} community</span>
+                                <span>
+                                    {community.visibility === "PRIVATE"
+                                        ? "Private"
+                                        : community.visibility === "RESTRICTED"
+                                            ? "Restricted"
+                                            : "Public"}{" "}
+                                    community
+                                </span>
                             </div>
                         </div>
                     </div>

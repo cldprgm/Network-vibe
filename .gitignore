@@ -176,5 +176,7 @@ cython_debug/
 *.jpeg
 *.png
 *.mp4
+*.webp
+*.webm
 !network_main/backend/media/uploads/community/icons/default_icon.png
 !network_main/backend/media/uploads/avatars/default.png

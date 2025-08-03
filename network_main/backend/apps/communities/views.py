@@ -59,8 +59,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
                     'members',
                     queryset=Membership.objects.filter(user=user),
                     to_attr='current_user_memberships'
-                )
-            ).annotate(
+                )).annotate(
                 is_member=Exists(
                     Membership.objects.filter(
                         user=user, community=OuterRef('pk'))
@@ -70,6 +69,9 @@ class CommunityViewSet(viewsets.ModelViewSet):
             queryset = queryset.annotate(
                 is_member=Value(False, output_field=BooleanField())
             )
+
+        if self.action != 'list':
+            queryset = queryset.prefetch_related('categories')
 
         return queryset
 
