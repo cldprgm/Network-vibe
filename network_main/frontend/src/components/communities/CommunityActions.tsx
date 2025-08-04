@@ -9,10 +9,9 @@ import { useRouter } from 'next/navigation';
 interface CommunityActionsProps {
     community: CommunityType;
     isMember: boolean;
-    creator: string;
 }
 
-export default function CommunityActions({ community, isMember, creator }: CommunityActionsProps) {
+export default function CommunityActions({ community, isMember }: CommunityActionsProps) {
     const router = useRouter();
     const [joined, setJoined] = useState(isMember);
     const [memberCount, setMemberCount] = useState(community.members_count);
@@ -57,6 +56,10 @@ export default function CommunityActions({ community, isMember, creator }: Commu
         }
     };
 
+    const handleManageClick = () => {
+        router.push(`${community.slug}/edit`);
+    };
+
     const primaryBtn = `cursor-pointer flex items-center gap-2 px-6 py-2 rounded-2xl font-semibold transition-transform \
     bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:scale-105 focus:outline-none \
     focus:ring-4 focus:ring-indigo-300 active:scale-95`;
@@ -69,6 +72,8 @@ export default function CommunityActions({ community, isMember, creator }: Commu
     focus:ring-gray-500`;
     const ghostBtn = `cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl text-gray-400 hover:text-white transition-colors \
     focus:outline-none focus:ring-2 focus:ring-gray-500`;
+
+    const canEditCommunity = community.current_user_permissions?.includes('edit_community');
 
     return (
         <div className="mt-8 flex flex-wrap justify-center gap-4 px-4">
@@ -107,9 +112,8 @@ export default function CommunityActions({ community, isMember, creator }: Commu
                 <span>{copied ? 'Copied!' : 'Share'}</span>
             </button>
 
-            {/* fix later */}
-            {creator === 'bebrawad' && (
-                <button className={ghostBtn} aria-label="Manage">
+            {canEditCommunity && (
+                <button onClick={handleManageClick} className={ghostBtn} aria-label="Manage">
                     <Settings size={18} />
                     <span>Manage</span>
                 </button>
