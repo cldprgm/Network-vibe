@@ -54,6 +54,8 @@ export type CommunityType = {
     status: string;
     is_member: boolean;
     members_count: number;
+    current_user_roles: string[];
+    current_user_permissions: string[];
 };
 
 export interface Category {

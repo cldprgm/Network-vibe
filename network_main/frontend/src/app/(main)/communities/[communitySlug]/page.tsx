@@ -135,7 +135,6 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
             <CommunityActions
                 community={community}
                 isMember={community.is_member}
-                creator={community.creator}
             />
 
             {/* Main Content */}
