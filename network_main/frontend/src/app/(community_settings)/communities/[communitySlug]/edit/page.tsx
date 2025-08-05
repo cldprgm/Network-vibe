@@ -42,10 +42,7 @@ export default async function CommunityEditPage({ params }: { params: Promise<{ 
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-10 px-4 mt-12">
-            <h1 className="text-3xl font-bold text-white mb-2">Manage Community</h1>
-            <p className="text-gray-400 mb-8">Settings for n/{community.name}</p>
-
+        <div className="mx-auto py-10 px-4 mt-10">
             <CommunityEditForm community={community} />
         </div>
     );
