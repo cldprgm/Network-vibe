@@ -253,8 +253,9 @@ class TestCommunityViewSet():
 
     def test_update_community_owner(self, authenticated_client_creator, community, membership_creator):
         url = reverse('community-detail', kwargs={'slug': community.slug})
-        data = {'description': 'updated'}
-        response = authenticated_client_creator.patch(url, data)
+        response = authenticated_client_creator.patch(
+            url, {'description': 'updated'}
+        )
         assert response.status_code == status.HTTP_200_OK
         community.refresh_from_db()
         assert community.description == 'updated'
@@ -279,6 +280,20 @@ class TestCommunityViewSet():
         response = authenticated_client_creator.delete(url)
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Community.objects.filter(pk=community.pk).exists()
+
+    def test_delete_community_not_owner(self, second_user, api_client, community):
+        login_url = reverse('login')
+        api_client.post(login_url, {
+            'email': 'second@example.com',
+            'password': 'secondpassword'
+        })
+        client2 = APIClient()
+        client2.cookies = api_client.cookies
+
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        response = client2.delete(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Community.objects.filter(pk=community.pk).exists()
 
     def test_delete_community_not_authenticated(self, api_client, community):
         url = reverse('community-detail', kwargs={'slug': community.slug})

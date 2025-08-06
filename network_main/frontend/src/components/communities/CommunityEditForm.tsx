@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Cropper from 'react-easy-crop';
 import { Point, Area } from 'react-easy-crop';
 import { CommunityType } from '@/services/types';
+import { updateCommunity } from '@/services/api';
 import { Eye, Shield, Lock, UploadCloud, Save, CheckCircle, ImageIcon } from 'lucide-react';
 import getCroppedImg from '@/components/sidebar/cropImage';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
@@ -13,15 +14,6 @@ import CommunityEditSidebar from './CommunityEditSidebar';
 
 interface CommunityEditFormProps {
     community: CommunityType;
-}
-
-async function updateCommunity(slug: string, data: FormData) {
-    console.log('Updating community...', { slug });
-    for (let [key, value] of data.entries()) {
-        console.log(key, value);
-    }
-
-    alert("Community update logic is not implemented yet. Check the console for form data.");
 }
 
 const Card = ({ children }: { children: React.ReactNode }) => (
@@ -208,8 +200,8 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
         if (description !== community.description) formData.append('description', description);
         if (isNsfw !== community.is_nsfw) formData.append('is_nsfw', String(isNsfw));
         if (visibility !== community.visibility) formData.append('visibility', visibility);
-        if (iconFile) formData.append('icon', iconFile);
-        if (bannerFile) formData.append('banner', bannerFile);
+        if (iconFile) formData.append('icon_upload', iconFile);
+        if (bannerFile) formData.append('banner_upload', bannerFile);
 
         if (formData.entries().next().done) {
             setLoading(false);
@@ -217,8 +209,8 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
             return;
         }
         try {
-            await updateCommunity(community.slug, formData);
-            router.push(`/communities/${community.slug}`);
+            const updatedCommunity = await updateCommunity(community.slug, formData);
+            router.push(`/communities/${updatedCommunity.slug}`);
             router.refresh();
         } catch (error) {
             console.error(error);
