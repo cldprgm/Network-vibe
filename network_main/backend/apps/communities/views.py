@@ -33,7 +33,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'delete']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsCommunityCreator()]
 
         if self.action == 'invite':

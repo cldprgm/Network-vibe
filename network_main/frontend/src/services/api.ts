@@ -185,5 +185,28 @@ export async function leaveCommunity(community_id: number) {
     }
 }
 
+export const updateCommunity = async (
+    slug: string,
+    data: FormData
+): Promise<CommunityType> => {
+    try {
+        const response = await fetch(`${baseUrl}/communities/${slug}/`, {
+            method: 'PATCH',
+            credentials: 'include',
+            body: data,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update community');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Update community error:', error);
+        throw error;
+    }
+};
+
 
 
