@@ -94,7 +94,7 @@ class Community(models.Model):
         indexes = [models.Index(fields=['slug', 'visibility'])]
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not self.slug or Community.objects.filter(pk=self.pk, name=self.name).exists() is False:
             self.slug = unique_slugify(self, self.name)
         super().save(*args, **kwargs)
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, ChangeEvent, FormEvent } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Cropper from 'react-easy-crop';
@@ -11,10 +11,16 @@ import { Eye, Shield, Lock, UploadCloud, Save, CheckCircle, ImageIcon } from 'lu
 import getCroppedImg from '@/components/sidebar/cropImage';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import CommunityEditSidebar from './CommunityEditSidebar';
+import useDebounce from '../sidebar/hooks/useDebounce';
+import axios from 'axios';
+
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 
 interface CommunityEditFormProps {
     community: CommunityType;
 }
+
 
 const Card = ({ children }: { children: React.ReactNode }) => (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/50 rounded-2xl shadow-sm">
@@ -141,6 +147,50 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [isCropperOpen, setIsCropperOpen] = useState(false);
 
+    const [nameError, setNameError] = useState<string | null>(null);
+    const [isNameChecking, setIsNameChecking] = useState(false);
+    const debouncedName = useDebounce(name, 1000);
+
+    useEffect(() => {
+        const validateName = async () => {
+            if (debouncedName.trim().length === 0) {
+                setNameError(null);
+                return;
+            }
+
+            if (debouncedName.trim().length < 4) {
+                setNameError('Name must be at least 4 characters long.');
+                return;
+            }
+
+            const nameRegex = /^[a-zA-Z0-9_а-яА-Я]+$/;
+            if (!nameRegex.test(debouncedName)) {
+                setNameError('Name can only contain letters, numbers, and underscores.');
+                return;
+            }
+
+            if (debouncedName !== community.name) {
+                setIsNameChecking(true);
+                setNameError(null);
+                try {
+                    const response = await axios.get(`${baseUrl}/communities/check-community-name/`, {
+                        params: { name: debouncedName }
+                    });
+                    if (response.data.is_taken) {
+                        setNameError(`"n/${name}" is already taken`);
+                    }
+                } catch (error) {
+                    console.error("Community name check error:", error);
+                    setNameError("Couldn't verify the name. Try again later.");
+                } finally {
+                    setIsNameChecking(false);
+                }
+            }
+        };
+
+        validateName();
+    }, [debouncedName, community.name]);
+
     const validateImage = (file: File, maxSizeMB: number, setError: (error: string | null) => void): boolean => {
         setError(null);
         const allowedTypes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
@@ -155,19 +205,36 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
         return true;
     };
 
+    const handleCloseCropper = () => {
+        setIsCropperOpen(false);
+        setUncroppedBanner(null);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+    };
+
     const handleIconChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && validateImage(file, 7, setIconError)) {
-            setIconFile(file);
-            setIconPreview(URL.createObjectURL(file));
+        if (file) {
+            if (validateImage(file, 7, setIconError)) {
+                setIconFile(file);
+                setIconPreview(URL.createObjectURL(file));
+            } else {
+                setIconFile(null);
+                setIconPreview(null);
+            }
         }
     };
 
     const handleBannerChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && validateImage(file, 10, setBannerError)) {
-            setUncroppedBanner(URL.createObjectURL(file));
-            setIsCropperOpen(true);
+        if (file) {
+            if (validateImage(file, 10, setBannerError)) {
+                setUncroppedBanner(URL.createObjectURL(file));
+                setIsCropperOpen(true);
+            } else {
+                setBannerFile(null);
+                setBannerPreview(null);
+            }
             e.target.value = '';
         }
     };
@@ -188,7 +255,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
             console.error(e);
             setBannerError("Could not crop the image. Please try again.");
         } finally {
-            setIsCropperOpen(false);
+            handleCloseCropper();
         }
     }, [croppedAreaPixels, uncroppedBanner]);
 
@@ -219,7 +286,14 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
         }
     };
 
-    const isFormValid = name.trim().length >= 4 && description.trim().length >= 4 && !iconError && !bannerError;
+    const isFormValid =
+        name.trim().length >= 4 &&
+        name.trim().length <= 21 &&
+        description.trim().length >= 4 &&
+        !nameError &&
+        !isNameChecking &&
+        !iconError &&
+        !bannerError;
 
     return (
         <>
@@ -236,7 +310,10 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                             <button
                                 type="submit"
                                 disabled={loading || !isFormValid}
-                                className="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all disabled:bg-indigo-500/50 disabled:cursor-not-allowed"
+                                className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all ${loading || !isFormValid
+                                        ? 'bg-indigo-500/50 cursor-not-allowed'
+                                        : 'bg-indigo-600 hover:bg-indigo-700'
+                                    }`}
                             >
                                 {loading ? 'Saving...' : <><Save size={18} /> Save Changes</>}
                             </button>
@@ -248,22 +325,44 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                     <CardHeader title="General" description="Basic information about your community." />
                                     <CardContent>
                                         <div>
-                                            <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Community Name</label>
+                                            <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                Community Name<span className="text-red-500 ml-1">*</span>
+                                            </label>
                                             <input
-                                                type="text" id="name" value={name} minLength={4}
+                                                type="text"
+                                                id="name"
+                                                value={name}
+                                                minLength={4}
+                                                maxLength={21}
                                                 onChange={e => setName(e.target.value)}
-                                                className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-indigo-500"
+                                                className={`w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border rounded-lg focus:ring-2 ${name.trim().length > 0 && name.trim().length < 4
+                                                    ? 'border-red-500 focus:ring-red-500'
+                                                    : 'border-zinc-300 dark:border-zinc-700 focus:ring-indigo-500'
+                                                    }`}
                                             />
-                                            {name.trim().length < 4 && <p className="text-xs text-red-500 mt-2">Name must be at least 4 characters long.</p>}
+                                            <div className="text-sm mt-1 h-4 flex justify-between">
+                                                {nameError && <p className="text-xs text-red-500">{nameError}</p>}
+                                                <p className="text-zinc-500 ml-auto">{21 - name.length} characters remaining</p>
+                                            </div>
                                         </div>
                                         <div>
-                                            <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Description</label>
+                                            <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                Description<span className="text-red-500 ml-1">*</span>
+                                            </label>
                                             <textarea
-                                                id="description" value={description} minLength={4}
-                                                onChange={e => setDescription(e.target.value)} rows={4}
+                                                id="description"
+                                                value={description}
+                                                minLength={4}
+                                                maxLength={420}
+                                                onChange={e => setDescription(e.target.value)}
+                                                rows={4}
                                                 className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-indigo-500"
                                             />
-                                            {description.trim().length < 4 && <p className="text-xs text-red-500 mt-2">Description must be at least 4 characters long.</p>}
+                                            <div className="text-sm mt-1 h-4 flex justify-between">
+                                                {description.trim().length < 4 && <p className="text-xs text-red-500">Description must be at least 4 characters long.</p>}
+                                                <p className="text-zinc-500 ml-auto">{420 - description.length} characters remaining</p>
+
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -275,11 +374,30 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                     <CardContent>
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                                             <div className="space-y-2 text-center">
-                                                <ImageUploader label="Icon" currentImage={community.icon} preview={iconPreview} onFileChange={handleIconChange} error={iconError} />
+                                                <ImageUploader
+                                                    label="Icon"
+                                                    currentImage={community.icon}
+                                                    preview={iconPreview}
+                                                    onFileChange={handleIconChange}
+                                                    error={iconError}
+                                                />
+                                                {iconError && (
+                                                    <p className="text-xs text-red-500 mt-1">{iconError}</p>
+                                                )}
                                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 px-1">max 7MB.</p>
                                             </div>
                                             <div className="space-y-2">
-                                                <ImageUploader label="Banner" currentImage={community.banner} preview={bannerPreview} onFileChange={handleBannerChange} error={bannerError} aspectRatio="16 / 5" />
+                                                <ImageUploader
+                                                    label="Banner"
+                                                    currentImage={community.banner}
+                                                    preview={bannerPreview}
+                                                    onFileChange={handleBannerChange}
+                                                    error={bannerError}
+                                                    aspectRatio="16 / 5"
+                                                />
+                                                {bannerError && (
+                                                    <p className="text-xs text-red-500 mt-1">{bannerError}</p>
+                                                )}
                                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 px-1">max 10MB.</p>
                                             </div>
                                         </div>
@@ -322,7 +440,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                 <div></div>
             </div>
 
-            <Dialog open={isCropperOpen} onClose={() => setIsCropperOpen(false)} className="relative z-50">
+            <Dialog open={isCropperOpen} onClose={handleCloseCropper} className="relative z-50">
                 <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
                     <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-2xl">
@@ -345,7 +463,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                             </div>
                             <div className="flex justify-end gap-3">
                                 <button
-                                    type="button" onClick={() => setIsCropperOpen(false)}
+                                    type="button" onClick={handleCloseCropper}
                                     className="px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
                                 >
                                     Cancel

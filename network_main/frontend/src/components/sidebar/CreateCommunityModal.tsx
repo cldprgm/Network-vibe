@@ -7,7 +7,7 @@ import { Dialog, DialogTitle, Description, DialogPanel } from '@headlessui/react
 import { CommunityType, Category } from '@/services/types';
 import { getCategoriesTree } from '@/services/api';
 import CommunityCreationPreview from './CommunityCreationPreview';
-import { Eye, Lock, Shield, UploadCloud, RotateCw, X } from 'lucide-react';
+import { Eye, Lock, Shield } from 'lucide-react';
 import useDebounce from './hooks/useDebounce';
 import { api } from '@/services/auth';
 import axios from 'axios';

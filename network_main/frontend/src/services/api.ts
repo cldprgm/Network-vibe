@@ -190,18 +190,14 @@ export const updateCommunity = async (
     data: FormData
 ): Promise<CommunityType> => {
     try {
-        const response = await fetch(`${baseUrl}/communities/${slug}/`, {
-            method: 'PATCH',
-            credentials: 'include',
-            body: data,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update community');
-        }
-
-        return response.json();
+        const response = await api.patch(`/communities/${slug}/`, data,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            },
+        );
+        return response.data;
     } catch (error) {
         console.error('Update community error:', error);
         throw error;
