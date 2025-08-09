@@ -140,6 +140,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [iconError, setIconError] = useState<string | null>(null);
     const [bannerError, setBannerError] = useState<string | null>(null);
+    const [showNoChangesMessage, setShowNoChangesMessage] = useState(false);
 
     const [uncroppedBanner, setUncroppedBanner] = useState<string | null>(null);
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -272,7 +273,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
 
         if (formData.entries().next().done) {
             setLoading(false);
-            alert("No changes to save.");
+            setShowNoChangesMessage(true);
             return;
         }
         try {
@@ -285,6 +286,10 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        setShowNoChangesMessage(false);
+    }, [name, description, isNsfw, visibility, iconFile, bannerFile]);
 
     const isFormValid =
         name.trim().length >= 4 &&
@@ -307,16 +312,23 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                 <h1 className="text-3xl font-bold text-white">Community Settings</h1>
                                 <p className="text-gray-400 mt-1">Editing settings for n/{community.name}</p>
                             </div>
-                            <button
-                                type="submit"
-                                disabled={loading || !isFormValid}
-                                className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all ${loading || !isFormValid
+                            <div className="flex flex-col items-end">
+                                <button
+                                    type="submit"
+                                    disabled={loading || !isFormValid}
+                                    className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all ${loading || !isFormValid
                                         ? 'bg-indigo-500/50 cursor-not-allowed'
                                         : 'bg-indigo-600 hover:bg-indigo-700'
-                                    }`}
-                            >
-                                {loading ? 'Saving...' : <><Save size={18} /> Save Changes</>}
-                            </button>
+                                        }`}
+                                >
+                                    {loading ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+                                </button>
+                                {showNoChangesMessage && (
+                                    <p className=" text-red-500 dark:text-red-400 mt-2">
+                                        No changes to save.
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-8">
