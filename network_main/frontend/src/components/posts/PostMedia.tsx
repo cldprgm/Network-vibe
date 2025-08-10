@@ -3,6 +3,7 @@
 import { Post, Media } from "@/services/types";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { getVideoVisibilityManager } from "./VideoVisibilityManager";
 
 export default function PostMedia({ post }: { post: Post }) {
   if (!post.media_data?.length) return null;
@@ -161,6 +162,21 @@ export default function PostMedia({ post }: { post: Post }) {
 
   const activeAspect = containerAspectRatio ?? getAspectRatio(currentMedia);
 
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (!currentMedia || currentMedia.media_type !== 'video') return;
+
+    const manager = getVideoVisibilityManager();
+    const unregister = manager.register(videoRef.current);
+
+    return () => {
+      unregister();
+      try { videoRef.current?.pause(); } catch (err) { }
+    };
+  }, [currentMedia?.file, currentMedia?.media_type, currentIndex]);
+
+
   return (
     <div className="mb-2 relative w-full" onClick={(e) => e.stopPropagation()}>
       <div
@@ -194,8 +210,11 @@ export default function PostMedia({ post }: { post: Post }) {
           </>
         ) : (
           <video
+            ref={videoRef}
             controls
             className="w-full h-full object-contain"
+            muted
+            playsInline
             src={currentMedia.file}
           />
         )}
