@@ -15,6 +15,7 @@ export default function PostMedia({ post }: { post: Post }) {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   const [containerAspectRatio, setContainerAspectRatio] = useState<number | null>(null);
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
 
   const currentMedia = mediaItems[currentIndex];
 
@@ -90,6 +91,44 @@ export default function PostMedia({ post }: { post: Post }) {
   }, [post.media_data?.length]);
 
   useEffect(() => {
+    if (!currentMedia || currentMedia.media_type !== "video" || !currentMedia.file) {
+      setVideoAspectRatio(null);
+      return;
+    }
+
+    let cancelled = false;
+    const vid = document.createElement("video");
+    vid.preload = "metadata";
+    vid.src = currentMedia.file;
+
+    const onLoaded = () => {
+      if (cancelled) return;
+      const w = vid.videoWidth || 0;
+      const h = vid.videoHeight || 0;
+      if (w && h) {
+        setVideoAspectRatio(w / h);
+      } else {
+        setVideoAspectRatio(parseAspectRatio(currentMedia.aspect_ratio, "video") ?? (16 / 9));
+      }
+    };
+
+    const onError = () => {
+      if (cancelled) return;
+      setVideoAspectRatio(parseAspectRatio(currentMedia.aspect_ratio, "video") ?? (16 / 9));
+    };
+
+    vid.addEventListener("loadedmetadata", onLoaded);
+    vid.addEventListener("error", onError);
+
+    return () => {
+      cancelled = true;
+      vid.removeEventListener("loadedmetadata", onLoaded);
+      vid.removeEventListener("error", onError);
+      try { vid.src = ""; } catch { }
+    };
+  }, [currentMedia?.file, currentMedia?.media_type]);
+
+  useEffect(() => {
     if (!isFullscreen || !currentMedia || currentMedia.media_type !== "image") return;
 
     const img = new window.Image();
@@ -160,7 +199,10 @@ export default function PostMedia({ post }: { post: Post }) {
     return "min-w-[90vw] max-w-[90vw] max-h-[90vh]";
   };
 
-  const activeAspect = containerAspectRatio ?? getAspectRatio(currentMedia);
+  const imageAspect = containerAspectRatio ?? getAspectRatio(currentMedia);
+  const videoAspect = videoAspectRatio ?? (currentMedia?.aspect_ratio ? parseAspectRatio(currentMedia.aspect_ratio, "video") : 16 / 9);
+
+  const containerAspectForRender = currentMedia?.media_type === "video" ? videoAspect : imageAspect;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
@@ -181,7 +223,11 @@ export default function PostMedia({ post }: { post: Post }) {
     <div className="mb-2 relative w-full" onClick={(e) => e.stopPropagation()}>
       <div
         className="relative w-full border border-[var(--border)] rounded-2xl overflow-hidden bg-black"
-        style={{ aspectRatio: activeAspect, maxHeight: "560px" }}
+        style={{
+          aspectRatio: containerAspectForRender,
+          maxHeight: "560px",
+          ...(currentMedia?.media_type === "video" ? { minHeight: "300px" } : {})
+        }}
       >
         {currentMedia.media_type === "image" ? (
           <>
