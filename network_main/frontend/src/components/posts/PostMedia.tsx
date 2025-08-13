@@ -17,7 +17,22 @@ export default function PostMedia({ post }: { post: Post }) {
   const [containerAspectRatio, setContainerAspectRatio] = useState<number | null>(null);
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
 
+  const [showControls, setShowControls] = useState(false);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const currentMedia = mediaItems[currentIndex];
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [currentMedia]);
+
+  useEffect(() => {
+    setShowControls(false);
+  }, [currentMedia]);
 
   const parseAspectRatio = (aspect?: string, mediaType?: string) => {
     if (!aspect) {
@@ -179,6 +194,15 @@ export default function PostMedia({ post }: { post: Post }) {
     };
   }, [isFullscreen, mediaItems.length]);
 
+  const handleVideoPlay = () => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(true);
+    }, 600);
+  };
+
   const getSizeClass = () => {
     if (!imageSize.width || !imageSize.height) return "object-contain max-w-[90vw] max-h-[90vh]";
 
@@ -257,7 +281,8 @@ export default function PostMedia({ post }: { post: Post }) {
         ) : (
           <video
             ref={videoRef}
-            controls
+            controls={showControls}
+            onPlay={handleVideoPlay}
             className="w-full h-full object-contain"
             muted
             playsInline
