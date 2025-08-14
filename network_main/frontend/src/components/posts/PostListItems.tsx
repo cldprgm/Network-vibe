@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { votePost, deleteVotePost } from '@/services/api';
 import { Post } from '@/services/types';
 import PostRating from './PostRating';
-import PostMedia from './PostMedia';
+import PostMedia from './media/PostMedia';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
 import AuthModalController from '../auth/AuthModalController';
