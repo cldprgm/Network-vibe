@@ -1,7 +1,7 @@
 'use client';
 
 import { deleteVotePost, votePost, } from "@/services/api";
-import PostMedia from "./PostMedia";
+import PostMedia from "./media/PostMedia";
 import { PostActions } from "./PostActions";
 import CommentsSection from "./comments/CommentsSection";
 import React, { useState } from "react";
