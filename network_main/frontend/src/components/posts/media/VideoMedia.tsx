@@ -46,7 +46,7 @@ export default function VideoMedia({ media }: VideoMediaProps) {
 
     return (
         <video
-            title="Post video content"
+            aria-label="Post video content"
             ref={videoRef}
             controls={showControls}
             onPlay={handleVideoPlay}
