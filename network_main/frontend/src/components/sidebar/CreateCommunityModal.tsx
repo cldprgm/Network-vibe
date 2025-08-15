@@ -298,7 +298,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     return (
         <>
             <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 overflow-y-auto">
-                <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+                <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
                 <div className="flex items-center justify-center min-h-screen p-4">
                     <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-4xl mx-auto transition-all duration-300 ease-in-out">
                         <form onSubmit={handleSubmit}>
