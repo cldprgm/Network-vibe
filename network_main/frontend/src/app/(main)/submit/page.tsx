@@ -5,8 +5,9 @@ import { useDropzone, FileRejection } from 'react-dropzone';
 import { getCommunities } from '@/services/api';
 import { CommunityType } from '@/services/types';
 import { apiCreatePost } from '@/services/api';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getCommunityBySlug } from '@/services/api';
+import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
 
 interface FileWithPreview extends File {
     preview: string;
@@ -24,10 +25,18 @@ export default function CreatePost() {
     const searchParams = useSearchParams();
     const slug = searchParams.get('communitySlug');
 
+    const router = useRouter();
+
     const titleRef = useRef<HTMLTextAreaElement>(null);
     const contentRef = useRef<HTMLTextAreaElement>(null);
 
     const [communities, setCommunities] = useState<CommunityType[]>([]);
+
+    const filesRef = useRef<FileWithPreview[]>([]);
+
+    useEffect(() => {
+        filesRef.current = files;
+    }, [files]);
 
     useEffect(() => {
         const fetchCommunities = async () => {
@@ -53,7 +62,6 @@ export default function CreatePost() {
         el.style.height = 'auto';
         el.style.height = `${el.scrollHeight}px`;
     };
-
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const mapped = acceptedFiles.map(file => {
@@ -81,6 +89,14 @@ export default function CreatePost() {
         },
     });
 
+    const removeFile = (index: number) => {
+        setFiles(prev => {
+            const newFiles = prev.filter((_, i) => i !== index);
+            URL.revokeObjectURL(prev[index].preview);
+            return newFiles;
+        });
+    };
+
     const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setTitle(e.target.value);
         adjustHeight(titleRef.current);
@@ -97,9 +113,11 @@ export default function CreatePost() {
         setDropdownOpen(false);
     };
 
-    useEffect(() => () => {
-        files.forEach(file => URL.revokeObjectURL(file.preview));
-    }, [files]);
+    useEffect(() => {
+        return () => {
+            filesRef.current.forEach(file => URL.revokeObjectURL(file.preview));
+        };
+    }, []);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -116,7 +134,6 @@ export default function CreatePost() {
             });
 
             const newPost = await apiCreatePost(formData);
-            console.log('Created post:', newPost);
             setTitle('');
             setContent('');
             setCommunity(null);
@@ -124,13 +141,20 @@ export default function CreatePost() {
             adjustHeight(titleRef.current);
             adjustHeight(contentRef.current);
 
+            const postSlug = newPost?.slug;
+
+            if (postSlug) {
+                router.push(`/${postSlug}`);
+                return;
+            }
+
+            router.push('/');
+
         } catch (err: any) {
             console.error('Error creating post: ', err.message)
         } finally {
             setLoading(false);
         }
-
-
     };
 
     const isTitleValid = title.trim().length >= 5;
@@ -145,7 +169,7 @@ export default function CreatePost() {
                         <button
                             type="button"
                             onClick={toggleDropdown}
-                            className="flex cursor-pointer peer block text-left rounded-3xl border dark:border-[var(--border)] p-3 bg-transparent"
+                            className="flex cursor-pointer peer block text-left rounded-3xl border dark:border-[var(--border)] px-4 py-3 bg-transparent"
                         >
                             {community ? (
                                 <>
@@ -159,7 +183,7 @@ export default function CreatePost() {
                             ) : (
                                 <span>Select a community</span>
                             )}
-                            <svg className="ml-2" fill="currentColor" height="20" viewBox="0 0 20 16" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M10 13.02a.755.755 0 0 1-.53-.22L4.912 8.242A.771.771 0 0 1 4.93 7.2a.771.771 0 0 1 1.042-.018L10 11.209l4.028-4.027a.771.771 0 0 1 1.042.018.771.771 0 0 1 .018 1.042L10.53 12.8a.754.754 0 0 1-.53.22Z"></path></svg>
+                            <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </button>
                         {dropdownOpen && (
                             <ul className="ml-3 absolute z-10 mt-1 bg-white dark:bg-gray-600 border dark:border-[var(--border)] rounded-2xl max-h-60 overflow-auto shadow-lg">
@@ -187,11 +211,12 @@ export default function CreatePost() {
                                 role="tab"
                                 aria-selected={activeTab === tab}
                                 onClick={() => setActiveTab(tab as any)}
-                                className={`cursor-pointer px-6 py-2 -mb-px font-medium ${activeTab === tab
-                                    ? 'border-b-2 border-blue-400 text-gray-300'
+                                className={`cursor-pointer flex px-6 py-2 -mb-px font-medium ${activeTab === tab
+                                    ? 'border-b-2 border-blue-500 text-gray-300'
                                     : 'text-gray-500'
                                     }`}
                             >
+                                {tab === 'TEXT' ? <Type className="w-5 h-5 mr-2" /> : <ImageIcon className="w-5 h-5 mr-2" />}
                                 {tab === 'TEXT' ? 'Text' : 'Media'}
                             </button>
                         ))}
@@ -259,28 +284,37 @@ export default function CreatePost() {
                             <>
                                 <div
                                     {...getRootProps()}
-                                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 h-48 rounded-2xl p-6 text-center cursor-pointer flex flex-col items-center justify-center"
+                                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 h-48 rounded-xl p-8 text-center cursor-pointer flex flex-col items-center justify-center hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                                 >
                                     <input {...getInputProps()} />
-                                    <p>{isDragActive ? 'Drop files here...' : "Drag 'n' drop media here, or click to select"}</p>
+                                    <Upload className="w-10 h-10 mb-3 text-gray-400 dark:text-gray-500" />
+                                    <p className="text-gray-600 dark:text-gray-300 font-medium">{isDragActive ? 'Drop files here...' : "Drag 'n' drop media here, or click to select"}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Supported: PNG, JPG, WEBP, GIF, MP4, WEBM</p>
                                 </div>
                                 {files.length > 0 && (
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
                                         {files.map((file, idx) => (
-                                            <div key={idx} className="relative">
+                                            <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-gray-300 dark:border-gray-600 shadow-md">
                                                 {file.type.startsWith('image') ? (
-                                                    <img src={file.preview} alt={file.name} className="w-full h-auto rounded" />
+                                                    <img src={file.preview} alt={file.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <video src={file.preview} controls className="w-full h-auto rounded" />
+                                                    <video src={file.preview} controls className="w-full h-full object-cover" />
                                                 )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFile(idx)}
+                                                    className="cursor-pointer absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                                 {fileRejections.length > 0 && (
-                                    <aside>
-                                        <h4 className="mt-4 font-medium text-red-600">Rejected files</h4>
-                                        <ul className="list-disc ml-5 text-sm text-red-500">
+                                    <aside className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                                        <h4 className="font-medium text-red-600 dark:text-red-400">Rejected files</h4>
+                                        <ul className="list-disc ml-5 text-sm text-red-500 dark:text-red-300">
                                             {fileRejections.map(({ file, errors }: FileRejection, i) => (
                                                 <li key={i}>
                                                     {file.name} - {file.size} bytes
@@ -294,7 +328,8 @@ export default function CreatePost() {
                                         </ul>
                                     </aside>
                                 )}
-                            </>)}
+                            </>
+                        )}
 
                         <div className="flex justify-end">
                             <button
@@ -309,7 +344,7 @@ export default function CreatePost() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={!canSubmit}
+                                disabled={!canSubmit || loading}
                                 className={`ml-4 px-4 py-2 font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 
                             ${canSubmit
                                         ? 'cursor-pointer bg-blue-600 text-white hover:bg-blue-700'
