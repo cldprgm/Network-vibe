@@ -31,10 +31,16 @@ export default function CommunityCreationPreview({ name, description, iconPrevie
                 </p>
 
                 <div className="flex space-x-2 mt-auto">
-                    <button className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold cursor-not-allowed">
+                    <button
+                        type='button'
+                        className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold cursor-not-allowed"
+                    >
                         Join
                     </button>
-                    <button className="bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 p-2 rounded-full cursor-not-allowed">
+                    <button
+                        type='button'
+                        className="bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 p-2 rounded-full cursor-not-allowed"
+                    >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
                     </button>
                 </div>
