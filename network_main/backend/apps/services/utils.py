@@ -65,3 +65,9 @@ def validate_magic_mime(value):
 
     if mime_type not in ALLOWED_MIME_TYPES.get(main_type, []):
         raise ValidationError(f'Invalid file type: {mime_type}')
+
+
+def validate_files_length(values):
+    max_files = 5
+    if len(values) > max_files:
+        raise ValidationError(f'You can upload no more than {max_files} files')

@@ -4,12 +4,11 @@ from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 
 from bleach import clean
-from collections import defaultdict
 
 from apps.communities.models import Community
 from apps.ratings.models import Rating
 
-from apps.services.utils import validate_magic_mime, validate_file_size
+from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
 
 from .models import Post, Comment, Media
 
@@ -197,6 +196,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
     #     return clean(value, tags=[], attributes={}, strip=True)
 
     def validate_media_files(self, media_files):
+        validate_files_length(media_files)
         for file in media_files:
             validate_file_size(file)
             validate_magic_mime(file)
@@ -209,6 +209,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             Media.objects.create(post=post, file=file)
         return post
 
+    # upgrade later
     def update(self, instance, validated_data):
         media_files = validated_data.pop('media_files', [])
         post = super().update(instance, validated_data)

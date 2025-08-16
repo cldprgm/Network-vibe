@@ -20,6 +20,7 @@ export default function CreatePost() {
     const [community, setCommunity] = useState<CommunityType | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
     const [files, setFiles] = useState<FileWithPreview[]>([]);
+    const [rejections, setRejections] = useState<FileRejection[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
     const searchParams = useSearchParams();
@@ -63,20 +64,31 @@ export default function CreatePost() {
         el.style.height = `${el.scrollHeight}px`;
     };
 
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        const mapped = acceptedFiles.map(file => {
+    const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+        const remaining = 5 - files.length;
+        const toAdd = acceptedFiles.slice(0, Math.max(0, remaining));
+        const extras = acceptedFiles.slice(toAdd.length);
+
+        const mappedToAdd = toAdd.map(file => {
             const f = file as FileWithPreview;
             f.preview = URL.createObjectURL(file);
             return f;
         });
-        setFiles(prev => [...prev, ...mapped]);
-    }, []);
+
+        setFiles(prev => [...prev, ...mappedToAdd]);
+
+        const extraRejections: FileRejection[] = extras.map(file => ({
+            file,
+            errors: [{ code: 'too-many-files', message: 'Maximum of 5 files allowed' }]
+        }));
+
+        setRejections([...rejectedFiles, ...extraRejections]);
+    }, [files]);
 
     const {
         getRootProps,
         getInputProps,
         isDragActive,
-        fileRejections,
     } = useDropzone({
         onDrop,
         accept: {
@@ -289,7 +301,7 @@ export default function CreatePost() {
                                     <input {...getInputProps()} />
                                     <Upload className="w-10 h-10 mb-3 text-gray-400 dark:text-gray-500" />
                                     <p className="text-gray-600 dark:text-gray-300 font-medium">{isDragActive ? 'Drop files here...' : "Drag 'n' drop media here, or click to select"}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Supported: PNG, JPG, WEBP, GIF, MP4, WEBM</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Supported: PNG, JPG, WEBP, GIF, MP4, WEBM. Max 5 files.</p>
                                 </div>
                                 {files.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
@@ -311,11 +323,11 @@ export default function CreatePost() {
                                         ))}
                                     </div>
                                 )}
-                                {fileRejections.length > 0 && (
+                                {rejections.length > 0 && (
                                     <aside className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
                                         <h4 className="font-medium text-red-600 dark:text-red-400">Rejected files</h4>
                                         <ul className="list-disc ml-5 text-sm text-red-500 dark:text-red-300">
-                                            {fileRejections.map(({ file, errors }: FileRejection, i) => (
+                                            {rejections.map(({ file, errors }: FileRejection, i) => (
                                                 <li key={i}>
                                                     {file.name} - {file.size} bytes
                                                     <ul className="ml-5 list-disc">

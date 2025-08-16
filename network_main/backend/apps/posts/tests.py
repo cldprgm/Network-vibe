@@ -1,6 +1,9 @@
 import pytest
+import io
+
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -113,6 +116,28 @@ class TestPostView:
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert not Post.objects.filter(title='newtestpost').exists()
+
+    def test_create_post_with_too_many_media_files(self, authenticated_client, community):
+        files = []
+        for i in range(6):
+            file_content = io.BytesIO(b"dummy data")
+            files.append(
+                SimpleUploadedFile(
+                    f"test{i}.jpg", file_content.getvalue(), content_type="image/jpeg")
+            )
+
+        data = {
+            'title': 'post with too many files',
+            'community_obj': community.id,
+            'media_files': files
+        }
+
+        response = authenticated_client.post(
+            self.url, data, format='multipart'
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert not Post.objects.filter(
+            title='post with too many files').exists()
 
     def test_retrieve_post(self, api_client, post):
         url = reverse('post-detail', kwargs={'slug': 'testpost'})
