@@ -1,14 +1,16 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { votePost, deleteVotePost } from '@/services/api';
-import { Post } from '@/services/types';
+import { Post, CommunityType } from '@/services/types';
 import PostRating from './PostRating';
 import PostMedia from './media/PostMedia';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
 import AuthModalController from '../auth/AuthModalController';
+import CommunityHoverCard from './CommunityHoverCard';
+import { getCommunityBySlug, joinCommunity } from '@/services/api';
 import Image from 'next/image';
 
 export default function PostListItems({ post }: { post: Post }) {
@@ -20,6 +22,13 @@ export default function PostListItems({ post }: { post: Post }) {
     const [currentPost, setCurrentPost] = useState(post);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const router = useRouter();
+
+    const [hoveredCommunity, setHoveredCommunity] = useState<CommunityType | null>(null);
+    const [isCardLoading, setIsCardLoading] = useState(false);
+    const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
+    const enterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {
@@ -40,6 +49,57 @@ export default function PostListItems({ post }: { post: Post }) {
         });
     };
 
+    const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+        }
+
+        const targetElement = event.currentTarget;
+
+        enterTimeoutRef.current = setTimeout(async () => {
+            const rect = targetElement.getBoundingClientRect();
+            setCardPosition({
+                top: rect.bottom + window.scrollY + 5,
+                left: rect.left + window.scrollX,
+            });
+            setIsCardLoading(true);
+
+            try {
+                const communityData = await getCommunityBySlug(post.community_slug);
+                setHoveredCommunity(communityData);
+            } catch (error) {
+                console.error("Failed to fetch community data:", error);
+                setCardPosition(null);
+            } finally {
+                setIsCardLoading(false);
+            }
+        }, 700);
+    };
+
+    const handleMouseLeave = () => {
+        if (enterTimeoutRef.current) {
+            clearTimeout(enterTimeoutRef.current);
+        }
+        leaveTimeoutRef.current = setTimeout(() => {
+            setCardPosition(null);
+            setHoveredCommunity(null);
+        }, 400);
+    };
+
+    const handleJoinCommunity = async (communityId: number) => {
+        requireAuth(async () => {
+            try {
+                await joinCommunity(communityId);
+                if (hoveredCommunity) {
+                    setHoveredCommunity({ ...hoveredCommunity, is_member: true });
+                }
+            } catch (error) {
+                console.error('Failed to join community:', error);
+                alert('Failed to join community.');
+            }
+        });
+    };
+
     const handleDelete = async (slug: string) => {
         requireAuth(async () => {
             try {
@@ -55,12 +115,33 @@ export default function PostListItems({ post }: { post: Post }) {
     return (
         <>
             {showAuthModal && <AuthModalController onCloseAll={() => setShowAuthModal(false)} />}
+
+            {cardPosition && (
+                <CommunityHoverCard
+                    community={hoveredCommunity}
+                    isLoading={isCardLoading}
+                    onJoin={handleJoinCommunity}
+                    style={{
+                        top: `${cardPosition.top}px`,
+                        left: `${cardPosition.left}px`,
+                        position: 'absolute'
+                    }}
+                    cardRef={cardRef}
+                    onMouseEnter={() => { if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current) }}
+                    onMouseLeave={handleMouseLeave}
+                />
+            )}
+
             <div className='mt-2'>
                 <div onClick={() => router.push(`/${currentPost.slug}/`)} className="cursor-pointer bg-white dark:bg-[var(--background)] hover:bg-[var(--hover-post-background)] transition rounded-2xl hover:shadow-2xl mx-auto w-full overflow-hidden">
                     <div className="px-4 py-2">
 
                         <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center space-x-2">
+                            <div
+                                className="flex items-center space-x-2 relative"
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                            >
                                 <div className="w-9 h-9 rounded-full overflow-hidden relative">
                                     <Image
                                         className="object-cover"
@@ -97,23 +178,18 @@ export default function PostListItems({ post }: { post: Post }) {
 
                         <div className="w-full overflow-x-auto">
                             <div className="flex items-center sm:flex-nowrap gap-2 sm:gap-3 w-full">
-                                {/* Post rating buttons */}
                                 <PostRating
                                     sum_rating={currentPost.sum_rating}
                                     userVote={currentPost.user_vote}
                                     onVote={(value: number) => handleVote(currentPost.slug, value)}
                                     onDelete={() => handleDelete(currentPost.slug)}
                                 />
-
-                                {/* Comment link */}
                                 <Link href={`/${currentPost.slug}/`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5">
                                     <svg width="18" height="18" viewBox="100 255 34 32" fill="currentColor">
                                         <path d="M116,281 C114.832,281 113.704,280.864 112.62,280.633 L107.912,283.463 L107.975,278.824 C104.366,276.654 102,273.066 102,269 C102,262.373 108.268,257 116,257 C123.732,257 130,262.373 130,269 C130,275.628 123.732,281 116,281 L116,281 Z M116,255 C107.164,255 100,261.269 100,269 C100,273.419 102.345,277.354 106,279.919 L106,287 L113.009,282.747 C113.979,282.907 114.977,283 116,283 C124.836,283 132,276.732 132,269 C132,261.269 124.836,255 116,255 L116,255 Z" />
                                     </svg>
                                     <span className="text-sm">{currentPost.comment_count}</span>
                                 </Link>
-
-                                {/* Share link */}
                                 <Link href="#" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5">
                                     <svg width="22" height="22" viewBox="5 4 17 17" fill="currentColor">
                                         <path d="M14.734 15.8974L19.22 12.1374C19.3971 11.9927 19.4998 11.7761 19.4998 11.5474C19.4998 11.3187 19.3971 11.1022 19.22 10.9574L14.734 7.19743C14.4947 6.9929 14.1598 6.94275 13.8711 7.06826C13.5824 7.19377 13.3906 7.47295 13.377 7.78743V9.27043C7.079 8.17943 5.5 13.8154 5.5 16.9974C6.961 14.5734 10.747 10.1794 13.377 13.8154V15.3024C13.3888 15.6178 13.5799 15.8987 13.8689 16.0254C14.158 16.1521 14.494 16.1024 14.734 15.8974Z" />
@@ -124,10 +200,8 @@ export default function PostListItems({ post }: { post: Post }) {
                         </div>
 
                     </div>
-
                 </div>
                 <hr className='border-[var(--border)] mt-2' />
-
             </div>
         </>
     );
