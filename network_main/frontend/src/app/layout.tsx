@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Network",
   description: "Social Network",
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.svg',
   },
 };
 
