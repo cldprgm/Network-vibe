@@ -182,4 +182,4 @@ cython_debug/
 *.gif
 !network_main/backend/media/uploads/community/icons/default_icon.png
 !network_main/backend/media/uploads/avatars/default.png
-!network_main/frontend/public/favicon.png
+!network_main/frontend/public/favicon.svg
