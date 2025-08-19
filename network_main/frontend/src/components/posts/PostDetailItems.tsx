@@ -4,12 +4,13 @@ import { deleteVotePost, votePost, } from "@/services/api";
 import PostMedia from "./media/PostMedia";
 import { PostActions } from "./PostActions";
 import CommentsSection from "./comments/CommentsSection";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/zustand_store/authStore";
 import { Post } from "@/services/types";
 import AuthModalController from "../auth/AuthModalController";
 import Image from "next/image";
 import Link from "next/link";
+import { MoreHorizontal, Pencil, Bookmark, Flag } from "lucide-react";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
     if (!postData || !postData.slug) {
@@ -19,6 +20,9 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const [post, setPostData] = useState(postData);
     const { isAuthenticated } = useAuthStore();
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {
@@ -50,6 +54,27 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
         })
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
+
     return (
         <>
             {showAuthModal && <AuthModalController onCloseAll={() => setShowAuthModal(false)} />}
@@ -80,9 +105,37 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                     </p>
                                 </div>
                             </div>
-                            <button aria-label="More options" className="text-gray-500 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-300/40 rounded-full p-1.5 -mt-1 -mr-1.5">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-                            </button>
+                            <div className="relative">
+                                <button
+                                    ref={buttonRef}
+                                    aria-label="More options"
+                                    className="cursor-pointer text-gray-500 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-300/40 rounded-full p-1.5 -mt-1 -mr-1.5"
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                >
+                                    <MoreHorizontal className="w-5 h-5" />
+                                </button>
+                                {isMenuOpen && (
+                                    <div
+                                        ref={menuRef}
+                                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                    >
+                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                            <Pencil className="w-4 h-4 mr-3" />
+                                            Edit
+                                        </button>
+                                        <hr className="border-gray-200 dark:border-gray-700" />
+                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                            <Bookmark className="w-4 h-4 mr-3" />
+                                            Save
+                                        </button>
+                                        <hr className="border-gray-200 dark:border-gray-700" />
+                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                            <Flag className="w-4 h-4 mr-3" />
+                                            Report
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="text-2xl font-semibold text-primary mb-2 break-words">
@@ -113,5 +166,3 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
         </>
     );
 };
-
-
