@@ -1,3 +1,4 @@
+// Modified PostDetailItems component (add useRouter and onClick to Edit button)
 'use client';
 
 import { deleteVotePost, votePost, } from "@/services/api";
@@ -10,6 +11,7 @@ import { Post } from "@/services/types";
 import AuthModalController from "../auth/AuthModalController";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { MoreHorizontal, Pencil, Bookmark, Flag } from "lucide-react";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
@@ -23,6 +25,8 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const router = useRouter();
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {
@@ -117,19 +121,22 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 {isMenuOpen && (
                                     <div
                                         ref={menuRef}
-                                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
                                     >
-                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button
+                                            onClick={() => {
+                                                setIsMenuOpen(false);
+                                                router.push(`/${post.slug}/edit`);
+                                            }}
+                                            className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
                                             <Pencil className="w-4 h-4 mr-3" />
                                             Edit
                                         </button>
-                                        <hr className="border-gray-200 dark:border-gray-700" />
-                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
                                             <Bookmark className="w-4 h-4 mr-3" />
                                             Save
                                         </button>
-                                        <hr className="border-gray-200 dark:border-gray-700" />
-                                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
                                             <Flag className="w-4 h-4 mr-3" />
                                             Report
                                         </button>
