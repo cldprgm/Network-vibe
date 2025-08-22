@@ -177,13 +177,18 @@ class PostDetailSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    deleted_media_files = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Post
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
                   'community_id', 'community_slug', 'community_name', 'community_icon',
-                  'community_obj', 'media_data',  'media_files')
+                  'community_obj', 'media_data',  'media_files', 'deleted_media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
 
@@ -209,13 +214,16 @@ class PostDetailSerializer(serializers.ModelSerializer):
             Media.objects.create(post=post, file=file)
         return post
 
-    # upgrade later
     def update(self, instance, validated_data):
         media_files = validated_data.pop('media_files', [])
+        deleted_media_ids = validated_data.pop('deleted_media_files', [])
+
         post = super().update(instance, validated_data)
         if media_files:
             for file in media_files:
                 Media.objects.create(post=post, file=file)
+        if deleted_media_ids:
+            Media.objects.filter(id__in=deleted_media_ids, post=post).delete()
         return post
 
 

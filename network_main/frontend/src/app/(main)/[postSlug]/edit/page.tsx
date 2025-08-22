@@ -72,7 +72,7 @@ export default function EditPost() {
                 setExistingMedia(post.media_data.map(media => ({
                     id: media.id,
                     preview: media.file,
-                    type: media.mime_type
+                    type: media.media_type
                 })));
                 adjustHeight(titleRef.current);
                 adjustHeight(contentRef.current);
@@ -177,7 +177,7 @@ export default function EditPost() {
             });
 
             deletedMediaIds.forEach((id) => {
-                formData.append('deleted_media_ids[]', String(id));
+                formData.append('deleted_media_files', String(id));
             });
 
             const response = await api.patch(`/posts/${slug}/`, formData);
@@ -340,7 +340,7 @@ export default function EditPost() {
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
                                         {existingMedia.map((media, idx) => (
                                             <div key={`existing-${media.id}`} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-gray-300 dark:border-gray-600 shadow-md">
-                                                {media.type.startsWith('image') ? (
+                                                {media.type == 'image' ? (
                                                     <img src={media.preview} alt="Existing media" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <video src={media.preview} controls className="w-full h-full object-cover" />
