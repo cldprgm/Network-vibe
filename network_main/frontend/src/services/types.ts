@@ -23,6 +23,7 @@ export type Post = {
     community_name: string;
     community_slug: string;
     community_icon: string;
+    is_creator: boolean;
 };
 
 export type CommentType = {

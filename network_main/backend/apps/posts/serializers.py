@@ -146,6 +146,7 @@ class PostListSerializer(serializers.ModelSerializer):
 
 class PostDetailSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
+    is_creator = serializers.SerializerMethodField()
     community_obj = serializers.PrimaryKeyRelatedField(
         source='community',
         queryset=Community.objects.all(),
@@ -188,9 +189,16 @@ class PostDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
                   'community_id', 'community_slug', 'community_name', 'community_icon',
-                  'community_obj', 'media_data',  'media_files', 'deleted_media_files')
+                  'community_obj', 'is_creator', 'media_data',  'media_files',
+                  'deleted_media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
+
+    def get_is_creator(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.author == request.user
+        return False
 
     def validate_title(self, value):
         return clean(value, tags=[], attributes={}, strip=True)
