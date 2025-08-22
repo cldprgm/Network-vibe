@@ -1,5 +1,6 @@
 import pytest
 import io
+import os
 
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
@@ -117,6 +118,35 @@ class TestPostView:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert not Post.objects.filter(title='newtestpost').exists()
 
+    def test_create_post_with_media_files(self, authenticated_client, community):
+        file_content = (
+            b'\x89PNG\r\n\x1a\n'
+            b'\x00\x00\x00\rIHDR'
+        )
+        image = SimpleUploadedFile(
+            "test.png",
+            file_content,
+            content_type="image/jpeg"
+        )
+
+        data = {
+            'title': 'post with image',
+            'community_obj': community.id,
+            'media_files': [image],
+        }
+
+        response = authenticated_client.post(
+            self.url, data, format='multipart'
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        post = Post.objects.get(title='post with image')
+        assert Media.objects.filter(post=post).exists()
+
+        media_file_name = os.path.basename(
+            Media.objects.filter(post=post).first().file.name)
+        assert media_file_name.startswith(
+            "test") and media_file_name.endswith(".png")
+
     def test_create_post_with_too_many_media_files(self, authenticated_client, community):
         files = []
         for i in range(6):
@@ -182,6 +212,61 @@ class TestPostView:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         post.refresh_from_db()
         assert post.title == 'testpost'
+
+    def test_update_post_add_media_files(self, authenticated_client, post):
+        url = reverse('post-detail', kwargs={'slug': post.slug})
+
+        file_content = (
+            b'\x89PNG\r\n\x1a\n'
+            b'\x00\x00\x00\rIHDR'
+        )
+        image = SimpleUploadedFile(
+            "new.png",
+            file_content,
+            content_type="image/jpeg")
+
+        data = {'media_files': [image]}
+
+        response = authenticated_client.patch(url, data, format='multipart')
+        assert response.status_code == status.HTTP_200_OK
+        post.refresh_from_db()
+        assert Media.objects.filter(post=post).count() == 1
+
+        media_file_name = os.path.basename(
+            Media.objects.filter(post=post).first().file.name)
+        assert media_file_name.startswith(
+            "new") and media_file_name.endswith(".png")
+
+    def test_update_post_delete_media_files(self, authenticated_client, post):
+        file_content = (
+            b'\x89PNG\r\n\x1a\n'
+            b'\x00\x00\x00\rIHDR'
+        )
+        media1 = Media.objects.create(
+            post=post,
+            file=SimpleUploadedFile(
+                "a.jpg", file_content, content_type="image/jpeg")
+        )
+        media2 = Media.objects.create(
+            post=post,
+            file=SimpleUploadedFile(
+                "b.jpg", file_content, content_type="image/jpeg")
+        )
+
+        url = reverse('post-detail', kwargs={'slug': post.slug})
+
+        data = {
+            'deleted_media_files': [media1.id],
+        }
+
+        response = authenticated_client.patch(url, data, format='multipart')
+        assert response.status_code == status.HTTP_200_OK
+        post.refresh_from_db()
+
+        remaining_ids = list(Media.objects.filter(
+            post=post).values_list("id", flat=True))
+        assert media1.id not in remaining_ids
+        assert media2.id in remaining_ids
 
     def test_delete_post(self, authenticated_client, post):
         url = reverse('post-detail', kwargs={'slug': 'testpost'})
