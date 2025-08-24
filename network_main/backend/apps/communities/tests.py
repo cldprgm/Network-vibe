@@ -310,8 +310,15 @@ class TestCommunityViewSet():
             'categories': category.pk
         }
         response = authenticated_client.post(url, data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_201_CREATED
         assert 'slug' in response.data
+        assert response.data['slug'] != community.slug
+
+    def test_delete_community_cascade_memberships(self, authenticated_client_creator, community, membership_creator):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        response = authenticated_client_creator.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Membership.objects.filter(community=community).exists()
 
 
 @pytest.mark.django_db
@@ -326,6 +333,29 @@ class TestCommunityPostsListView():
         assert len(response.data['results']) == 1
         assert response.data['results'][0]['id'] == post.id
         assert response.data['results'][0]['community_id'] == community.id
+
+    def test_list_only_posts_for_given_community(self, api_client, community, post, test_user_creator):
+        other_community = Community.objects.create(
+            creator=test_user_creator,
+            name='othercommunity',
+            slug='othercommunity',
+            description='other'
+        )
+        other_post = Post.objects.create(
+            title='otherpost',
+            author=test_user_creator,
+            community=other_community
+        )
+
+        url = reverse('community-posts-list',
+                      kwargs={'community_slug': community.slug})
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+        results = response.data['results']
+        assert any(r['id'] == post.id for r in results)
+        assert all(r['community_id'] == community.id for r in results)
+        assert not any(r['id'] == other_post.id for r in results)
 
 
 @pytest.mark.django_db
