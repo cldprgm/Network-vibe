@@ -16,11 +16,9 @@ import axios from 'axios';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-
 interface CommunityEditFormProps {
     community: CommunityType;
 }
-
 
 const Card = ({ children }: { children: React.ReactNode }) => (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/50 rounded-2xl shadow-sm">
@@ -123,7 +121,6 @@ const ImageUploader = ({ label, currentImage, preview, onFileChange, error, aspe
     );
 };
 
-
 export default function CommunityEditForm({ community }: CommunityEditFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -151,6 +148,9 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     const [nameError, setNameError] = useState<string | null>(null);
     const [isNameChecking, setIsNameChecking] = useState(false);
     const debouncedName = useDebounce(name, 1000);
+
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
         const validateName = async () => {
@@ -284,6 +284,24 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        setLoading(true);
+        setDeleteError(null);
+        try {
+            await axios.delete(`${baseUrl}/communities/${community.slug}/`);
+            router.push('/communities');
+            router.refresh();
+        } catch (error) {
+            console.error("Community deletion error:", error);
+            setDeleteError("Failed to delete the community. Please try again.");
+        } finally {
+            setLoading(false);
+            if (!deleteError) {
+                setIsDeleteDialogOpen(false);
+            }
         }
     };
 
@@ -443,6 +461,17 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                                 </label>
                                             </div>
                                         </div>
+                                        <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                                            <h4 className="text-base font-semibold text-zinc-800 dark:text-zinc-200 mb-4">Danger Zone</h4>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDeleteDialogOpen(true)}
+                                                disabled={loading}
+                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed"
+                                            >
+                                                Delete Community
+                                            </button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             )}
@@ -487,6 +516,40 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                     Apply
                                 </button>
                             </div>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md">
+                        <DialogTitle className="p-4 text-lg font-bold text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-800">
+                            Delete Community
+                        </DialogTitle>
+                        <div className="p-4">
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                                Are you sure you want to delete this community? This action cannot be undone.
+                            </p>
+                            {deleteError && <p className="text-sm text-red-500 mt-2">{deleteError}</p>}
+                        </div>
+                        <div className="p-4 flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800">
+                            <button
+                                type="button"
+                                onClick={() => setIsDeleteDialogOpen(false)}
+                                className="px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={loading}
+                                className="px-4 py-2 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                            >
+                                {loading ? 'Deleting...' : 'Delete'}
+                            </button>
                         </div>
                     </DialogPanel>
                 </div>
