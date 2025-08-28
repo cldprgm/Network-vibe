@@ -205,4 +205,14 @@ export const updateCommunity = async (
 };
 
 
+export async function deleteCommunity(community_id: string) {
+    try {
+        const response = await api.delete(`/communities/${community_id}/`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to delete community.');
+    }
+}
+
+
 
