@@ -12,6 +12,7 @@ import getCroppedImg from '@/components/sidebar/cropImage';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import CommunityEditSidebar from './CommunityEditSidebar';
 import useDebounce from '../sidebar/hooks/useDebounce';
+import { deleteCommunity } from '@/services/api';
 import axios from 'axios';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -291,7 +292,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
         setLoading(true);
         setDeleteError(null);
         try {
-            await axios.delete(`${baseUrl}/communities/${community.slug}/`);
+            await deleteCommunity(community.slug);
             router.push('/communities');
             router.refresh();
         } catch (error) {
