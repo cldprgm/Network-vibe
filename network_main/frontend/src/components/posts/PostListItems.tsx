@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { votePost, deleteVotePost } from '@/services/api';
 import { Post, CommunityType } from '@/services/types';
@@ -12,6 +12,8 @@ import AuthModalController from '../auth/AuthModalController';
 import CommunityHoverCard from './CommunityHoverCard';
 import { getCommunityBySlug, joinCommunity } from '@/services/api';
 import Image from 'next/image';
+import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
+
 
 export default function PostListItems({ post }: { post: Post }) {
     if (!post || !post.slug) {
@@ -29,6 +31,10 @@ export default function PostListItems({ post }: { post: Post }) {
     const enterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
+
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {
@@ -48,6 +54,27 @@ export default function PostListItems({ post }: { post: Post }) {
             }
         });
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
         if (leaveTimeoutRef.current) {
@@ -165,9 +192,31 @@ export default function PostListItems({ post }: { post: Post }) {
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={(e) => e.stopPropagation()} aria-label="More options" className="text-gray-500 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-300/40 rounded-full p-1.5 -mt-1 -mr-1.5">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-                            </button>
+                            <div className="relative">
+                                <button
+                                    ref={buttonRef}
+                                    aria-label="More options"
+                                    className="cursor-pointer text-gray-500 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-300/40 rounded-full p-1.5 -mt-1 -mr-1.5"
+                                    onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen) }}
+                                >
+                                    <MoreHorizontal className="w-5 h-5" />
+                                </button>
+                                {isMenuOpen && (
+                                    <div
+                                        ref={menuRef}
+                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                    >
+                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                            <Bookmark className="w-4 h-4 mr-3" />
+                                            Save
+                                        </button>
+                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                            <Flag className="w-4 h-4 mr-3" />
+                                            Report
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="text-lg font-semibold text-primary mb-2 break-words">
