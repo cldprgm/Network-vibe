@@ -142,8 +142,8 @@ describe('CommunityHoverCard', () => {
                 onJoin={jest.fn()}
                 style={{}}
                 cardRef={React.createRef()}
-                onMouseEnter={() => {}}
-                onMouseLeave={() => {}}
+                onMouseEnter={() => { }}
+                onMouseLeave={() => { }}
             />
         );
         expect(screen.getByText('n/test')).toBeInTheDocument();
