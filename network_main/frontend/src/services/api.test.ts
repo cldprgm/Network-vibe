@@ -1,4 +1,3 @@
-// api.test.ts
 import { URL } from 'url';
 import axios from 'axios';
 import { api as authApi } from './auth';

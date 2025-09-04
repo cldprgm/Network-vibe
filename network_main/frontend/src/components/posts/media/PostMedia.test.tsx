@@ -67,6 +67,7 @@ const mockPost: Post = {
     community_icon: 'test',
     community_slug: 'testcommunity',
     media_data: [],
+    is_creator: false
 };
 
 describe('PostMedia Component', () => {
