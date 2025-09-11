@@ -1,0 +1,210 @@
+[
+{
+  "model": "categories.category",
+  "pk": 10,
+  "fields": {
+    "title": "Games",
+    "slug": "games",
+    "parent": null,
+    "lft": 1,
+    "rght": 8,
+    "tree_id": 2,
+    "level": 0
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 11,
+  "fields": {
+    "title": "Action Games",
+    "slug": "action-games",
+    "parent": 10,
+    "lft": 2,
+    "rght": 3,
+    "tree_id": 2,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 12,
+  "fields": {
+    "title": "Adventure Games",
+    "slug": "adventure-games",
+    "parent": 10,
+    "lft": 4,
+    "rght": 5,
+    "tree_id": 2,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 13,
+  "fields": {
+    "title": "Esports",
+    "slug": "esports",
+    "parent": 10,
+    "lft": 6,
+    "rght": 7,
+    "tree_id": 2,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 14,
+  "fields": {
+    "title": "Technology",
+    "slug": "technology",
+    "parent": null,
+    "lft": 1,
+    "rght": 8,
+    "tree_id": 6,
+    "level": 0
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 15,
+  "fields": {
+    "title": "Artificial Intelligence & Machine Learning",
+    "slug": "artificial-intelligence-machine-learning",
+    "parent": 14,
+    "lft": 4,
+    "rght": 5,
+    "tree_id": 6,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 16,
+  "fields": {
+    "title": "3D Printing",
+    "slug": "3d-printing",
+    "parent": 14,
+    "lft": 2,
+    "rght": 3,
+    "tree_id": 6,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 17,
+  "fields": {
+    "title": "Computers & Hardware",
+    "slug": "computers-hardware",
+    "parent": 14,
+    "lft": 6,
+    "rght": 7,
+    "tree_id": 6,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 18,
+  "fields": {
+    "title": "Internet Culture",
+    "slug": "internet-culture",
+    "parent": null,
+    "lft": 1,
+    "rght": 8,
+    "tree_id": 4,
+    "level": 0
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 19,
+  "fields": {
+    "title": "Amazing",
+    "slug": "amazing",
+    "parent": 18,
+    "lft": 2,
+    "rght": 3,
+    "tree_id": 4,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 20,
+  "fields": {
+    "title": "Animals & Pets",
+    "slug": "animals-pets",
+    "parent": 18,
+    "lft": 4,
+    "rght": 5,
+    "tree_id": 4,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 21,
+  "fields": {
+    "title": "Interesting",
+    "slug": "interesting",
+    "parent": 18,
+    "lft": 6,
+    "rght": 7,
+    "tree_id": 4,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 22,
+  "fields": {
+    "title": "Sports",
+    "slug": "sports",
+    "parent": null,
+    "lft": 1,
+    "rght": 8,
+    "tree_id": 5,
+    "level": 0
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 23,
+  "fields": {
+    "title": "Baseball",
+    "slug": "baseball",
+    "parent": 22,
+    "lft": 2,
+    "rght": 3,
+    "tree_id": 5,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 24,
+  "fields": {
+    "title": "Bikes & Cycling",
+    "slug": "bikes-cycling",
+    "parent": 22,
+    "lft": 4,
+    "rght": 5,
+    "tree_id": 5,
+    "level": 1
+  }
+},
+{
+  "model": "categories.category",
+  "pk": 25,
+  "fields": {
+    "title": "Golf",
+    "slug": "golf",
+    "parent": 22,
+    "lft": 6,
+    "rght": 7,
+    "tree_id": 5,
+    "level": 1
+  }
+}
+]

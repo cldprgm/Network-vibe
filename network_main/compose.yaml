@@ -1,0 +1,37 @@
+services:
+  api_backend:
+    build: ./backend
+    image: api_backend:1.0.0
+    restart: unless-stopped
+    volumes:
+      - static_api_volume:/usr/src/api_backend/static
+      - media_volume:/usr/src/api_backend/media
+    env_file:
+      - ./backend/.env
+    expose:
+      - 8001
+    command: gunicorn network.wsgi:application --bind 0.0.0.0:8001 --access-logfile '-'
+    depends_on:
+      - db
+  db:
+    image: postgres:17-bookworm
+    volumes:
+      - data:/var/lib/postgresql/data/
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env # add secrets later
+  nginx:
+    image: nginx:1.29.1-alpine-slim
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      - static_api_volume:/api_backend/static
+      - media_volume:/api_backend/media
+    ports:
+      - 8005:80
+    depends_on:
+      - api_backend
+
+volumes:
+  data:
+  static_api_volume:
+  media_volume:
