@@ -28,9 +28,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
+
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split()
+
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split()
+# for testing (not secure):
+# CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -141,6 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = 'static'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = (BASE_DIR / 'media')
@@ -183,9 +190,3 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-]
-# for testing (not secure):
-CORS_ALLOW_CREDENTIALS = True
