@@ -15,7 +15,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
+load_dotenv(dotenv_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,9 +36,9 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split()
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split()
-# for testing (not secure):
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', "").split()
+# for dev (not secure):
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
