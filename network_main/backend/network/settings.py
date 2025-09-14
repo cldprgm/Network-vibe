@@ -14,7 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-
+import socket
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
 load_dotenv(dotenv_path)
@@ -30,19 +30,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", False)
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1")
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split()
 
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', "").split()
-# for dev (not secure):
+
 CORS_ALLOW_CREDENTIALS = True
 
 
-# Application definition
+# for debug toolbar
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
 
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -159,11 +163,6 @@ MEDIA_ROOT = (BASE_DIR / 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# for debug toolbar
-INTERNAL_IPS = [
-    '127.0.0.1',
-]
 
 
 AUTH_USER_MODEL = 'users.CustomUser'
