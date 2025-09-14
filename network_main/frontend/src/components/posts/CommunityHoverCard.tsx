@@ -4,6 +4,9 @@ import React from 'react';
 import Image from 'next/image';
 import { CommunityType } from '@/services/types';
 
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
+const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL;
+
 interface CardContentProps {
     community: CommunityType;
     onJoin: (communityId: number) => void;
@@ -23,13 +26,13 @@ const CardContent = ({ community, onJoin }: CardContentProps) => (
     <div className="w-80">
         <div
             className="h-18 bg-zinc-200 dark:bg-zinc-700 bg-cover bg-center"
-            style={{ backgroundImage: `url(${community.banner})` }}
+            style={{ backgroundImage: `url(${publicBaseUrl}${community.banner})` }}
         />
         <div className="p-4 pt-8 flex flex-col">
             <div className="flex items-end space-x-2 -mt-14 mb-4">
                 <div className="relative w-16 h-16 bg-zinc-300 dark:bg-zinc-600 rounded-full flex-shrink-0 border-4 border-white dark:border-zinc-800 overflow-hidden">
                     <Image
-                        src={community.icon}
+                        src={`${containerUrl}${community.icon}`}
                         alt={`${community.name} icon`}
                         layout="fill"
                         objectFit="cover"

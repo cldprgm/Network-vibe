@@ -9,6 +9,8 @@ import AuthModalController from '../auth/AuthModalController';
 import Link from 'next/link';
 import Image from 'next/image';
 
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
+
 export default function Navbar() {
   const router = useRouter();
   const { hasHydrated, user, isAuthenticated, isLoading, setLoading, logout } = useAuthStore();
@@ -91,7 +93,7 @@ export default function Navbar() {
                   <div className="w-9 h-9 rounded-full overflow-hidden relative">
                     <span className="sr-only">Open user menu</span>
                     <Image
-                      src={user.avatar || '/default-avatar.png'}
+                      src={`${containerUrl}${user.avatar}` || '/default-avatar.png'}
                       alt={`${user.username}'s avatar`}
                       fill
                       className="object-cover"
