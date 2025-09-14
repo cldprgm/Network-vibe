@@ -31,6 +31,9 @@ class CommunityListSerializer(serializers.ModelSerializer):
     is_member = serializers.BooleanField(read_only=True)
     members_count = serializers.IntegerField(read_only=True)
 
+    icon = serializers.SerializerMethodField()
+    banner = serializers.SerializerMethodField()
+
     class Meta:
         model = Community
         fields = ('id', 'slug', 'name', 'creator', 'description',
@@ -38,6 +41,12 @@ class CommunityListSerializer(serializers.ModelSerializer):
                   'created', 'updated', 'status', 'is_member', 'members_count')
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug')
+
+    def get_icon(self, obj):
+        return obj.icon.url if obj.icon else 'uploads/community/icons/default_icon.png'
+
+    def get_banner(self, obj):
+        return obj.banner.url if obj.banner else 'uploads/community/icons/default_icon.png'
 
 
 class CommunityDetailSerializer(serializers.ModelSerializer):
@@ -55,8 +64,8 @@ class CommunityDetailSerializer(serializers.ModelSerializer):
         many=True
     )
 
-    icon = serializers.ImageField(read_only=True)
-    banner = serializers.ImageField(read_only=True)
+    icon = serializers.SerializerMethodField()
+    banner = serializers.SerializerMethodField()
 
     icon_upload = serializers.FileField(
         write_only=True, required=False, source='icon'
@@ -75,6 +84,12 @@ class CommunityDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated', 'slug',
                             'current_user_roles', 'current_user_permissions')
+
+    def get_icon(self, obj):
+        return obj.icon.url if obj.icon else 'uploads/community/icons/default_icon.png'
+
+    def get_banner(self, obj):
+        return obj.banner.url if obj.banner else 'uploads/community/icons/default_icon.png'
 
     def validate_categories(self, value):
         if not value:
