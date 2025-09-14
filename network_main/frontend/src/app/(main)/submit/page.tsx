@@ -8,6 +8,9 @@ import { apiCreatePost } from '@/services/api';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getCommunityBySlug } from '@/services/api';
 import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
+import Image from 'next/image';
+
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 interface FileWithPreview extends File {
     preview: string;
@@ -185,9 +188,11 @@ export default function CreatePost() {
                         >
                             {community ? (
                                 <>
-                                    <img
-                                        src={community.icon}
+                                    <Image
+                                        src={`${containerUrl}${community.icon}`}
                                         alt={`${community.name} icon`}
+                                        width={20}
+                                        height={20}
                                         className="w-5 h-5 mr-2 rounded-full"
                                     />
                                     <span>{community.name}</span>
@@ -205,9 +210,11 @@ export default function CreatePost() {
                                         onClick={() => selectCommunity(c)}
                                         className="flex items-center px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                                     >
-                                        <img
-                                            src={c.icon}
+                                        <Image
+                                            src={`${containerUrl}${c.icon}`}
                                             alt={`${c.name} icon`}
+                                            width={20}
+                                            height={20}
                                             className="w-6 h-6 mr-2 rounded-full"
                                         />
                                         <span>n/{c.name}</span>

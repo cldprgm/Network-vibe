@@ -9,6 +9,8 @@ import { Calendar, Lock, Globe, Flag, Shield } from "lucide-react";
 import { Post } from "@/services/types";
 import CommunityPostList from '@/components/communities/CommunityPostList';
 
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
+
 async function getCommunityData(communitySlug: string) {
     if (!communitySlug || communitySlug === 'null') {
         return notFound();
@@ -91,7 +93,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
             {/* Banner */}
             <div className="relative h-90 sm:h-64 md:h-90">
                 <Image
-                    src={community.banner}
+                    src={`${containerUrl}${community.banner}`}
                     alt={`${community.name} banner`}
                     fill
                     priority
@@ -116,7 +118,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-10">
                     <div className="relative w-27 h-27 rounded-full border-4 border-[var(--background)] overflow-hidden bg-[var(--background)]">
                         <Image
-                            src={community.icon}
+                            src={`${containerUrl}${community.icon}`}
                             alt={community.name}
                             fill
                             className="object-cover"

@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import axios from 'axios';
 import { useAuthStore } from '@/zustand_store/authStore';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL}/api/v1`;
 
 export interface RefreshResult {
     newAccessCookie: string | null;

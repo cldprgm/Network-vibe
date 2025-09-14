@@ -3,7 +3,7 @@ export type Media = {
     file: string;
     media_type: 'image' | 'video';
     aspect_ratio?: string;
-    file_url?: string;
+    file_url: string;
     uploaded_at: string;
 };
 
