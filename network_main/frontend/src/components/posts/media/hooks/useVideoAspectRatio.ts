@@ -1,6 +1,8 @@
 import { Media } from "@/services/types";
 import { useEffect, useState } from "react";
 
+const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
+
 const parseAspectRatio = (aspect?: string) => {
     if (!aspect) return 16 / 9;
     const [w, h] = aspect.split("/").map(Number);
@@ -12,7 +14,7 @@ export default function useVideoAspectRatio(media: Media) {
     const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
 
     useEffect(() => {
-        if (!media || media.media_type !== "video" || !media.file) {
+        if (!media || media.media_type !== "video" || !media.file_url) {
             setVideoAspectRatio(null);
             return;
         }
@@ -20,7 +22,7 @@ export default function useVideoAspectRatio(media: Media) {
         let cancelled = false;
         const vid = document.createElement("video");
         vid.preload = "metadata";
-        vid.src = media.file;
+        vid.src = `${publicBaseUrl}${media.file_url}`;
 
         const onLoaded = () => {
             if (cancelled) return;
@@ -47,7 +49,7 @@ export default function useVideoAspectRatio(media: Media) {
             vid.removeEventListener("error", onError);
             try { vid.src = ""; } catch { }
         };
-    }, [media.file, media.media_type, media.aspect_ratio]);
+    }, [media.file_url, media.media_type, media.aspect_ratio]);
 
     return videoAspectRatio;
 }

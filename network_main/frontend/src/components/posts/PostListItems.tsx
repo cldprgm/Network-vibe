@@ -14,6 +14,7 @@ import { getCommunityBySlug, joinCommunity } from '@/services/api';
 import Image from 'next/image';
 import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
 
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 export default function PostListItems({ post }: { post: Post }) {
     if (!post || !post.slug) {
@@ -172,7 +173,7 @@ export default function PostListItems({ post }: { post: Post }) {
                                 <div className="w-9 h-9 rounded-full overflow-hidden relative">
                                     <Image
                                         className="object-cover"
-                                        src={currentPost.community_icon}
+                                        src={`${containerUrl}${currentPost.community_icon}`}
                                         onClick={(e) => e.stopPropagation()}
                                         alt="Community icon"
                                         fill
@@ -188,7 +189,11 @@ export default function PostListItems({ post }: { post: Post }) {
                                         >
                                             n/{currentPost.community_name}
                                         </Link>
-                                        • {new Date(currentPost.created).toLocaleDateString()}
+                                        • {new Date(currentPost.created).toLocaleDateString("en-GB", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                        })}
                                     </p>
                                 </div>
                             </div>

@@ -1,14 +1,16 @@
 import { Media } from "@/services/types";
 import { useEffect, useState } from "react";
 
+const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
+
 export default function useImageSize(media: Media) {
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
-        if (media.media_type !== "image") return;
+        if (media.media_type !== "image" || !media.file_url) return;
 
         const img = new window.Image();
-        img.src = media.file;
+        img.src = `${publicBaseUrl}${media.file_url}`;
 
         img.onload = () => {
             setImageSize({
@@ -25,7 +27,7 @@ export default function useImageSize(media: Media) {
             img.onload = null;
             img.onerror = null;
         };
-    }, [media.file, media.media_type]);
+    }, [media.file_url, media.media_type]);
 
     return imageSize;
 }
