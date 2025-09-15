@@ -119,10 +119,8 @@ class PostListSerializer(serializers.ModelSerializer):
         source='community.name',
         read_only=True
     )
-    community_icon = serializers.ImageField(
-        source='community.icon',
-        read_only=True
-    )
+    community_icon = serializers.SerializerMethodField()
+
     comment_count = serializers.IntegerField(read_only=True)
     sum_rating = serializers.IntegerField(read_only=True)
     user_vote = serializers.IntegerField(read_only=True)
@@ -142,6 +140,9 @@ class PostListSerializer(serializers.ModelSerializer):
                   'community_obj', 'media_data', 'media_files')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
+
+    def get_community_icon(self, obj):
+        return obj.community.icon.url if obj.community.icon else 'uploads/community/icons/default_icon.png'
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
