@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import useImageSize from "./hooks/useImageSize";
 import useVideoAspectRatio from "./hooks/useVideoAspectRatio";
 
+const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
+
 interface FullscreenViewerProps {
     mediaItems: Media[];
     currentIndex: number;
@@ -65,6 +67,8 @@ export default function FullscreenViewer({
 
         return "min-w-[90vw] max-w-[90vw] max-h-[90vh]";
     };
+
+    const currentFullSrc = `${publicBaseUrl}${currentMedia.file_url}`;
 
     return (
         <div
@@ -136,7 +140,7 @@ export default function FullscreenViewer({
                     <div className="w-full h-full flex items-center justify-center p-4">
                         {currentMedia.media_type === "image" ? (
                             <img
-                                src={currentMedia.file}
+                                src={currentFullSrc}
                                 alt="Fullscreen media"
                                 className={`${getSizeClass()} object-contain`}
                                 draggable={false}
@@ -147,7 +151,7 @@ export default function FullscreenViewer({
                             />
                         ) : (
                             <video
-                                src={currentMedia.file}
+                                src={currentFullSrc}
                                 controls
                                 autoPlay
                                 className="max-w-[90vw] max-h-[90vh] object-contain"

@@ -2,6 +2,8 @@ import { Media } from "@/services/types";
 import { useRef, useState, useEffect } from "react";
 import { getVideoVisibilityManager } from "../VideoVisibilityManager";
 
+const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
+
 interface VideoMediaProps {
     media: Media;
 }
@@ -33,7 +35,7 @@ export default function VideoMedia({ media }: VideoMediaProps) {
             unregister();
             try { videoRef.current?.pause(); } catch (err) { }
         };
-    }, [media.file, media.media_type]);
+    }, [media.file_url, media.media_type]);
 
     const handleVideoPlay = () => {
         if (controlsTimeoutRef.current) {
@@ -44,6 +46,8 @@ export default function VideoMedia({ media }: VideoMediaProps) {
         }, 600);
     };
 
+    const fullSrc = `${publicBaseUrl}${media.file_url}`;
+
     return (
         <video
             aria-label="Post video content"
@@ -53,7 +57,7 @@ export default function VideoMedia({ media }: VideoMediaProps) {
             className="w-full h-full object-contain"
             muted
             playsInline
-            src={media.file}
+            src={fullSrc}
         />
     );
 }
