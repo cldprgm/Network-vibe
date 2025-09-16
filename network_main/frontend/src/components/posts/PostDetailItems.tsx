@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { MoreHorizontal, Pencil, Bookmark, Flag } from "lucide-react";
 
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
+
 export default function PostDetailItems({ postData }: { postData: Post }) {
     if (!postData || !postData.slug) {
         return null;
@@ -91,7 +93,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 <div className="w-9 h-9 rounded-full overflow-hidden relative">
                                     <Image
                                         className="object-cover"
-                                        src={post.community_icon}
+                                        src={`${containerUrl}${post.community_icon}`}
                                         alt="Community icon"
                                         fill
                                     />
@@ -104,7 +106,11 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                         >
                                             n/{post.community_name}
                                         </Link>
-                                        • {new Date(post.created).toLocaleDateString()}
+                                        • {new Date(post.created).toLocaleDateString("en-GB", {
+                                            day: "2-digit",
+                                            month: "2-digit",
+                                            year: "numeric",
+                                        })}
                                     </p>
                                 </div>
                             </div>
