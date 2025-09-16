@@ -42,13 +42,24 @@ class FileSizeValidator:
         return isinstance(other, self.__class__) and self.max_size == other.max_size
 
 
+def _trim_slug_by_words(slug: str, max_length: int = 50):
+    if len(slug) > max_length:
+        last_hyphen = slug.rfind('-', 0, max_length)
+        if last_hyphen != -1:
+            slug = slug[:last_hyphen]
+        else:
+            slug = slug[:max_length]
+    return slug
+
+
 def unique_slugify(instance, content):
     model = instance.__class__
-    unique_slug = slugify(unidecode(content))
-    while model.objects.filter(slug=unique_slug).exists():
-        unique_slug = f'{unique_slug}-{uuid4().hex[:8]}'
+    base_slug = slugify(unidecode(content))
+    slug = _trim_slug_by_words(base_slug, max_length=30)
+    while model.objects.filter(slug=slug).exists():
+        slug = f'{slug}-{uuid4().hex[:8]}'
 
-    return unique_slug
+    return slug
 
 
 def validate_file_size(value):
