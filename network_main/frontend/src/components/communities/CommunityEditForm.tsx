@@ -16,6 +16,7 @@ import { deleteCommunity } from '@/services/api';
 import axios from 'axios';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 interface CommunityEditFormProps {
     community: CommunityType;
@@ -407,7 +408,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                             <div className="space-y-2 text-center">
                                                 <ImageUploader
                                                     label="Icon"
-                                                    currentImage={community.icon}
+                                                    currentImage={`${containerUrl}${community.icon}`}
                                                     preview={iconPreview}
                                                     onFileChange={handleIconChange}
                                                     error={iconError}
@@ -420,7 +421,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                             <div className="space-y-2">
                                                 <ImageUploader
                                                     label="Banner"
-                                                    currentImage={community.banner}
+                                                    currentImage={`${containerUrl}${community.banner}`}
                                                     preview={bannerPreview}
                                                     onFileChange={handleBannerChange}
                                                     error={bannerError}
@@ -539,7 +540,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                             <button
                                 type="button"
                                 onClick={() => setIsDeleteDialogOpen(false)}
-                                className="px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                                className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
                             >
                                 Cancel
                             </button>
@@ -547,7 +548,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                 type="button"
                                 onClick={handleDelete}
                                 disabled={loading}
-                                className="px-4 py-2 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                                className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400"
                             >
                                 {loading ? 'Deleting...' : 'Delete'}
                             </button>

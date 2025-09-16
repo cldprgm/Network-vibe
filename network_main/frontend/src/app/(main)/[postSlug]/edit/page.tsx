@@ -7,6 +7,9 @@ import { CommunityType, Post } from '@/services/types';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
 import { api } from '@/services/auth';
+import Image from 'next/image';
+
+const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 interface FileWithPreview extends File {
     preview: string;
@@ -218,12 +221,14 @@ export default function EditPost() {
                         >
                             {community ? (
                                 <>
-                                    <img
-                                        src={community.icon}
+                                    <Image
+                                        src={`${containerUrl}${community.icon}`}
                                         alt={`${community.name} icon`}
+                                        width={20}
+                                        height={20}
                                         className="w-5 h-5 mr-2 rounded-full"
                                     />
-                                    <span>{community.name}</span>
+                                    <span>n/{community.name}</span>
                                 </>
                             ) : (
                                 <span>Select a community</span>
@@ -238,10 +243,12 @@ export default function EditPost() {
                                         onClick={() => selectCommunity(c)}
                                         className="flex items-center px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                                     >
-                                        <img
-                                            src={c.icon}
+                                        <Image
+                                            src={`${containerUrl}${c.icon}`}
                                             alt={`${c.name} icon`}
-                                            className="w-6 h-6 mr-2 rounded-full"
+                                            width={20}
+                                            height={20}
+                                            className="w-5 h-5 mr-2 rounded-full"
                                         />
                                         <span>n/{c.name}</span>
                                     </li>
