@@ -209,7 +209,7 @@ export default function PostListItems({ post }: { post: Post }) {
                                 {isMenuOpen && (
                                     <div
                                         ref={menuRef}
-                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-600 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
                                     >
                                         <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
                                             <Bookmark className="w-4 h-4 mr-3" />

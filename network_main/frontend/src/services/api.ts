@@ -38,6 +38,15 @@ export async function apiCreatePost(postData: FormData): Promise<Post> {
     }
 }
 
+export async function deletePost(slug: string): Promise<Post> {
+    try {
+        const response = await api.delete(`${baseUrl}/posts/${slug}/`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to delete post.');
+    }
+}
+
 export async function votePost(slug: string, value: number): Promise<VoteResult> {
     try {
         const response = await api.post(`/posts/${slug}/ratings/`, { value });
