@@ -1,6 +1,6 @@
 'use client';
 
-import { deleteVotePost, votePost, } from "@/services/api";
+import { deleteVotePost, votePost, deletePost } from "@/services/api";
 import PostMedia from "./media/PostMedia";
 import { PostActions } from "./PostActions";
 import CommentsSection from "./comments/CommentsSection";
@@ -11,7 +11,8 @@ import AuthModalController from "../auth/AuthModalController";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, Pencil, Bookmark, Flag } from "lucide-react";
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import { MoreHorizontal, Pencil, Bookmark, Flag, Trash } from "lucide-react";
 
 const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
@@ -24,6 +25,10 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const { isAuthenticated } = useAuthStore();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [loadingDelete, setLoadingDelete] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -48,7 +53,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
         });
     };
 
-    const handleDelete = async (slug: string) => {
+    const handleDeleteVote = async (slug: string) => {
         requireAuth(async () => {
             try {
                 const { sum_rating, user_vote } = await deleteVotePost(slug);
@@ -57,6 +62,23 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                 console.error('Error for delete voice on post:', error);
             }
         })
+    };
+
+    const handleDelete = async (slug: string) => {
+        requireAuth(async () => {
+            setLoadingDelete(true);
+            setDeleteError(null);
+            try {
+                await deletePost(slug);
+                router.push(`/`);
+                router.refresh();
+            } catch (error) {
+                console.error("Error deleting post:", error);
+                setDeleteError("Failed to delete the post. Please try again.");
+            } finally {
+                setLoadingDelete(false);
+            }
+        });
     };
 
     useEffect(() => {
@@ -126,18 +148,29 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 {isMenuOpen && (
                                     <div
                                         ref={menuRef}
-                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-600 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
                                     >
                                         {post?.is_creator && (
-                                            <button
-                                                onClick={() => {
-                                                    setIsMenuOpen(false);
-                                                    router.push(`/${post.slug}/edit`);
-                                                }}
-                                                className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
-                                                <Pencil className="w-4 h-4 mr-3" />
-                                                Edit
-                                            </button>
+                                            <div>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsMenuOpen(false);
+                                                        router.push(`/${post.slug}/edit`);
+                                                    }}
+                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-green-700 dark:text-green-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                                    <Pencil className="w-4 h-4 mr-3" />
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsMenuOpen(false);
+                                                        setIsDeleteDialogOpen(true);
+                                                    }}
+                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                                    <Trash className="w-4 h-4 mr-3" />
+                                                    Delete
+                                                </button>
+                                            </div>
                                         )}
                                         <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
                                             <Bookmark className="w-4 h-4 mr-3" />
@@ -166,7 +199,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                             <PostActions
                                 post={post}
                                 onVote={handleVote}
-                                onDelete={handleDelete}
+                                onDelete={handleDeleteVote}
                             />
 
                             <CommentsSection
@@ -177,6 +210,39 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                     </div>
                 </div>
             </div>
+            <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <DialogPanel className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md">
+                        <DialogTitle className="p-4 text-lg font-bold text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-800">
+                            Delete Post
+                        </DialogTitle>
+                        <div className="p-4">
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                                Are you sure you want to delete this post? This action cannot be undone.
+                            </p>
+                            {deleteError && <p className="text-sm text-red-500 mt-2">{deleteError}</p>}
+                        </div>
+                        <div className="p-4 flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800">
+                            <button
+                                type="button"
+                                onClick={() => setIsDeleteDialogOpen(false)}
+                                className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDelete(post.slug)}
+                                disabled={loadingDelete}
+                                className="cursor-pointer px-4 py-2 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                            >
+                                {loadingDelete ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
         </>
     );
 };
