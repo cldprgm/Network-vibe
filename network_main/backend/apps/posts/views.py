@@ -106,6 +106,11 @@ class PostViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('You cannot edit this post.')
         serializer.save()
 
+    def perform_destroy(self, instance):
+        if self.get_object().author != self.request.user:
+            raise PermissionDenied('You cannot delete this post.')
+        instance.delete()
+
     @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='ratings')
     def ratings(self, request, slug=None):
         post = self.get_object()

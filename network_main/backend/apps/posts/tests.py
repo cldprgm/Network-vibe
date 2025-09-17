@@ -280,6 +280,27 @@ class TestPostView:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert Post.objects.filter(id=post.id).exists()
 
+    def test_delete_post_not_author(self, api_client, post):
+        second_user = CustomUser.objects.create_user(
+            username='secondtestuser',
+            email='secondtest@example.com',
+            password='secondtestpassword'
+        )
+
+        login_url = reverse('login')
+        response = api_client.post(login_url, {
+            'email': 'secondtest@example.com',
+            'password': 'secondtestpassword'
+        })
+        client = APIClient()
+        client.cookies = response.cookies
+
+        url = reverse('post-detail', kwargs={'slug': 'testpost'})
+        response = client.delete(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        post.refresh_from_db()
+        assert Post.objects.filter(id=post.id).exists()
+
     def test_post_ratings_get(self, api_client, post):
         url = reverse('post-ratings', kwargs={'slug': 'testpost'})
         response = api_client.get(url)
