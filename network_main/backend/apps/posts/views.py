@@ -1,22 +1,38 @@
+import random
+
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import mixins
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import OuterRef, Subquery, IntegerField, Value, Sum, Q, Count, Max
+from django.db.models import (
+    OuterRef, Subquery,
+    IntegerField, FloatField,
+    Value, Sum, Count, Max,
+    Q, F, ExpressionWrapper,
+    Case, When
+)
+from django.db.models.functions.math import Random
 from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Extract
+from django.utils import timezone
+from datetime import timedelta
 
 from apps.ratings.models import Rating
 
 from .models import Post, Comment
-from .serializers import PostDetailSerializer, PostListSerializer, CommentDetailSerializer, \
-    RatingSerializer, CommentSummarySerializer
+from .serializers import (
+    PostDetailSerializer,
+    PostListSerializer,
+    CommentDetailSerializer,
+    RatingSerializer,
+    CommentSummarySerializer
+)
 
 
 def get_annotated_ratings(queryset, request, content_type: ContentType):
@@ -59,15 +75,13 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
 
 
 def get_optimized_post_queryset(request, action):
-    queryset = Post.published.all()
-    post_content_type = ContentType.objects.get_for_model(Post)
-
-    queryset = get_annotated_ratings(queryset, request, post_content_type)
-    queryset = queryset.annotate(
-        comment_count=Count(
-            'owned_comments', filter=Q(owned_comments__status='PB')
+    if request.user.is_authenticated:
+        queryset = get_user_recommendations(
+            request,
+            randomize_factor=0.7
         )
-    )
+    else:
+        queryset = get_trending_posts(request, days=2, randomize_factor=0.7)
 
     common_prefetch = [
         'media_data',
@@ -78,15 +92,134 @@ def get_optimized_post_queryset(request, action):
     return qs
 
 
-class PostPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
-    max_page_size = 50
+def get_user_recommendations(request, randomize_factor=0.05):
+    user = request.user
+    now = timezone.now()
+    post_content_type = ContentType.objects.get_for_model(Post)
+
+    liked_posts = Rating.objects.filter(
+        user=user, value=1, content_type=post_content_type
+    ).values_list('object_id', flat=True)
+
+    liked_communities = Post.objects.filter(
+        id__in=liked_posts).values_list('community', flat=True).distinct()
+
+    w_rating = 0.4
+    w_comments = 0.2
+    w_community = 0.2
+    w_freshness = 0.2
+    w_random = randomize_factor
+
+    queryset = Post.published.all().exclude(id__in=liked_posts)
+
+    queryset = get_annotated_ratings(
+        queryset,
+        request,
+        content_type=post_content_type
+    )
+
+    comment_count_subquery = Comment.objects.filter(
+        post=OuterRef('pk'),
+        status='PB'
+    ).values('post').annotate(count=Count('pk')).values('count')
+
+    queryset = queryset.annotate(
+        comment_count=Coalesce(
+            Subquery(comment_count_subquery, output_field=IntegerField()),
+            Value(0)
+        ),
+        hours_since_created=ExpressionWrapper(
+            Extract((now - F('created')), 'epoch') / 3600.0,
+            output_field=FloatField()
+        ),
+        freshness=ExpressionWrapper(
+            1.0 / (1.0 + F('hours_since_created')),
+            output_field=FloatField()
+        ),
+        community_relevance=Case(
+            When(community__in=liked_communities, then=1.0),
+            default=0.1,
+            output_field=FloatField()
+        ),
+        random_factor=ExpressionWrapper(
+            Random() * 0.4,
+            output_field=FloatField()
+        ),
+        score=ExpressionWrapper(
+            (w_rating * F('sum_rating')) +
+            (w_comments * F('comment_count')) +
+            (w_community * F('community_relevance')) +
+            (w_freshness * F('freshness')) +
+            (w_random * F('random_factor')),
+            output_field=FloatField()
+        )
+    ).order_by('-score')
+
+    return queryset
+
+
+def get_trending_posts(request, days=3, randomize_factor=0.05):
+    now = timezone.now()
+    post_content_type = ContentType.objects.get_for_model(Post)
+
+    time_threshold = now - timedelta(days=days)
+
+    w_rating = 0.4
+    w_comments = 0.2
+    w_freshness = 0.3
+    w_random = randomize_factor
+
+    queryset = Post.published.filter(created__gte=time_threshold)
+
+    queryset = get_annotated_ratings(
+        queryset,
+        request,
+        content_type=post_content_type
+    )
+
+    comment_count_subquery = Comment.objects.filter(
+        post=OuterRef('pk'),
+        status='PB'
+    ).values('post').annotate(count=Count('pk')).values('count')
+
+    queryset = queryset.annotate(
+        comment_count=Coalesce(
+            Subquery(comment_count_subquery, output_field=IntegerField()),
+            Value(0)
+        ),
+        hours_since_created=ExpressionWrapper(
+            Extract((now - F('created')), 'epoch') / 3600.0,
+            output_field=FloatField()
+        ),
+        freshness=ExpressionWrapper(
+            1.0 / (1.0 + F('hours_since_created')),
+            output_field=FloatField()
+        ),
+        random_factor=ExpressionWrapper(
+            Random() * 0.4,
+            output_field=FloatField()
+        ),
+        score=ExpressionWrapper(
+            (w_rating * F('sum_rating')) +
+            (w_comments * F('comment_count')) +
+            (w_freshness * F('freshness')) +
+            (w_random * F('random_factor')),
+            output_field=FloatField()
+        )
+    ).order_by('-score')
+
+    return queryset
+
+
+class PostCursorPagination(CursorPagination):
+    page_size = 25
+    ordering = ('-score', '-created')
+    cursor_query_param = 'cursor'
 
 
 class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    pagination_class = PostPagination
+    pagination_class = PostCursorPagination
     lookup_field = 'slug'
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 

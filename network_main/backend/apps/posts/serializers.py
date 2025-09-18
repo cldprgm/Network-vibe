@@ -125,6 +125,9 @@ class PostListSerializer(serializers.ModelSerializer):
     sum_rating = serializers.IntegerField(read_only=True)
     user_vote = serializers.IntegerField(read_only=True)
 
+    # for dev
+    score = serializers.FloatField(read_only=True)
+
     media_data = MediaSerializer(many=True, read_only=True)
     media_files = serializers.ListField(
         child=serializers.FileField(),
@@ -137,7 +140,7 @@ class PostListSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'slug', 'description', 'status', 'author',
                   'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
                   'community_id', 'community_slug', 'community_name', 'community_icon',
-                  'community_obj', 'media_data', 'media_files')
+                  'community_obj', 'media_data', 'media_files', 'score')
         read_only_fields = ('id', 'slug', 'created', 'updated',
                             'author', 'media_data')
 
