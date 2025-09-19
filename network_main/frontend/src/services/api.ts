@@ -13,17 +13,19 @@ export interface VoteResult {
 export interface PaginatedResponse<T> {
     results: T[];
     next: string | null;
+    previous: string | null;
 }
 
-export async function fetchPosts(page: number): Promise<{ results: Post[]; nextPage: number | null }> {
+export async function fetchPosts(cursor: string | null): Promise<{ results: Post[]; nextCursor: string | null; previousCursor: string | null }> {
     try {
         const response = await api.get<PaginatedResponse<Post>>(
             `/posts/`,
-            { params: { page } }
+            { params: { cursor } }
         );
-        const { results, next } = response.data;
-        const nextPage = next ? Number(new URL(next).searchParams.get('page')) : null;
-        return { results, nextPage };
+        const { results, next, previous } = response.data;
+        const nextCursor = next ? new URL(next).searchParams.get('cursor') : null;
+        const previousCursor = previous ? new URL(previous).searchParams.get('cursor') : null;
+        return { results, nextCursor, previousCursor };
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to fetch posts in client.');
     }
