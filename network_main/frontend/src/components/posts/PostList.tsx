@@ -12,7 +12,6 @@ export default async function PostList() {
   // fix later
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
   const url = new URL(`http://${host}/api/proxy/posts`);
-  url.searchParams.append('page', '1')
 
   const cookieHeader = headersList.get('cookie') || '';
   const res = await fetch(url, {
@@ -21,11 +20,17 @@ export default async function PostList() {
     },
   });
 
-  const data: { results: Post[]; next: string | null } = await res.json();
+  const data: { results: Post[]; next: string | null; previous: string | null } = await res.json();
 
-  const nextPage = data.next
-    ? Number(new URL(data.next).searchParams.get('page'))
-    : null;
 
-  return <PostsSection initialPosts={data.results} initialNextPage={nextPage} />;
+  const nextCursor = data.next ? new URL(data.next).searchParams.get('cursor') : null;
+  const previousCursor = data.previous ? new URL(data.previous).searchParams.get('cursor') : null;
+
+  return (
+    <PostsSection
+      initialPosts={data.results}
+      initialNextCursor={nextCursor}
+      initialPreviousCursor={previousCursor}
+    />
+  );
 }
