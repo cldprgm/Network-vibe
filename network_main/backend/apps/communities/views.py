@@ -14,7 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.memberships.models import Membership
 from apps.posts.models import Post
 from apps.posts.serializers import PostListSerializer
-from apps.posts.views import PostCursorPagination, get_annotated_ratings
+from apps.posts.views import PostPagination, get_annotated_ratings
 
 from .models import Community
 from .serializers import CommunityListSerializer, CommunityDetailSerializer, MembershipSerializer
@@ -102,7 +102,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
 
 class CommunityPostsListView(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = PostListSerializer
-    pagination_class = PostCursorPagination
+    pagination_class = PostPagination
 
     def get_queryset(self):
         queryset = Post.published.filter(

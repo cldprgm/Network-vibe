@@ -1,4 +1,5 @@
 import random
+import time
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -35,63 +36,6 @@ from .serializers import (
 )
 
 
-def get_annotated_ratings(queryset, request, content_type: ContentType):
-    ratings_sum_subquery = (
-        Rating.objects.filter(
-            content_type=content_type,
-            object_id=OuterRef('pk')
-        ).values('object_id').annotate(total=Coalesce(Sum('value'), Value(0))).values('total')[:1]
-    )
-
-    queryset = queryset.annotate(
-        sum_rating=Coalesce(
-            Subquery(ratings_sum_subquery, output_field=IntegerField()),
-            Value(0),
-            output_field=IntegerField()
-        )
-    )
-
-    user = request.user
-    if user.is_authenticated:
-        queryset = queryset.annotate(
-            user_vote=Coalesce(
-                Max(
-                    'ratings__value',
-                    filter=Q(
-                        ratings__content_type=content_type,
-                        ratings__user=user
-                    )
-                ),
-                Value(0),
-                output_field=IntegerField()
-            )
-        )
-    else:
-        queryset = queryset.annotate(
-            user_vote=Value(0, output_field=IntegerField())
-        )
-
-    return queryset
-
-
-def get_optimized_post_queryset(request, action):
-    if request.user.is_authenticated:
-        queryset = get_user_recommendations(
-            request,
-            randomize_factor=0.7
-        )
-    else:
-        queryset = get_trending_posts(request, days=2, randomize_factor=0.7)
-
-    common_prefetch = [
-        'media_data',
-    ]
-
-    qs = queryset.prefetch_related(*common_prefetch)
-
-    return qs
-
-
 def get_user_recommendations(request, randomize_factor=0.05):
     user = request.user
     now = timezone.now()
@@ -105,7 +49,7 @@ def get_user_recommendations(request, randomize_factor=0.05):
         id__in=liked_posts).values_list('community', flat=True).distinct()
 
     w_rating = 0.4
-    w_comments = 0.2
+    w_comments = 0.1
     w_community = 0.2
     w_freshness = 0.2
     w_random = randomize_factor
@@ -165,7 +109,7 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
     time_threshold = now - timedelta(days=days)
 
     w_rating = 0.4
-    w_comments = 0.2
+    w_comments = 0.1
     w_freshness = 0.3
     w_random = randomize_factor
 
@@ -211,15 +155,74 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
     return queryset
 
 
-class PostCursorPagination(CursorPagination):
+def get_annotated_ratings(queryset, request, content_type: ContentType):
+    ratings_sum_subquery = (
+        Rating.objects.filter(
+            content_type=content_type,
+            object_id=OuterRef('pk')
+        ).values('object_id').annotate(total=Coalesce(Sum('value'), Value(0))).values('total')[:1]
+    )
+
+    queryset = queryset.annotate(
+        sum_rating=Coalesce(
+            Subquery(ratings_sum_subquery, output_field=IntegerField()),
+            Value(0),
+            output_field=IntegerField()
+        )
+    )
+
+    user = request.user
+    if user.is_authenticated:
+        queryset = queryset.annotate(
+            user_vote=Coalesce(
+                Max(
+                    'ratings__value',
+                    filter=Q(
+                        ratings__content_type=content_type,
+                        ratings__user=user
+                    )
+                ),
+                Value(0),
+                output_field=IntegerField()
+            )
+        )
+    else:
+        queryset = queryset.annotate(
+            user_vote=Value(0, output_field=IntegerField())
+        )
+
+    return queryset
+
+
+def get_optimized_post_queryset(request, action):
+    queryset = Post.published.all()
+    post_content_type = ContentType.objects.get_for_model(Post)
+
+    queryset = get_annotated_ratings(queryset, request, post_content_type)
+    queryset = queryset.annotate(
+        comment_count=Count(
+            'owned_comments', filter=Q(owned_comments__status='PB')
+        )
+    )
+
+    common_prefetch = [
+        'media_data',
+    ]
+
+    qs = queryset.prefetch_related(*common_prefetch)
+
+    return qs
+
+
+class PostPagination(PageNumberPagination):
     page_size = 25
-    ordering = ('-score', '-created')
-    cursor_query_param = 'cursor'
+    page_size_query_param = 'page_size'
+    max_page_size = 30
 
 
 class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    pagination_class = PostCursorPagination
+    pagination_class = PostPagination
     lookup_field = 'slug'
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
@@ -230,6 +233,43 @@ class PostViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return PostListSerializer
         return PostDetailSerializer
+
+    def list(self, request, *args, **kwargs):
+        session_key = 'random_post_ids'
+        timestamp_key = 'random_posts_timestamp'
+
+        now = time.time()
+        last_generated = request.session.get(timestamp_key, 0)
+
+        if (now - last_generated > 30) or (session_key not in request.session):
+            if request.user.is_authenticated:
+                recommendation_qs = get_user_recommendations(
+                    request, randomize_factor=0.3)
+            else:
+                recommendation_qs = get_trending_posts(
+                    request, days=1000, randomize_factor=0.6)
+
+            ordered_ids = list(recommendation_qs.values_list('pk', flat=True))
+            request.session[session_key] = ordered_ids
+            request.session[timestamp_key] = now
+
+        post_ids_from_session = request.session[session_key]
+
+        paginator = self.pagination_class()
+        page_ids = paginator.paginate_queryset(
+            post_ids_from_session, request, view=self)
+
+        base_queryset = self.get_queryset()
+
+        preserved_order = Case(*[When(pk=pk_val, then=pos)
+                                 for pos, pk_val in enumerate(page_ids)])
+
+        queryset = base_queryset.filter(
+            pk__in=page_ids).order_by(preserved_order)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg2
 import random
 import requests
 from faker import Faker
@@ -6,6 +6,11 @@ from django.utils.text import slugify
 from unidecode import unidecode
 from uuid import uuid4
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
+load_dotenv(dotenv_path)
 
 
 def unique_slugify(content):
@@ -17,7 +22,13 @@ def unique_slugify(content):
 fake = Faker()
 
 try:
-    conn = sqlite3.connect('db.sqlite3')
+    conn = psycopg2.connect(
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
+    )
     cursor = conn.cursor()
 
     cursor.execute('SELECT id FROM users_customuser')
@@ -26,7 +37,7 @@ try:
     cursor.execute('SELECT id FROM api_network_community')
     community_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(30):
+    for _ in range(50):
         title = fake.text(max_nb_chars=50)
         slug = unique_slugify(title)
         description = fake.text(max_nb_chars=150)
@@ -39,16 +50,17 @@ try:
         cursor.execute(
             """
             INSERT INTO api_network_post (title, slug, description, status, created, updated, author_id, community_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (title, slug, description, status, created, updated, author_id, community_id)
         )
 
     MEDIA_ROOT = Path('media/uploads/media')
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
     cursor.execute('SELECT id FROM api_network_post')
     post_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(40):
+    for _ in range(60):
         try:
             response = requests.get('https://picsum.photos/1080/1080')
             response.raise_for_status()
@@ -70,17 +82,18 @@ try:
         cursor.execute(
             """
             INSERT INTO api_network_media (file, uploaded_at, post_id)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
             """, (file_url, uploaded_at, post_id)
         )
 
     conn.commit()
 
-except sqlite3.Error as e:
-    print(f'SQLite error: {e}')
+except psycopg2.Error as e:
+    print(f'PostgreSQL error: {e}')
     author_ids = []
     community_ids = []
     post_ids = []
 finally:
     if conn:
+        cursor.close()
         conn.close()
