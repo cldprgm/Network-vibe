@@ -241,13 +241,13 @@ class PostViewSet(viewsets.ModelViewSet):
         now = time.time()
         last_generated = request.session.get(timestamp_key, 0)
 
-        if (now - last_generated > 30) or (session_key not in request.session):
+        if (now - last_generated > 40) or (session_key not in request.session):
             if request.user.is_authenticated:
                 recommendation_qs = get_user_recommendations(
                     request, randomize_factor=0.3)
             else:
                 recommendation_qs = get_trending_posts(
-                    request, days=1000, randomize_factor=0.6)
+                    request, days=30, randomize_factor=0.6)
 
             ordered_ids = list(recommendation_qs.values_list('pk', flat=True))
             request.session[session_key] = ordered_ids

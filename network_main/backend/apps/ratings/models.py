@@ -20,6 +20,7 @@ class Rating(models.Model):
         choices=[(1, 'upvote'), (-1, 'downvote')], verbose_name='Rating value')
     time_created = models.DateTimeField(
         auto_now_add=True, verbose_name='Time created')
+    # Delete this later
     ip_address = models.GenericIPAddressField(verbose_name='IP address')
 
     class Meta:
