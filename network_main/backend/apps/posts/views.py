@@ -173,15 +173,17 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
 
     user = request.user
     if user.is_authenticated:
+        user_vote_subquery = (
+            Rating.objects.filter(
+                content_type=content_type,
+                object_id=OuterRef('pk'),
+                user=user
+            ).values('object_id').annotate(max_value=Max('value')).values('max_value')[:1]
+        )
+
         queryset = queryset.annotate(
             user_vote=Coalesce(
-                Max(
-                    'ratings__value',
-                    filter=Q(
-                        ratings__content_type=content_type,
-                        ratings__user=user
-                    )
-                ),
+                Subquery(user_vote_subquery, output_field=IntegerField()),
                 Value(0),
                 output_field=IntegerField()
             )

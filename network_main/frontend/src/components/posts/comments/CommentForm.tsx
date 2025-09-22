@@ -26,17 +26,17 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, Props>(({ parentId, on
                 maxLength={500}
                 required
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pb-2">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+                    className="cursor-pointer px-4 py-2 bg-gray-300 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-400 dark:hover:bg-gray-600 transition"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
+                    className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
                 >
                     Comment
                 </button>
