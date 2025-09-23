@@ -4,12 +4,15 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, OuterRef, Exists, Value, Q, Prefetch
 from django.db.models.fields import BooleanField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from apps.memberships.models import Membership
 from apps.posts.models import Post
@@ -17,8 +20,13 @@ from apps.posts.serializers import PostListSerializer
 from apps.posts.views import PostPagination, get_annotated_ratings
 
 from .models import Community
-from .serializers import CommunityListSerializer, CommunityDetailSerializer, MembershipSerializer
+from .serializers import (
+    CommunityListSerializer,
+    CommunityDetailSerializer,
+    MembershipSerializer
+)
 from .community_permissions import IsCommunityCreator, HasCommunityPermission, CannotLeaveIfCreator
+from .community_permissions import PERMISSONS_MAP
 
 
 class CommunityPagination(PageNumberPagination):
@@ -48,8 +56,9 @@ class CommunityViewSet(viewsets.ModelViewSet):
         return CommunityDetailSerializer
 
     def get_queryset(self):
-        queryset = Community.objects.select_related(
-            'creator').annotate(members_count=Count('members'))
+        queryset = Community.objects.select_related('creator').annotate(
+            members_count=Count('members')
+        )
 
         user = self.request.user
         # add (members__is_approved=True) later
@@ -74,6 +83,48 @@ class CommunityViewSet(viewsets.ModelViewSet):
             queryset = queryset.prefetch_related('categories')
 
         return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        slug = self.kwargs.get('slug')
+        cache_key = f'community:{slug}'
+
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            data = cache_data.copy()
+            if request.user.is_authenticated:
+                membership = Membership.objects.filter(
+                    user=request.user, community__slug=slug
+                ).first()
+                if membership:
+                    data['is_member'] = True
+                    data['current_user_roles'] = [membership.role]
+                    data['current_user_permissions'] = list(
+                        set(PERMISSONS_MAP.get(membership.role, []))
+                    )
+                else:
+                    data['is_member'] = False
+                    data['current_user_roles'] = []
+                    data['current_user_permissions'] = []
+            else:
+                data['is_member'] = False
+                data['current_user_roles'] = []
+                data['current_user_permissions'] = []
+            print('CACHED DATA:', cache_data)
+            return Response(data)
+
+        instance = self.get_queryset().get(slug=slug)
+        serializer = CommunityDetailSerializer(
+            instance,
+            context={'request': request}
+        )
+        data = serializer.data
+
+        cache_data = {
+            k: v for k, v in data.items()
+            if k not in ['is_member', 'current_user_roles', 'current_user_permissions']
+        }
+        cache.set(cache_key, cache_data, 200)
+        return Response(data)
 
     # add later
     @action(detail=True, methods=['post'])
