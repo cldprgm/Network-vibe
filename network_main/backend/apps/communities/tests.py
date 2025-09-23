@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 import io
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 
 from apps.users.models import CustomUser
 from apps.categories.models import Category
@@ -219,6 +220,67 @@ class TestCommunityViewSet():
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['name'] == community.name
+
+    def test_retrieve_community_from_cache(self, authenticated_client_member, community, membership_member):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+
+        response = authenticated_client_member.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+        cache_key = f'community:{community.slug}'
+        cached_data = cache.get(cache_key)
+        assert cached_data is not None
+        assert cached_data['name'] == community.name
+
+        response = authenticated_client_member.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == community.name
+        assert response.data['is_member'] is True
+
+    def test_retrieve_community_cache_invalidation_on_update(self, authenticated_client_creator, community, membership_creator):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        cache_key = f'community:{community.slug}'
+
+        response = authenticated_client_creator.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert cache.get(cache_key) is not None
+
+        response = authenticated_client_creator.patch(
+            url, {'description': 'updated_description'})
+        assert response.status_code == status.HTTP_200_OK
+
+        assert cache.get(cache_key) is None
+
+        response = authenticated_client_creator.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert cache.get(cache_key) is not None
+        assert cache.get(cache_key)['description'] == 'updated_description'
+
+    def test_retrieve_community_unauthenticated(self, api_client, community):
+        url = reverse('community-detail', kwargs={'slug': community.slug})
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['is_member'] is False
+        assert response.data['current_user_roles'] == []
+        assert response.data['current_user_permissions'] == []
+
+    def test_community_members_count_annotation(self, api_client, community, membership_creator, membership_moderator):
+        url = reverse('community-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'][0]['members_count'] == 2
+
+    def test_community_is_member_annotation_authenticated(self, authenticated_client_member, community, membership_member):
+        url = reverse('community-list')
+        response = authenticated_client_member.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'][0]['is_member'] is True
+
+    def test_community_is_member_annotation_unauthenticated(self, api_client, community):
+        url = reverse('community-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'][0]['is_member'] is False
 
     def test_create_community(self, authenticated_client, test_user, category):
         url = reverse('community-list')
