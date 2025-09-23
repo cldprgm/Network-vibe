@@ -123,7 +123,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
             k: v for k, v in data.items()
             if k not in ['is_member', 'current_user_roles', 'current_user_permissions']
         }
-        cache.set(cache_key, cache_data, 200)
+        cache.set(cache_key, cache_data, 60 * 15)
         return Response(data)
 
     # add later
@@ -143,9 +143,11 @@ class CommunityViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        if self.get_object().creator != self.request.user:
+        instance = self.get_object()
+        if instance.creator != self.request.user:
             raise PermissionDenied('You cannot edit this community.')
         serializer.save()
+        cache.delete(f"community:{instance.slug}")
 
     def get_serializer_context(self):
         return {'request': self.request}
