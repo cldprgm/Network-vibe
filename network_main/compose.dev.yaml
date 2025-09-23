@@ -16,6 +16,8 @@ services:
             - venv/
         - action: rebuild
           path: ./backend/requirements
+    volumes:
+      - media_volume:/usr/src/api_backend/media
     ports:
       - 127.0.0.1:8000:8000
     env_file:
@@ -23,6 +25,11 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     depends_on:
       - db
+  redis:
+    image: redis:8.2.1-alpine3.22
+    container_name: redis_db
+    ports:
+      - 127.0.0.1:6379:6379
   db:
     image: postgres:17-bookworm
     container_name: db
@@ -60,3 +67,4 @@ services:
 
 volumes:
   data:
+  media_volume:
