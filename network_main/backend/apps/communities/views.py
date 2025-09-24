@@ -109,7 +109,6 @@ class CommunityViewSet(viewsets.ModelViewSet):
                 data['is_member'] = False
                 data['current_user_roles'] = []
                 data['current_user_permissions'] = []
-            print('CACHED DATA:', cache_data)
             return Response(data)
 
         instance = self.get_queryset().get(slug=slug)

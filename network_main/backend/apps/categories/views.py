@@ -1,9 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import generics
+from rest_framework.response import Response
+from copy import deepcopy
 
 from django.db.models import Count, Exists, Value, OuterRef, Prefetch, Subquery
 from django.db.models.fields import BooleanField
+from django.core.cache import cache
 
 from apps.communities.models import Community
 from apps.communities.serializers import CommunityListSerializer
@@ -57,6 +60,52 @@ class CategoryViewSet(viewsets.ModelViewSet):
         )
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        cache_key = 'categories_tree:list'
+
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            data = cache_data.copy()
+
+            if user.is_authenticated:
+
+                community_ids = []
+                for category in data:
+                    for child in category.get('subcategories', []):
+                        for community in child.get('communities', []):
+                            community_ids.append(community['id'])
+
+                membership = Membership.objects.filter(
+                    user=user,
+                    community__id__in=community_ids
+                ).values('community_id')
+                membership_set = {m['community_id'] for m in membership}
+
+                for category in data:
+                    for child in category.get('subcategories', []):
+                        for community in child.get('communities', []):
+                            community['is_member'] = community['id'] in membership_set
+            else:
+                for category in data:
+                    for child in category.get('subcategories', []):
+                        for community in child.get('communities', []):
+                            community['is_member'] = False
+            return Response(data)
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+
+        cache_data = deepcopy(data)
+        for category in cache_data:
+            for child in category.get('subcategories', []):
+                for community in child.get('communities', []):
+                    community.pop('is_member', None)
+        cache.set(cache_key, cache_data, 60 * 1)
+
+        return Response(data)
 
 
 class CategoryCommunityListView(generics.ListAPIView):

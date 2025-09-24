@@ -19,26 +19,44 @@ export default function ExplorePage() {
         const load = async () => {
             try {
                 const recommendedRes = await api.get('/recommendations/communities/');
-                setRecommendedCommunities(recommendedRes.data.recommendations);
-                setRecommendedNextPage(recommendedRes.data.next);
+                const recs = Array.isArray(recommendedRes.data?.recommendations)
+                    ? recommendedRes.data.recommendations
+                    : [];
+                setRecommendedCommunities(recs);
+                setRecommendedNextPage(recommendedRes.data?.next ?? null);
 
                 const res = await api.get('/categories-tree/');
-                const categoriesWithPagination: Category[] = res.data.results.map((category: Category) => ({
+
+                const results: any[] = Array.isArray(res.data)
+                    ? res.data
+                    : Array.isArray(res.data?.results)
+                        ? res.data.results
+                        : [];
+
+                const categoriesWithPagination: Category[] = results.map((category: any) => ({
                     ...category,
-                    subcategories: category.subcategories.map(sub => ({
-                        ...sub,
-                        nextPage: (sub as any).next
-                            ?? (sub.communities.length >= 6
-                                ? `/categories-tree/subcategories/${sub.id}/communities/?page=2`
-                                : null)
-                    }))
+                    subcategories: Array.isArray(category.subcategories)
+                        ? category.subcategories.map((sub: any) => {
+                            const nextFromApi = sub?.next ?? null;
+                            const communitiesCount = Array.isArray(sub?.communities) ? sub.communities.length : 0;
+                            return {
+                                ...sub,
+                                nextPage: nextFromApi ?? (communitiesCount >= 6
+                                    ? `/categories-tree/subcategories/${sub.id}/communities/?page=2`
+                                    : null)
+                            };
+                        })
+                        : []
                 }));
+
                 setCategories([
                     { id: 'all', slug: 'all', title: 'All', subcategories: [] },
                     ...categoriesWithPagination
                 ]);
             } catch (err: any) {
-                setError(err.message || 'loading error');
+                console.error('load error:', err);
+                const serverMsg = err?.response?.data ? JSON.stringify(err.response.data) : undefined;
+                setError(err?.message ? `${err.message}${serverMsg ? ` — ${serverMsg}` : ''}` : 'loading error');
             } finally {
                 setLoading(false);
             }
@@ -62,6 +80,15 @@ export default function ExplorePage() {
     }
 
     const current = categories.find(c => c.slug === selected);
+
+    console.log('ExplorePage render', {
+        loading,
+        error,
+        selected,
+        categoriesLength: categories.length,
+        recommendedCommunitiesLength: recommendedCommunities.length,
+        current: !!current
+    });
 
     return (
         <div className="mt-5 max-w-[1300px] p-5 sm:p-10 md:p-16 mx-auto">

@@ -199,6 +199,8 @@ CACHES = {
         'LOCATION': os.getenv("REDIS_URL"),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PARSER_CLASS': 'redis.connection._HiredisParser',
+            'SERIALIZER': 'django_redis.serializers.json.JSONSerializer'
         }
     }
 }
