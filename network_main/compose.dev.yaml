@@ -6,6 +6,7 @@ services:
     image: api_backend:1.0.0
     container_name: api_backend_con
     restart: unless-stopped
+    entrypoint: /usr/src/api_backend/entrypoint.dev.sh
     develop:
       watch:
         - action: sync
@@ -28,6 +29,7 @@ services:
   redis:
     image: redis:8.2.1-alpine3.22
     container_name: redis_db
+    restart: unless-stopped
     ports:
       - 127.0.0.1:6379:6379
   db:
@@ -38,6 +40,20 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env.dev
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    image: celery:1.0.0
+    restart: unless-stopped
+    container_name: celery_worker
+    env_file:
+      - ./backend/.env.dev
+    command: celery -A network worker --loglevel=info
+    depends_on:
+      - redis
+      - apibackend
+
   frontend:
     build:
       context: ./frontend
