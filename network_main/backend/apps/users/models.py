@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
-from django.urls import reverse
+from django.utils import timezone
+
+from datetime import timedelta
 
 from apps.services.utils import unique_slugify, validate_file_size
 
@@ -15,6 +17,8 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
     slug = models.SlugField(
         verbose_name='URL', max_length=75, blank=True, unique=True)
+    # change on False later
+    is_active = models.BooleanField(default=True)
     avatar = models.ImageField(
         upload_to='uploads/avatars/%Y/%m/%d',
         default='uploads/avatars/default.png',
@@ -40,3 +44,23 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class VerificationCode(models.Model):
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expired_at = models.DateTimeField()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'code'])
+        ]
+
+    def is_valid(self):
+        return timezone.now() <= self.expired_at
+
+    def save(self, *args, **kwargs):
+        if not self.expired_at:
+            self.expired_at = timezone.now() + timedelta(minutes=10)
+        super().save(*args, **kwargs)

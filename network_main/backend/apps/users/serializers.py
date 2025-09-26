@@ -2,6 +2,8 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from django.conf import settings
 
+from ..services.verification import send_verification_code
+
 from .models import CustomUser
 
 
@@ -33,7 +35,10 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             password=validated_data['password'],
             email=validated_data['email'],
+            # change on False later
+            is_active=True
         )
+        send_verification_code(user)
         return user
 
 
