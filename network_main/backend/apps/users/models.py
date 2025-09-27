@@ -17,8 +17,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
     slug = models.SlugField(
         verbose_name='URL', max_length=75, blank=True, unique=True)
-    # change on False later
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     avatar = models.ImageField(
         upload_to='uploads/avatars/%Y/%m/%d',
         default='uploads/avatars/default.png',
