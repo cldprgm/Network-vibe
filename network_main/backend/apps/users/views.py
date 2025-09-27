@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
 
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -10,8 +10,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from django.core.exceptions import PermissionDenied
 
-from .models import CustomUser
-from .serializers import CustomUserSerializer, RegisterUserSerializer, LoginUserSerializer
+from .models import CustomUser, VerificationCode
+from .serializers import (
+    CustomUserSerializer,
+    RegisterUserSerializer,
+    LoginUserSerializer,
+    VerifyCodeSerializer
+)
 
 
 class CustomUserView(RetrieveUpdateAPIView):
@@ -25,6 +30,20 @@ class CustomUserView(RetrieveUpdateAPIView):
 class UserRegistrationView(CreateAPIView):
     serializer_class = RegisterUserSerializer
     permission_classes = [AllowAny]
+
+
+class VerifyCodeView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = VerifyCodeSerializer(data=request.data)
+        if serializer.is_valid():
+            user = CustomUser.objects.get(
+                email=serializer.validated_data['email']
+            )
+            user.is_active = True
+            user.save()
+            VerificationCode.objects.filter(user=user).delete()
+            return Response({"message": "Email verified successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):

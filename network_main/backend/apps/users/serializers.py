@@ -4,7 +4,10 @@ from django.conf import settings
 
 from ..services.verification import send_verification_code
 
-from .models import CustomUser
+from .models import CustomUser, VerificationCode
+
+
+User = settings.AUTH_USER_MODEL
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -35,11 +38,32 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             password=validated_data['password'],
             email=validated_data['email'],
-            # change on False later
-            is_active=True
+            is_active=False
         )
         send_verification_code(user)
         return user
+
+
+class VerifyCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+
+    def validate(self, attrs):
+        try:
+            user = CustomUser.objects.get(email=attrs['email'])
+            verification_code = VerificationCode.objects.filter(
+                user=user, code=attrs['code']
+            ).latest('created_at')
+
+            if not verification_code.is_valid():
+                raise serializers.ValidationError(
+                    'Verification code is expired'
+                )
+
+        except (CustomUser.DoesNotExist, VerificationCode.DoesNotExist):
+            raise serializers.ValidationError('Invalid email or code')
+
+        return attrs
 
 
 class LoginUserSerializer(serializers.Serializer):
