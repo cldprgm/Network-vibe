@@ -8,15 +8,25 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError
 
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from django.core.exceptions import PermissionDenied
+
+from apps.services.verification import send_verification_code
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
     CustomUserSerializer,
     RegisterUserSerializer,
     LoginUserSerializer,
-    VerifyCodeSerializer
+    VerifyCodeSerializer,
+    ResendVerificationSerializer
 )
+
+
+def email_key(group, request):
+    email = request.data.get("email")
+    return (email or '').lower()
 
 
 class CustomUserView(RetrieveUpdateAPIView):
@@ -44,6 +54,31 @@ class VerifyCodeView(APIView):
             VerificationCode.objects.filter(user=user).delete()
             return Response({"message": "Email verified successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendVerificationView(APIView):
+    permission_classes = [AllowAny]
+
+    @method_decorator(ratelimit(key=email_key, rate='5/h', method='POST', block=False))
+    @method_decorator(ratelimit(key=email_key, rate='1/m', method='POST', block=False))
+    def post(self, request, *args, **kwargs):
+
+        if getattr(request, "limited", False):
+            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        serializer = ResendVerificationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        email = serializer.validated_data['email']
+
+        user = CustomUser.objects.filter(email=email, is_active=False).first()
+        if user:
+            send_verification_code(user=user)
+
+        return Response(
+            {'message': 'Verification code resent if email is registered'},
+            status=status.HTTP_200_OK
+        )
 
 
 class LoginView(APIView):
