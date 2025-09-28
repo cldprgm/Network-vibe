@@ -1,9 +1,12 @@
 import pytest
+from datetime import timedelta
+
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from .models import CustomUser
+from .models import CustomUser, VerificationCode
 
 
 @pytest.fixture
@@ -16,7 +19,8 @@ def test_user():
     return CustomUser.objects.create_user(
         username='testuser',
         email='test@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -45,7 +49,9 @@ class TestUserRegistration:
         }
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_201_CREATED
-        assert CustomUser.objects.filter(email='test2@example.com').exists()
+        user = CustomUser.objects.get(email='test2@example.com')
+        assert user.is_active is False
+        assert VerificationCode.objects.filter(user=user).exists()
 
     def test_missing_fields(self, api_client):
         data = {'email': 'incomplete@example.com'}
@@ -77,6 +83,20 @@ class TestUserLogin:
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_inactive_user(self, api_client):
+        inactive_user = CustomUser.objects.create_user(
+            username='inactiveuser',
+            email='inactive@example.com',
+            password='inactivepassword',
+            is_active=False
+        )
+        data = {
+            'email': 'inactive@example.com',
+            'password': 'inactivepassword'
+        }
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 @pytest.mark.django_db
 class TestCustomUserView:
@@ -102,7 +122,8 @@ class TestCustomUserView:
         other_user = CustomUser.objects.create_user(
             email='other@example.com',
             username='otheruser',
-            password='otherpassword'
+            password='otherpassword',
+            is_active=True
         )
 
         login_url = reverse('login')
@@ -151,3 +172,105 @@ class TestRefreshToken:
     def test_refresh_missing_token(self, api_client):
         response = api_client.post(self.url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestVerifyCode:
+    url = reverse('verify_code')
+
+    def test_successful_verification(self, api_client):
+        user = CustomUser.objects.create_user(
+            username='verifyuser',
+            email='verify@example.com',
+            password='verifypassword',
+            is_active=False
+        )
+        code = VerificationCode.generate_for_user(user)
+        data = {
+            'email': 'verify@example.com',
+            'code': code
+        }
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+        user.refresh_from_db()
+        assert user.is_active is True
+        assert not VerificationCode.objects.filter(user=user).exists()
+
+    def test_invalid_code(self, api_client):
+        user = CustomUser.objects.create_user(
+            username='invalidcodeuser',
+            email='invalidcode@example.com',
+            password='invalidcodepassword',
+            is_active=False
+        )
+        VerificationCode.generate_for_user(user)
+        data = {
+            'email': 'invalidcode@example.com',
+            'code': 'wrongcode'
+        }
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_expired_code(self, api_client):
+        user = CustomUser.objects.create_user(
+            username='expireduser',
+            email='expired@example.com',
+            password='expiredpassword',
+            is_active=False
+        )
+        code = VerificationCode.generate_for_user(user)
+        verification_code = VerificationCode.objects.get(user=user)
+        verification_code.expired_at = timezone.now() - timedelta(minutes=1)
+        verification_code.save()
+        data = {
+            'email': 'expired@example.com',
+            'code': code
+        }
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_missing_fields(self, api_client):
+        data = {'email': 'missing@example.com'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestResendVerification:
+    url = reverse('resend_code')
+
+    def test_resend_for_inactive_user(self, api_client):
+        user = CustomUser.objects.create_user(
+            username='resenduser',
+            email='resend@example.com',
+            password='resendpassword',
+            is_active=False
+        )
+        old_code = VerificationCode.generate_for_user(user)
+        data = {'email': 'resend@example.com'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_200_OK
+        assert not VerificationCode.objects.filter(code=old_code).exists()
+        assert VerificationCode.objects.filter(user=user).exists()
+
+    def test_resend_for_non_existing_email(self, api_client):
+        data = {'email': 'nonexisting@example.com'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_resend_for_active_user(self, api_client):
+        user = CustomUser.objects.create_user(
+            username='activeuser',
+            email='active@example.com',
+            password='activepassword',
+            is_active=True
+        )
+        data = {'email': 'active@example.com'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_200_OK
+        assert not VerificationCode.objects.filter(user=user).exists()
+
+    def test_missing_email(self, api_client):
+        data = {}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
