@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
@@ -45,6 +47,10 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+def generate_code(length=6):
+    return ''.join(str(random.randint(0, 9)) for _ in range(length))
+
+
 class VerificationCode(models.Model):
     user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
     code = models.CharField(max_length=6)
@@ -63,3 +69,11 @@ class VerificationCode(models.Model):
         if not self.expired_at:
             self.expired_at = timezone.now() + timedelta(minutes=10)
         super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_for_user(cls, user):
+        cls.objects.filter(user=user).delete()
+        code = generate_code(length=6)
+        instance = cls(user=user, code=code)
+        instance.save()
+        return code

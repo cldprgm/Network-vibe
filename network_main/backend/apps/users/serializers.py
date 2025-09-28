@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from django.conf import settings
 
-from ..services.verification import send_verification_code
+from apps.services.verification import send_verification_code
 
 from .models import CustomUser, VerificationCode
 
@@ -45,7 +45,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
 
 
 class VerifyCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=True)
     code = serializers.CharField(max_length=6)
 
     def validate(self, attrs):
@@ -64,6 +64,10 @@ class VerifyCodeSerializer(serializers.Serializer):
             raise serializers.ValidationError('Invalid email or code')
 
         return attrs
+
+
+class ResendVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
 
 
 class LoginUserSerializer(serializers.Serializer):
