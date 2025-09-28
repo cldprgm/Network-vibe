@@ -35,7 +35,8 @@ def test_user():
     return CustomUser.objects.create_user(
         username='testuser',
         email='test@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -221,7 +222,8 @@ class TestPostView:
         second_user = CustomUser.objects.create_user(
             username='secondtestuser',
             email='secondtest@example.com',
-            password='secondtestpassword'
+            password='secondtestpassword',
+            is_active=True
         )
 
         login_url = reverse('login')
@@ -310,7 +312,8 @@ class TestPostView:
         second_user = CustomUser.objects.create_user(
             username='secondtestuser',
             email='secondtest@example.com',
-            password='secondtestpassword'
+            password='secondtestpassword',
+            is_active=True
         )
 
         login_url = reverse('login')
@@ -589,7 +592,9 @@ class TestCommentView:
         second_user = CustomUser.objects.create_user(
             username='secondtestuser',
             email='secondtest@example.com',
-            password='secondtestpassword'
+            password='secondtestpassword',
+            is_active=True
+
         )
 
         login_url = reverse('login')
@@ -724,7 +729,9 @@ class TestAnnotations:
         new_user = CustomUser.objects.create_user(
             username='newuser',
             email='new@example.com',
-            password='newpassword'
+            password='newpassword',
+            is_active=True
+
         )
 
         Rating.objects.create(
@@ -756,7 +763,9 @@ class TestAnnotations:
         new_user = CustomUser.objects.create_user(
             username='newuser',
             email='new@example.com',
-            password='newpassword'
+            password='newpassword',
+            is_active=True
+
         )
 
         Rating.objects.create(

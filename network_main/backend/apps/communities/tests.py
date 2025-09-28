@@ -24,7 +24,8 @@ def test_user():
     return CustomUser.objects.create_user(
         username='testuser',
         email='test@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -33,7 +34,8 @@ def test_user_creator():
     return CustomUser.objects.create_user(
         username='testuserCr',
         email='testCr@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -42,7 +44,8 @@ def test_user_moderator():
     return CustomUser.objects.create_user(
         username='testuserModerator',
         email='testModerato@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -51,7 +54,8 @@ def test_user_member():
     return CustomUser.objects.create_user(
         username='testuserMember',
         email='testMember@example.com',
-        password='testpassword'
+        password='testpassword',
+        is_active=True
     )
 
 
@@ -60,7 +64,8 @@ def second_user():
     return CustomUser.objects.create_user(
         username='seconduser',
         email='second@example.com',
-        password='secondpassword'
+        password='secondpassword',
+        is_active=True
     )
 
 

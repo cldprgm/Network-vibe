@@ -61,7 +61,7 @@ class TestCategoryViewSet:
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
-        results = response.data['results']
+        results = response.data
         assert len(results) == 1
         parent = results[0]
         assert parent['id'] == parent_category.id
