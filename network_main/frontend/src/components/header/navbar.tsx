@@ -15,7 +15,8 @@ export default function Navbar() {
   const router = useRouter();
   const { hasHydrated, user, isAuthenticated, isLoading, setLoading, logout } = useAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const setShowAuthModal = useAuthStore((s) => s.setShowAuthModal);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -150,10 +151,6 @@ export default function Navbar() {
                 >
                   Log in
                 </button>
-
-                {showAuthModal && (
-                  <AuthModalController onCloseAll={() => setShowAuthModal(false)} />
-                )}
               </>
             )}
 

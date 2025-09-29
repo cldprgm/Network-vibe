@@ -111,6 +111,34 @@ export const loginUser = async (email: string, password: string): Promise<AxiosR
     }
 };
 
+export const verifyCode = async (email: string, code: string) => {
+    try {
+        const response = await api.post(
+            '/users/verify/',
+            { email, code },
+            { withCredentials: true }
+        );
+        return response;
+    }
+    catch (e) {
+        throw new Error('Code verifying failed!')
+    }
+};
+
+export const resendCode = async (email: string) => {
+    try {
+        const response = await api.post(
+            '/users/resend/',
+            { email },
+            { withCredentials: true }
+        );
+        return response;
+    }
+    catch (e) {
+        throw new Error('Code resending failed!')
+    }
+};
+
 export const logoutUser = async () => {
     try {
         const response = await api.post(
