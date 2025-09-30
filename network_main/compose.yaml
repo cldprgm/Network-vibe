@@ -1,11 +1,14 @@
 services:
-  api_backend:
-    build: ./backend
+  apibackend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: api_backend:1.0.0
     restart: unless-stopped
+    entrypoint: /usr/src/apibackend/entrypoint.sh
     volumes:
-      - static_api_volume:/usr/src/api_backend/static
-      - media_volume:/usr/src/api_backend/media
+      - static_api_volume:/usr/src/apibackend/static
+      - media_volume:/usr/src/apibackend/media
     env_file:
       - ./backend/.env
     expose:
@@ -13,8 +16,28 @@ services:
     command: gunicorn network.wsgi:application --bind 0.0.0.0:8001 --access-logfile '-'
     depends_on:
       - db
+  redis:
+    image: redis:8.2.1-alpine3.22
+    container_name: redis_db
+    restart: unless-stopped
+    expose:
+      - 6379
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: celery:1.0.0
+    restart: unless-stopped
+    container_name: celery_worker
+    env_file:
+      - ./backend/.env
+    command: celery -A network worker --loglevel=info
+    depends_on:
+      - redis
+      - apibackend
   db:
     image: postgres:17-bookworm
+    container_name: db
     volumes:
       - data:/var/lib/postgresql/data/
     restart: unless-stopped
@@ -24,12 +47,28 @@ services:
     image: nginx:1.29.1-alpine-slim
     volumes:
       - ./conf.d:/etc/nginx/conf.d
-      - static_api_volume:/api_backend/static
-      - media_volume:/api_backend/media
+      - static_api_volume:/apibackend/static
+      - media_volume:/apibackend/media
     ports:
-      - 8005:80
+      - 80:80
     depends_on:
-      - api_backend
+      - apibackend
+      - frontend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: nextjs_frontend:1.0.0
+    container_name: nextjs_frontend_con
+    expose:
+      - 3000
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    command: npm run dev
+    depends_on:
+      - apibackend
 
 volumes:
   data:
