@@ -1,6 +1,6 @@
 FROM python:3.13.7-slim-bookworm
 
-WORKDIR /usr/src/api_backend
+WORKDIR /usr/src/apibackend
 
 RUN useradd -s /bin/sh -u 1234 nonroot
 
@@ -16,11 +16,3 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-RUN sed -i 's/\r$//g' /usr/src/api_backend/entrypoint.sh
-RUN chmod +x /usr/src/api_backend/entrypoint.sh
-
-RUN chown -R nonroot:nonroot /usr/src/api_backend
-USER nonroot
-
-ENTRYPOINT [ "./entrypoint.sh" ]
