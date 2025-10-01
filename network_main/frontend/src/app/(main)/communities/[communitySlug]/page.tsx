@@ -22,7 +22,7 @@ async function getCommunityData(communitySlug: string) {
         throw new Error('Error in getting "host"');
     }
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const url = `http://${host}/api/proxy/communities/${communitySlug}`;
+    const url = `http://${host}:3000/api/proxy/communities/${communitySlug}`;
 
     const cookieHeader = headersList.get('cookie') || '';
     const res = await fetch(url, {
@@ -47,7 +47,7 @@ async function getCommunityPosts(communitySlug: string) {
         throw new Error('Error in getting "host"');
     }
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const url = new URL(`http://${host}/api/proxy/communities/${communitySlug}/posts`);
+    const url = new URL(`http://${host}:3000/api/proxy/communities/${communitySlug}/posts`);
     url.searchParams.append('page', '1')
 
 
