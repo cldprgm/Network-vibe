@@ -13,3 +13,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+RUN sed -i 's/\r$//g' /usr/src/apibackend/entrypoint.dev.sh
+RUN chmod +x /usr/src/apibackend/entrypoint.dev.sh
+
+ENTRYPOINT [ "./entrypoint.dev.sh" ]

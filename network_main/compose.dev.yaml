@@ -6,19 +6,18 @@ services:
     image: api_backend:1.0.0
     container_name: api_backend_con
     restart: unless-stopped
-    entrypoint: /usr/src/api_backend/entrypoint.dev.sh
     develop:
       watch:
         - action: sync
           path: ./backend
-          target: /usr/src/api_backend
+          target: /usr/src/apibackend
           ignore:
             - node_modules/
             - venv/
         - action: rebuild
           path: ./backend/requirements
     volumes:
-      - media_volume:/usr/src/api_backend/media
+      - media_volume:/usr/src/apibackend/media
     ports:
       - 127.0.0.1:8000:8000
     env_file:
