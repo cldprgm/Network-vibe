@@ -127,8 +127,8 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
         const fetchCategories = async () => {
             try {
                 const data = await getCategoriesTree();
-                if (data && data.results) {
-                    setCategories(data.results);
+                if (data) {
+                    setCategories(data);
                 }
             } catch (error) {
                 console.error("Failed to fetch categories:", error);
