@@ -1,15 +1,12 @@
 FROM python:3.13.7-slim-bookworm
 
-WORKDIR /usr/src/apibackend
-
-RUN useradd -s /bin/sh -u 1234 nonroot
+WORKDIR /usr/src/api_backend
 
 RUN apt-get update && apt-get install -y \
     libpq-dev gcc python3-dev libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir media; \
-    mkdir static
+RUN mkdir media
 
 RUN pip install --upgrade pip
 COPY requirements.txt .
@@ -17,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN sed -i 's/\r$//g' /usr/src/apibackend/entrypoint.sh
-RUN chmod +x /usr/src/apibackend/entrypoint.sh
+RUN sed -i 's/\r$//g' /usr/src/apibackend/entrypoint.dev.sh
+RUN chmod +x /usr/src/apibackend/entrypoint.dev.sh
 
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "./entrypoint.dev.sh" ]
