@@ -17,10 +17,6 @@ import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
 const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 export default function PostListItems({ post }: { post: Post }) {
-    if (!post || !post.slug) {
-        return null;
-    }
-
     const { isAuthenticated } = useAuthStore();
     const [currentPost, setCurrentPost] = useState(post);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -36,6 +32,10 @@ export default function PostListItems({ post }: { post: Post }) {
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    if (!post || !post.slug) {
+        return null;
+    }
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {

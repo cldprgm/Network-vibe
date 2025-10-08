@@ -5,9 +5,10 @@ import { useDropzone, FileRejection } from 'react-dropzone';
 import { getCommunities } from '@/services/api';
 import { CommunityType } from '@/services/types';
 import { apiCreatePost } from '@/services/api';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getCommunityBySlug } from '@/services/api';
 import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
+import { Suspense } from 'react';
 import Image from 'next/image';
 
 const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
@@ -16,7 +17,7 @@ interface FileWithPreview extends File {
     preview: string;
 }
 
-export default function CreatePost() {
+function CreatePostContent() {
     const [activeTab, setActiveTab] = useState<'TEXT' | 'MEDIA'>('TEXT');
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
@@ -378,5 +379,13 @@ export default function CreatePost() {
             </div>
             <div className="w-[250px] hidden xl:block"></div>
         </div>
+    );
+}
+
+export default function CreatePostPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">Loading form...</div>}>
+            <CreatePostContent />
+        </Suspense>
     );
 }

@@ -15,7 +15,7 @@ async function getCommunityData(communitySlug: string): Promise<CommunityType> {
     }
 
     const cookieHeader = headersList.get('cookie') || '';
-    const url = `http://${host}:3000/api/proxy/communities/${communitySlug}`;
+    const url = `http://${host}/api/proxy/communities/${communitySlug}`;
 
     const res = await fetch(url, {
         headers: { Cookie: cookieHeader },

@@ -13,5 +13,3 @@ if [ "$1" = "apibackend" ]; then
 else
   exec "$@"
 fi
-
-exec "$@"
