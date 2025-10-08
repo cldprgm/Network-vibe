@@ -12,7 +12,7 @@ services:
       - ./backend/.env
     expose:
       - 8001
-    command: gunicorn network.wsgi:application --bind 0.0.0.0:8001 --access-logfile '-'
+    command: [ "apibackend", "gunicorn", "network.wsgi:application", "--bind", "0.0.0.0:8001", "--access-logfile", "-" ]
     depends_on:
       - db
   redis:
@@ -57,7 +57,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     image: nextjs_frontend:1.0.0
     container_name: nextjs_frontend_con
     expose:
@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
     env_file:
       - ./frontend/.env
-    command: npm run dev
+    command: npx next start
     depends_on:
       - apibackend
 

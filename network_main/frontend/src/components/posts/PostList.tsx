@@ -11,7 +11,7 @@ export default async function PostList() {
 
   // fix later
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-  const url = new URL(`http://${host}:3000/api/proxy/posts`);
+  const url = new URL(`http://${host}/api/proxy/posts`);
   url.searchParams.append('page', '1')
 
   const cookieHeader = headersList.get('cookie') || '';
