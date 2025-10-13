@@ -22,7 +22,10 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    import debug_toolbar
+    # turn off debug_toolbar for s3
+    # import debug_toolbar
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL,
                           document_root=settings.MEDIA_ROOT)
-    urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]
+    # urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]

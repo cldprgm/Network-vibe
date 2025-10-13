@@ -5,9 +5,6 @@ services:
       dockerfile: Dockerfile
     image: api_backend:1.0.0
     restart: unless-stopped
-    volumes:
-      - static_api_volume:/usr/src/apibackend/static
-      - media_volume:/usr/src/apibackend/media
     env_file:
       - ./backend/.env
     expose:
@@ -46,8 +43,6 @@ services:
     image: nginx:1.29.1-alpine-slim
     volumes:
       - ./conf.d:/etc/nginx/conf.d
-      - static_api_volume:/apibackend/static
-      - media_volume:/apibackend/media
     ports:
       - 80:80
     depends_on:
@@ -71,5 +66,3 @@ services:
 
 volumes:
   data:
-  static_api_volume:
-  media_volume:
