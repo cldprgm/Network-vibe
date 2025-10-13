@@ -15,6 +15,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import socket
+from storages.backends.s3boto3 import S3Boto3Storage
+from botocore.config import Config
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
 load_dotenv(dotenv_path)
@@ -42,8 +44,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # for debug toolbar
-hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
+# hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+# INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
 
 
 # Application definition
@@ -55,7 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mptt',
-    'debug_toolbar',
+    # 'debug_toolbar',
     'rest_framework',
     'apps.users.apps.UsersConfig',
     'apps.communities.apps.CommunitiesConfig',
@@ -68,6 +70,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -79,7 +82,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'network.urls'
@@ -152,11 +155,45 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = 'static'
+# S3 settings
+STATIC_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/static/'
+MEDIA_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/media/'
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = (BASE_DIR / 'media')
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+            "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+            "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
+            "region_name": os.getenv("AWS_S3_REGION_NAME"),
+            "addressing_style": "virtual",
+            "signature_version": 's3v4',
+            "default_acl": 'public-read',
+            "querystring_auth": True,
+            "object_parameters": {"CacheControl": "max-age=20000"},
+            "location": 'media',
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+            "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+            "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
+            "region_name": os.getenv("AWS_S3_REGION_NAME"),
+            "addressing_style": "virtual",
+            "signature_version": 's3v4',
+            "default_acl": 'public-read',
+            "querystring_auth": True,
+            "object_parameters": {"CacheControl": "max-age=86400"},
+            "location": 'static',
+            "gzip": True,
+        },
+    },
+}
 
 
 # Default primary key field type
