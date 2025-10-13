@@ -1,8 +1,6 @@
 import { Media } from "@/services/types";
 import { useEffect, useState } from "react";
 
-const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
-
 const parseAspectRatio = (aspect?: string) => {
     if (!aspect) return 16 / 9;
     const [w, h] = aspect.split("/").map(Number);
@@ -22,7 +20,7 @@ export default function useVideoAspectRatio(media: Media) {
         let cancelled = false;
         const vid = document.createElement("video");
         vid.preload = "metadata";
-        vid.src = `${publicBaseUrl}${media.file_url}`;
+        vid.src = `${media.file_url}`;
 
         const onLoaded = () => {
             if (cancelled) return;

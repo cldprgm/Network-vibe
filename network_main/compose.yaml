@@ -5,14 +5,11 @@ services:
       dockerfile: Dockerfile
     image: api_backend:1.0.0
     restart: unless-stopped
-    volumes:
-      - static_api_volume:/usr/src/apibackend/static
-      - media_volume:/usr/src/apibackend/media
     env_file:
       - ./backend/.env
     expose:
       - 8001
-    command: ["apibackend", "gunicorn", "network.wsgi:application", "--bind", "0.0.0.0:8001", "--access-logfile", "-"]
+    command: [ "apibackend", "gunicorn", "network.wsgi:application", "--bind", "0.0.0.0:8001", "--access-logfile", "-" ]
     depends_on:
       - db
   redis:
@@ -46,8 +43,6 @@ services:
     image: nginx:1.29.1-alpine-slim
     volumes:
       - ./conf.d:/etc/nginx/conf.d
-      - static_api_volume:/apibackend/static
-      - media_volume:/apibackend/media
     ports:
       - 80:80
     depends_on:
@@ -57,7 +52,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     image: nextjs_frontend:1.0.0
     container_name: nextjs_frontend_con
     expose:
@@ -66,14 +61,8 @@ services:
     env_file:
       - ./frontend/.env
     command: npx next start
-    deploy:
-      resources:
-        limits:
-          memory: 3G
     depends_on:
       - apibackend
 
 volumes:
   data:
-  static_api_volume:
-  media_volume:

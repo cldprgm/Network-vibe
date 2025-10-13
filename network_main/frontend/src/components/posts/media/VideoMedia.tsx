@@ -46,7 +46,7 @@ export default function VideoMedia({ media }: VideoMediaProps) {
         }, 600);
     };
 
-    const fullSrc = `${publicBaseUrl}${media.file_url}`;
+    const fullSrc = `${media.file_url}`;
 
     return (
         <video
