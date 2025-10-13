@@ -11,8 +11,6 @@ import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
 import { Suspense } from 'react';
 import Image from 'next/image';
 
-const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
-
 interface FileWithPreview extends File {
     preview: string;
 }
@@ -190,7 +188,7 @@ function CreatePostContent() {
                             {community ? (
                                 <>
                                     <Image
-                                        src={`${containerUrl}${community.icon}`}
+                                        src={`${community.icon}`}
                                         alt={`${community.name} icon`}
                                         width={20}
                                         height={20}
@@ -212,7 +210,7 @@ function CreatePostContent() {
                                         className="flex items-center px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                                     >
                                         <Image
-                                            src={`${containerUrl}${c.icon}`}
+                                            src={`${c.icon}`}
                                             alt={`${c.name} icon`}
                                             width={20}
                                             height={20}

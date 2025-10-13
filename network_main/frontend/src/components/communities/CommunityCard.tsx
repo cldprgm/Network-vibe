@@ -6,8 +6,6 @@ import { joinCommunity, leaveCommunity } from '@/services/api';
 import Image from 'next/image';
 import { Loader } from 'lucide-react';
 
-const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
-
 interface Props {
     community: CommunityType;
 }
@@ -45,7 +43,7 @@ export const CommunityCard = ({ community }: Props) => {
                     <div className="flex items-center gap-4 mb-3">
                         <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden ring-1 ring-gray-500">
                             <Image
-                                src={`${containerUrl}${community.icon}`}
+                                src={`${community.icon}`}
                                 alt={`${community.name} icon`}
                                 fill
                                 style={{ objectFit: 'cover' }}

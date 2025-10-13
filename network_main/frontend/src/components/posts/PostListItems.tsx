@@ -14,8 +14,6 @@ import { getCommunityBySlug, joinCommunity } from '@/services/api';
 import Image from 'next/image';
 import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
 
-const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
-
 export default function PostListItems({ post }: { post: Post }) {
     const { isAuthenticated } = useAuthStore();
     const [currentPost, setCurrentPost] = useState(post);
@@ -173,7 +171,7 @@ export default function PostListItems({ post }: { post: Post }) {
                                 <div className="w-9 h-9 rounded-full overflow-hidden relative">
                                     <Image
                                         className="object-cover"
-                                        src={`${containerUrl}${currentPost.community_icon}`}
+                                        src={`${currentPost.community_icon}`}
                                         onClick={(e) => e.stopPropagation()}
                                         alt="Community icon"
                                         fill
@@ -229,6 +227,7 @@ export default function PostListItems({ post }: { post: Post }) {
                         </div>
 
                         <PostMedia post={currentPost} />
+
 
                         <div className="w-full overflow-x-auto">
                             <div className="flex items-center sm:flex-nowrap gap-2 sm:gap-3 w-full">
