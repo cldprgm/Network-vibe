@@ -68,7 +68,7 @@ export default function FullscreenViewer({
         return "min-w-[90vw] max-w-[90vw] max-h-[90vh]";
     };
 
-    const currentFullSrc = `${publicBaseUrl}${currentMedia.file_url}`;
+    const currentFullSrc = `${currentMedia.file_url}`;
 
     return (
         <div

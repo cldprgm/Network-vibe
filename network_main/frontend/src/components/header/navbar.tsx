@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { logoutUser, getUserInfo } from '@/services/auth';
 import IconComponent from './icon_component';
-import AuthModalController from '../auth/AuthModalController';
 import Link from 'next/link';
 import Image from 'next/image';
-
-const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
 
 export default function Navbar() {
   const router = useRouter();
@@ -94,7 +91,7 @@ export default function Navbar() {
                   <div className="w-9 h-9 rounded-full overflow-hidden relative">
                     <span className="sr-only">Open user menu</span>
                     <Image
-                      src={`${containerUrl}${user.avatar}` || '/default-avatar.png'}
+                      src={`${user.avatar}`}
                       alt={`${user.username}'s avatar`}
                       fill
                       className="object-cover"

@@ -10,6 +10,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+
   ...compat.config({
     extends: ["next/core-web-vitals", "next/typescript"],
     // for the test build(don't use it)
@@ -22,7 +23,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "off",
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/rules-of-hooks": "off",
-      "@typescript-eslint/no-unused-expressions": "off", 
+      "@typescript-eslint/no-unused-expressions": "off",
       "react/display-name": "off",
       "@typescript-eslint/no-require-imports": "off",
       "jsx-a11y/alt-text": "off",

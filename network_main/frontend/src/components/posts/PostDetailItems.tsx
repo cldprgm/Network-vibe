@@ -14,13 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { MoreHorizontal, Pencil, Bookmark, Flag, Trash } from "lucide-react";
 
-const containerUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL;
-
 export default function PostDetailItems({ postData }: { postData: Post }) {
-    if (!postData || !postData.slug) {
-        return null;
-    }
-
     const [post, setPostData] = useState(postData);
     const { isAuthenticated } = useAuthStore();
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -33,6 +27,10 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     const router = useRouter();
+
+    if (!postData || !postData.slug) {
+        return null;
+    }
 
     const requireAuth = (callback: () => void) => {
         if (!isAuthenticated) {
@@ -115,7 +113,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 <div className="w-9 h-9 rounded-full overflow-hidden relative">
                                     <Image
                                         className="object-cover"
-                                        src={`${containerUrl}${post.community_icon}`}
+                                        src={`${post.community_icon}`}
                                         alt="Community icon"
                                         fill
                                     />
