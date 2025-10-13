@@ -1,17 +1,13 @@
 import { Media } from "@/services/types";
 import Image from "next/image";
 
-const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
-const containerBaseUrl = process.env.NEXT_PUBLIC_API_BASE_CONTAINER_URL || '';
-
 interface ImageMediaProps {
     media: Media;
     onFullscreenOpen: () => void;
 }
 
 export default function ImageMedia({ media, onFullscreenOpen }: ImageMediaProps) {
-    const fullSrc = `${publicBaseUrl}${media.file_url}`;
-    const containerfullSrc = `${containerBaseUrl}${media.file_url}`;
+    const fullSrc = `${media.file_url}`;
 
     return (
         <>
@@ -30,7 +26,7 @@ export default function ImageMedia({ media, onFullscreenOpen }: ImageMediaProps)
                 className="relative cursor-pointer w-full h-full block focus:outline-none"
             >
                 <Image
-                    src={containerfullSrc}
+                    src={fullSrc}
                     alt="Post media content"
                     fill
                     style={{ objectFit: "contain" }}

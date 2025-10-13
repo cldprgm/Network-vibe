@@ -1,8 +1,6 @@
 import { Media } from "@/services/types";
 import { useEffect, useState } from "react";
 
-const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
-
 export default function useImageSize(media: Media) {
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
@@ -10,7 +8,7 @@ export default function useImageSize(media: Media) {
         if (media.media_type !== "image" || !media.file_url) return;
 
         const img = new window.Image();
-        img.src = `${publicBaseUrl}${media.file_url}`;
+        img.src = `${media.file_url}`;
 
         img.onload = () => {
             setImageSize({

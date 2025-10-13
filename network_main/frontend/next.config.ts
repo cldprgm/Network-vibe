@@ -1,16 +1,29 @@
 import type { NextConfig } from "next";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL;
+const s3Url = process.env.AWS_S3_ENDPOINT_URL;
+const s3BacketName = process.env.AWS_STORAGE_BUCKET_NAME;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  allowedDevOrigins: [`http://${baseUrl}:80`, `http://${baseUrl}:3000`, "http://apibackend:8001", "http://localhost"],
+  allowedDevOrigins: [`http://${baseUrl}:80`, `http://${baseUrl}:3000`, "http://apibackend:8001", "http://localhost", `https://${s3BacketName}.${s3Url}`],
   images: {
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'apibackend',
         port: '8000',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: `${s3BacketName}.${s3Url}`,
+        port: '443',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: `${s3BacketName}.${s3Url}`,
         pathname: '/media/**',
       },
       {

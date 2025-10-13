@@ -31,11 +31,11 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "off",
       "react-hooks/exhaustive-deps": "off",
     },
-    languageOptions: {
-      parserOptions: {
-        project: "./tsconfig.json",
-      },
-    },
+    // languageOptions: {
+    //   parserOptions: {
+    //     project: "./tsconfig.json",
+    //   },
+    // },
   }),
 ];
 

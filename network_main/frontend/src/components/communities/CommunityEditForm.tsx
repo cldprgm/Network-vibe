@@ -408,7 +408,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                             <div className="space-y-2 text-center">
                                                 <ImageUploader
                                                     label="Icon"
-                                                    currentImage={`${containerUrl}${community.icon}`}
+                                                    currentImage={`${community.icon}`}
                                                     preview={iconPreview}
                                                     onFileChange={handleIconChange}
                                                     error={iconError}
@@ -421,7 +421,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
                                             <div className="space-y-2">
                                                 <ImageUploader
                                                     label="Banner"
-                                                    currentImage={`${containerUrl}${community.banner}`}
+                                                    currentImage={`${community.banner}`}
                                                     preview={bannerPreview}
                                                     onFileChange={handleBannerChange}
                                                     error={bannerError}
