@@ -380,7 +380,6 @@ function CreatePostContent() {
     );
 }
 
-
 export default function CreatePostPage() {
     return (
         <Suspense fallback={<div className="flex justify-center items-center h-64">Loading form...</div>}>
