@@ -228,6 +228,7 @@ export default function PostListItems({ post }: { post: Post }) {
 
                         <PostMedia post={currentPost} />
 
+
                         <div className="w-full overflow-x-auto">
                             <div className="flex items-center sm:flex-nowrap gap-2 sm:gap-3 w-full">
                                 <PostRating
