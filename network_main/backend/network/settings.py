@@ -15,8 +15,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import socket
-from storages.backends.s3boto3 import S3Boto3Storage
-from botocore.config import Config
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
 load_dotenv(dotenv_path)
@@ -156,44 +154,62 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 # S3 settings
-STATIC_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/static/'
-MEDIA_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/media/'
+if DEBUG:
+    STATIC_URL = '/static/'
+    MEDIA_URL = '/media/'
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {
+                "location": BASE_DIR / "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {
+                "location": BASE_DIR / "static",
+            },
+        },
+    }
+else:
+    STATIC_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/static/'
+    MEDIA_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/media/'
 
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        "OPTIONS": {
-            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
-            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
-            "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
-            "region_name": os.getenv("AWS_S3_REGION_NAME"),
-            "addressing_style": "virtual",
-            "signature_version": 's3v4',
-            "default_acl": 'public-read',
-            "querystring_auth": True,
-            "object_parameters": {"CacheControl": "max-age=20000"},
-            "location": 'media',
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "addressing_style": "virtual",
+                "signature_version": 's3v4',
+                "default_acl": 'public-read',
+                "querystring_auth": True,
+                "object_parameters": {"CacheControl": "max-age=20000"},
+                "location": 'media',
+            },
         },
-    },
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        "OPTIONS": {
-            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
-            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
-            "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
-            "region_name": os.getenv("AWS_S3_REGION_NAME"),
-            "addressing_style": "virtual",
-            "signature_version": 's3v4',
-            "default_acl": 'public-read',
-            "querystring_auth": True,
-            "object_parameters": {"CacheControl": "max-age=86400"},
-            "location": 'static',
-            "gzip": True,
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "endpoint_url": f'https://{os.getenv("AWS_S3_ENDPOINT_URL")}',
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "addressing_style": "virtual",
+                "signature_version": 's3v4',
+                "default_acl": 'public-read',
+                "querystring_auth": True,
+                "object_parameters": {"CacheControl": "max-age=86400"},
+                "location": 'static',
+                "gzip": True,
+            },
         },
-    },
-}
+    }
 
 
 # Default primary key field type
