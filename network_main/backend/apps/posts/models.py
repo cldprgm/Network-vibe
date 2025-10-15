@@ -178,6 +178,8 @@ class Media(models.Model):
         verbose_name='File'
     )
 
+    aspect_ratio = models.CharField(max_length=10, blank=True, default='16/9')
+
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -197,9 +199,13 @@ class Media(models.Model):
                 return media_type
         return 'unknown'
 
-    def get_aspect_ratio(self):
-        if self.get_media_type() != 'image':
-            return "16/9"
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.get_media_type() == 'image':
+            self.aspect_ratio = self._compute_aspect_ratio()
+            super().save(update_fields=['aspect_ratio'])
+
+    def _compute_aspect_ratio(self):
         try:
             with self.file.open('rb') as file:
                 parser = ImageFile.Parser()
@@ -208,12 +214,12 @@ class Media(models.Model):
                 img = parser.close()
                 width, height = img.size
                 return f'{width}/{height}'
-        except DecompressionBombError:
+        except (DecompressionBombError, UnidentifiedImageError, Exception):
             return "16/9"
-        except UnidentifiedImageError:
-            return "16/9"
-        except Exception:
-            return "16/9"
+
+    @property
+    def get_aspect_ratio(self):
+        return self.aspect_ratio
 
     def __str__(self):
         return f"{self.get_media_type()} - {self.file.name}"
