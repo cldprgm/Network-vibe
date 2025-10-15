@@ -15,7 +15,7 @@ from .models import Post, Comment, Media
 
 class MediaSerializer(serializers.ModelSerializer):
     media_type = serializers.SerializerMethodField()
-    aspect_ratio = serializers.SerializerMethodField()
+    aspect_ratio = serializers.CharField(read_only=True)
     file_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,9 +31,6 @@ class MediaSerializer(serializers.ModelSerializer):
 
     def get_media_type(self, obj):
         return obj.get_media_type()
-
-    def get_aspect_ratio(self, obj):
-        return obj.get_aspect_ratio()
 
     def get_file_url(self, obj):
         return obj.file.url
