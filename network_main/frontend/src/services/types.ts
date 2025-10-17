@@ -77,9 +77,13 @@ export interface Subcategory {
 export type User = {
     id: number;
     username: string;
+    slug: string;
     email: string;
     first_name: string;
     last_name: string;
-    avatar?: string;
+    avatar: string;
     description: string;
+    birth_date: string | null;
+    gender: string;
+    date_joined: string;
 };
