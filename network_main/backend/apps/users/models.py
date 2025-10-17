@@ -17,26 +17,33 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(unique=True, blank=False)
+    username = models.CharField(max_length=25, unique=True,)
     slug = models.SlugField(
-        verbose_name='URL', max_length=75, blank=True, unique=True)
+        verbose_name='URL', max_length=25, blank=True, unique=True)
     is_active = models.BooleanField(default=False)
     avatar = models.ImageField(
         upload_to='uploads/avatars/%Y/%m/%d',
         default='uploads/avatars/default.png',
         validators=[FileExtensionValidator(
-            allowed_extensions=('jpg', 'png', 'jpeg')),
+            allowed_extensions=('jpg', 'png', 'jpeg', 'webp', 'gif')),
             validate_file_size
         ]
     )
     description = models.TextField(max_length=200, blank=True)
     birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=6, choices=[(
-        'male', 'Male'), ('female', 'Female'), ('other', 'Other')], blank=True)
+    first_name = models.CharField(max_length=20, blank=True)
+    last_name = models.CharField(max_length=20, blank=True)
+    gender = models.CharField(
+        max_length=6,
+        choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
+        blank=True
+    )
 
     objects = CustomUserManager()
 
     class Meta:
         ordering = ('username',)
+        indexes = [models.Index(fields=['slug'])]
 
     def save(self, *args, **kwargs):
         if not self.slug:

@@ -3,26 +3,36 @@ from rest_framework import serializers
 from django.conf import settings
 
 from apps.services.verification import send_verification_code
+from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
+
 
 from .models import CustomUser, VerificationCode
 
 
 User = settings.AUTH_USER_MODEL
 
+ALLOWED_MIME_TYPES = {
+    'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+}
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(required=False)
 
     class Meta:
         model = CustomUser
         fields = (
             'id', 'slug', 'username', 'email', 'first_name',
-            'last_name', 'avatar', 'description', 'birth_date', 'gender'
+            'last_name', 'avatar', 'description', 'birth_date', 'gender',
+            "date_joined"
         )
-        read_only_fields = ('id', 'slug')
+        read_only_fields = ('id', 'slug', 'date_joined')
 
-    def get_avatar(self, obj):
-        return obj.avatar.url if obj.avatar else '/media/uploads/avatars/default.png'
+    def validate_avatar(self, obj):
+        validate_files_length([obj], max_files=1)
+        validate_file_size(obj, max_file_size_mb=5)
+        validate_magic_mime(obj, allowed_mime_types=ALLOWED_MIME_TYPES)
+        return obj
 
 
 class RegisterUserSerializer(serializers.ModelSerializer):
