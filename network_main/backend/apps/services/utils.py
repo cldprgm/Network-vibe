@@ -6,12 +6,6 @@ from uuid import uuid4
 import magic
 
 
-ALLOWED_MIME_TYPES = {
-    'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    'video': ['video/mp4', 'video/webm'],
-}
-
-
 @deconstructible
 class MimeTypeValidator:
     def __init__(self, allowed_mime_types):
@@ -62,23 +56,22 @@ def unique_slugify(instance, content):
     return slug
 
 
-def validate_file_size(value):
-    max_size = 10 * 1024 * 1024
-    if value.size > max_size:
-        raise ValidationError('File size cannot exceed 10MB.')
+def validate_file_size(file, max_file_size_mb: int):
+    max_size = max_file_size_mb * 1024 * 1024
+    if file.size > max_size:
+        raise ValidationError(f'File size cannot exceed {max_file_size_mb}MB.')
 
 
-def validate_magic_mime(value):
+def validate_magic_mime(value, allowed_mime_types: dict):
     header = value.read(2048)
     mime_type = magic.from_buffer(header, mime=True)
     value.seek(0)
     main_type = mime_type.split('/')[0]
 
-    if mime_type not in ALLOWED_MIME_TYPES.get(main_type, []):
+    if mime_type not in allowed_mime_types.get(main_type, []):
         raise ValidationError(f'Invalid file type: {mime_type}')
 
 
-def validate_files_length(values):
-    max_files = 5
-    if len(values) > max_files:
+def validate_files_length(files, max_files: int):
+    if len(files) > max_files:
         raise ValidationError(f'You can upload no more than {max_files} files')

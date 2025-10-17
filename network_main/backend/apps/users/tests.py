@@ -1,6 +1,9 @@
 import pytest
 from datetime import timedelta
-
+import os
+from PIL import Image
+import io
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from django.urls import reverse
 from rest_framework import status
@@ -139,6 +142,50 @@ class TestCustomUserView:
         assert response.status_code == status.HTTP_200_OK
         test_user.refresh_from_db()
         assert test_user.username == 'testuser'
+
+    def test_update_valid_avatar(self, authenticated_client, test_user):
+        w, h = 100, 100
+        random_bytes = os.urandom(w * h * 3)
+        img = Image.frombytes('RGB', (w, h), random_bytes)
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='JPEG', quality=100)
+        valid_image = SimpleUploadedFile(
+            name='test.jpg',
+            content=img_byte_arr.getvalue(),
+            content_type='image/jpeg'
+        )
+        data = {'avatar': valid_image}
+        response = authenticated_client.patch(
+            self.url, data, format='multipart')
+        assert response.status_code == status.HTTP_200_OK
+        test_user.refresh_from_db()
+        assert test_user.avatar
+        test_user.avatar.delete()
+
+    def test_update_avatar_too_large(self, authenticated_client, test_user):
+        large_content = b'0' * (5 * 1024 * 1024 + 1)
+        large_image = SimpleUploadedFile(
+            name='large.jpg',
+            content=large_content,
+            content_type='image/jpeg'
+
+        )
+        data = {'avatar': large_image}
+        response = authenticated_client.patch(
+            self.url, data, format='multipart')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'avatar' in response.data
+
+    def test_update_invalid_mime_type_avatar(self, authenticated_client, test_user):
+        invalid_file = SimpleUploadedFile(
+            name='test.txt',
+            content=b'text_content',
+            content_type='text/plain'
+        )
+        data = {'avatar': invalid_file}
+        response = authenticated_client.patch(
+            self.url, data, format='multipart')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
