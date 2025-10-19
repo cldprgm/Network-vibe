@@ -172,8 +172,8 @@ if DEBUG:
         },
     }
 else:
-    STATIC_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/static/'
-    MEDIA_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/media/'
+    STATIC_URL = f'https://{os.getenv("AWS_PUBLIC_DOMAIN")}/static/'
+    MEDIA_URL = f'https://{os.getenv("AWS_PUBLIC_DOMAIN")}/media/'
 
     STORAGES = {
         "default": {
@@ -187,7 +187,10 @@ else:
                 "addressing_style": "virtual",
                 "signature_version": 's3v4',
                 "default_acl": 'public-read',
-                "querystring_auth": True,
+                "querystring_auth": False,
+                # for public access(for browser caching)
+                "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
+                #
                 "object_parameters": {"CacheControl": "max-age=20000"},
                 "location": 'media',
             },
@@ -203,7 +206,10 @@ else:
                 "addressing_style": "virtual",
                 "signature_version": 's3v4',
                 "default_acl": 'public-read',
-                "querystring_auth": True,
+                "querystring_auth": False,
+                # for public access(for browser caching)
+                "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
+                #
                 "object_parameters": {"CacheControl": "max-age=86400"},
                 "location": 'static',
                 "gzip": True,

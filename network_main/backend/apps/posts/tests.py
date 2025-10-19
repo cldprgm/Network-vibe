@@ -794,5 +794,5 @@ class TestPostMedia:
         assert response.status_code == status.HTTP_200_OK
         assert 'media_data' in response.data
         assert len(response.data['media_data']) == 1
-        expected_url = f'http://testserver{media_file.file.url}'
+        expected_url = media_file.file.url
         assert response.data['media_data'][0]['file'] == expected_url
