@@ -17,6 +17,17 @@ ALLOWED_MIME_TYPES = {
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id', 'slug', 'username', 'first_name',
+            'last_name', 'avatar', 'description', 'birth_date', 'gender',
+            "date_joined"
+        )
+        read_only_fields = fields
+
+
+class CustomUserInfoSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False)
 
     class Meta:

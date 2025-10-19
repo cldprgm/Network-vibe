@@ -1,8 +1,8 @@
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, GenericAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, RetrieveAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -10,13 +10,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from django.core.exceptions import PermissionDenied
 
 from apps.services.verification import send_verification_code
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
     CustomUserSerializer,
+    CustomUserInfoSerializer,
     RegisterUserSerializer,
     LoginUserSerializer,
     VerifyCodeSerializer,
@@ -29,8 +29,15 @@ def email_key(group, request):
     return (email or '').lower()
 
 
-class CustomUserView(RetrieveUpdateAPIView):
+class CustomUserView(RetrieveAPIView):
     serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+
+
+class CustomUserInfoView(RetrieveUpdateAPIView):
+    serializer_class = CustomUserInfoSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -95,7 +102,7 @@ class LoginView(APIView):
 
             response = Response(
                 data={
-                    'user': CustomUserSerializer(
+                    'user': CustomUserInfoSerializer(
                         user,
                         context={'request': request}).data
                 },
