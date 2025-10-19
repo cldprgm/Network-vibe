@@ -162,6 +162,19 @@ export const getUserInfo = async (): Promise<User> => {
         return response.data;
     }
     catch (e) {
+        throw new Error('Getting user info failed!')
+    }
+};
+
+export const getUser = async (slug: string): Promise<User> => {
+    try {
+        const response = await api.get<User>(
+            `/users/${slug}/`,
+            { withCredentials: true }
+        );
+        return response.data;
+    }
+    catch (e) {
         throw new Error('Getting user failed!')
     }
 };

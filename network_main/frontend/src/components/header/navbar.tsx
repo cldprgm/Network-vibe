@@ -171,7 +171,7 @@ export default function Navbar() {
                   <ul className="py-2" role="none">
                     <li>
                       <Link
-                        href="/profile"
+                        href={`/user/${user.slug}`}
                         onClick={closeDropdown}
                         className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
                         role="menuitem"
