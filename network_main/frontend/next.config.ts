@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const baseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL;
 const s3Url = process.env.AWS_S3_ENDPOINT_URL;
 const s3BacketName = process.env.AWS_STORAGE_BUCKET_NAME;
+const publicDomain = process.env.AWS_PUBLIC_DOMAIN;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -29,6 +30,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'http',
         hostname: `${baseUrl}`,
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: `${publicDomain}`,
         pathname: '/media/**',
       },
       {
