@@ -83,7 +83,7 @@ export type User = {
     last_name: string;
     avatar: string;
     description: string;
-    birth_date: string | null;
+    birth_date: string;
     gender: string;
     date_joined: string;
 };
