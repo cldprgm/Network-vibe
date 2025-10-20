@@ -1,8 +1,9 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import CursorPagination
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -10,8 +11,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count, Q, ExpressionWrapper, F, FloatField
 
 from apps.services.verification import send_verification_code
+from apps.posts.serializers import PostListSerializer
+from apps.posts.models import Post
+from apps.posts.views import get_annotated_ratings
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
@@ -171,10 +177,58 @@ class CookieTokenRefreshView(TokenRefreshView):
             response.set_cookie(key='access_token',
                                 value=access_token,
                                 httponly=True,
-								domain=None,
-								path='/',
-                                secure=False,
+                                domain=None,
                                 samesite='Lax')
             return response
         except TokenError:
             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class PostListCursorPagination(CursorPagination):
+    page_size = 25
+    ordering = None
+
+    def get_ordering(self, request, queryset, view):
+        filter_type = self.request.query_params.get('filter')
+
+        if filter_type == 'new':
+            return '-created', '-id'
+        elif filter_type == 'popular':
+            return '-score', '-id'
+
+        return '-id'
+
+
+class CustomUserPostsView(ListAPIView):
+    serializer_class = PostListSerializer
+    permission_classes = [AllowAny]
+    pagination_class = PostListCursorPagination
+
+    def get_queryset(self):
+        queryset = Post.published.filter(
+            author__slug=self.kwargs['slug']
+        ).prefetch_related('media_data')
+
+        queryset = get_annotated_ratings(
+            queryset,
+            self.request,
+            content_type=ContentType.objects.get_for_model(Post)
+        )
+
+        queryset = queryset.annotate(
+            comment_count=Count(
+                'owned_comments', filter=Q(owned_comments__status='PB')
+            )
+        )
+
+        filter_type = self.request.query_params.get('filter')
+
+        if filter_type == 'popular':
+            queryset = queryset.annotate(
+                score=ExpressionWrapper(
+                    (F('sum_rating') + 0.5) * (F('comment_count') + 0.5) * 0.01,
+                    output_field=FloatField()
+                )
+            )
+
+        return queryset
