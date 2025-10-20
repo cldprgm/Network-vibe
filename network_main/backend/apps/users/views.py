@@ -177,7 +177,9 @@ class CookieTokenRefreshView(TokenRefreshView):
             response.set_cookie(key='access_token',
                                 value=access_token,
                                 httponly=True,
-                                domain=None,
+								domain=None,
+								path='/',
+                                secure=False,
                                 samesite='Lax')
             return response
         except TokenError:
