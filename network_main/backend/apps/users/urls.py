@@ -8,7 +8,8 @@ from .views import (
     LoginView,
     VerifyCodeView,
     ResendVerificationView,
-    CookieTokenRefreshView
+    CookieTokenRefreshView,
+    CustomUserPostsView
 )
 
 
@@ -21,4 +22,5 @@ urlpatterns = [
     path('verify/', VerifyCodeView.as_view(), name='verify_code'),
     path('resend/', ResendVerificationView.as_view(), name='resend_code'),
     path('<slug:slug>/', CustomUserView.as_view(), name='user'),
+    path('<slug:slug>/posts/', CustomUserPostsView.as_view(), name='user_posts'),
 ]
