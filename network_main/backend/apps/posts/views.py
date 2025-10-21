@@ -195,8 +195,8 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
     return queryset
 
 
-def get_optimized_post_queryset(request, action):
-    queryset = Post.published.all()
+def get_optimized_post_queryset(request):
+    queryset = Post.published.all().select_related('community')
     post_content_type = ContentType.objects.get_for_model(Post)
 
     queryset = get_annotated_ratings(queryset, request, post_content_type)
@@ -228,7 +228,7 @@ class PostViewSet(viewsets.ModelViewSet):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def get_queryset(self):
-        return get_optimized_post_queryset(request=self.request, action=self.action)
+        return get_optimized_post_queryset(request=self.request)
 
     def get_serializer_class(self):
         if self.action == 'list':

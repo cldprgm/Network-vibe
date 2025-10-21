@@ -11,19 +11,17 @@ from django.db.models import Count, OuterRef, Exists, Value, Q, Prefetch
 from django.db.models.fields import BooleanField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 
 from apps.memberships.models import Membership
 from apps.posts.models import Post
-from apps.posts.serializers import PostListSerializer
 from apps.posts.views import PostPagination, get_annotated_ratings
 
 from .models import Community
 from .serializers import (
     CommunityListSerializer,
     CommunityDetailSerializer,
-    MembershipSerializer
+    MembershipSerializer,
+    CommunityPostListSerializer
 )
 from .community_permissions import IsCommunityCreator, HasCommunityPermission, CannotLeaveIfCreator
 from .community_permissions import PERMISSONS_MAP
@@ -153,7 +151,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
 
 
 class CommunityPostsListView(viewsets.GenericViewSet, mixins.ListModelMixin):
-    serializer_class = PostListSerializer
+    serializer_class = CommunityPostListSerializer
     pagination_class = PostPagination
 
     def get_queryset(self):

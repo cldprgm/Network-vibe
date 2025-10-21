@@ -5,6 +5,8 @@ from django.core.validators import RegexValidator, MinLengthValidator
 
 from apps.memberships.models import Membership
 from apps.categories.models import Category
+from apps.posts.models import Post
+from apps.posts.serializers import MediaSerializer
 
 from apps.services.utils import FileSizeValidator, MimeTypeValidator
 from .models import Community
@@ -140,6 +142,28 @@ class CommunityDetailSerializer(CommunityBaseSerializer):
         for role in roles:
             permissions.update(PERMISSONS_MAP.get(role, []))
         return list(permissions)
+
+
+class CommunityPostListSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    author_slug = serializers.CharField(source='author.slug', read_only=True)
+    author_icon = serializers.ImageField(
+        source='author.avatar',
+        read_only=True
+    )
+    comment_count = serializers.IntegerField(read_only=True)
+    sum_rating = serializers.IntegerField(read_only=True)
+    user_vote = serializers.IntegerField(read_only=True)
+
+    media_data = MediaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Post
+        fields = ('id', 'title', 'slug', 'description', 'status', 'author',
+                  'created', 'updated', 'sum_rating', 'user_vote', 'comment_count',
+                  'media_data', 'author_slug', 'author_icon')
+        read_only_fields = ('id', 'slug', 'created', 'updated',
+                            'author', 'media_data')
 
 
 class CurrentCommunityDefault:
