@@ -13,6 +13,8 @@ export type Post = {
     slug: string;
     description: string;
     author: string;
+    author_icon: string;
+    author_slug: string;
     created: string;
     updated: string;
     sum_rating: number;
