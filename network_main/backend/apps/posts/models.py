@@ -30,7 +30,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related('author', 'community').filter(status='PB').order_by('-created')
+        return super().get_queryset().select_related('author').filter(status='PB').order_by('-created')
 
 
 class CommentQuerySet(models.QuerySet):

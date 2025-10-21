@@ -17,7 +17,7 @@ from django.db.models import Count, Q, ExpressionWrapper, F, FloatField
 from apps.services.verification import send_verification_code
 from apps.posts.serializers import PostListSerializer
 from apps.posts.models import Post
-from apps.posts.views import get_annotated_ratings
+from apps.posts.views import get_optimized_post_queryset
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
@@ -207,23 +207,11 @@ class CustomUserPostsView(ListAPIView):
     pagination_class = PostListCursorPagination
 
     def get_queryset(self):
-        queryset = Post.published.filter(
-            author__slug=self.kwargs['slug']
-        ).prefetch_related('media_data')
+        request = self.request
+        queryset = get_optimized_post_queryset(request)
+        queryset = queryset.filter(author__slug=self.kwargs['slug'])
 
-        queryset = get_annotated_ratings(
-            queryset,
-            self.request,
-            content_type=ContentType.objects.get_for_model(Post)
-        )
-
-        queryset = queryset.annotate(
-            comment_count=Count(
-                'owned_comments', filter=Q(owned_comments__status='PB')
-            )
-        )
-
-        filter_type = self.request.query_params.get('filter')
+        filter_type = request.query_params.get('filter')
 
         if filter_type == 'popular':
             queryset = queryset.annotate(
@@ -233,4 +221,4 @@ class CustomUserPostsView(ListAPIView):
                 )
             )
 
-        return queryset
+        return queryset.order_by('-id')

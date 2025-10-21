@@ -475,7 +475,7 @@ class TestPostRecommendations:
     def test_get_optimized_post_queryset(self, authenticated_client, test_user, post, comment, media_file):
         request = authenticated_client.get(reverse('post-list')).wsgi_request
         request.user = test_user
-        queryset = get_optimized_post_queryset(request, action='list')
+        queryset = get_optimized_post_queryset(request)
 
         post = queryset.get(id=post.id)
         assert hasattr(post, 'sum_rating')
