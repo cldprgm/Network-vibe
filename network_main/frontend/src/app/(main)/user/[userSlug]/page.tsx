@@ -6,14 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { User } from '@/services/types';
 import { getUser } from '@/services/auth';
-import { Calendar, User as UserIcon, MessageCircle, MoreVertical } from 'lucide-react';
+import { Calendar, User as UserIcon, MessageCircle } from 'lucide-react';
+import UserPostList from '@/components/user/UserPostList';
 
 export default function UserProfilePage() {
     const params = useParams();
     const slug = params?.userSlug as string;
     const [user, setUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'posts' | 'comments'>('overview');
-    const [sort, setSort] = useState<'hot' | 'new' | 'top'>('new');
+    const [sort, setSort] = useState<'new' | 'top'>('top');
 
     useEffect(() => {
         if (slug) {
@@ -37,6 +38,10 @@ export default function UserProfilePage() {
     const fullName = `${user.first_name} ${user.last_name}`;
     const joinedDate = new Date(user.date_joined).toLocaleDateString();
     const birthDate = new Date(user.birth_date).toLocaleDateString();
+
+    const getFilter = (currentSort: typeof sort): 'new' | 'popular' => {
+        return currentSort === 'new' ? 'new' : 'popular';
+    };
 
     return (
         <div className="w-full mt-20 min-w-0 bg-zinc-50 dark:bg-[var(--background)]">
@@ -107,7 +112,7 @@ export default function UserProfilePage() {
                     </div>
                 </div>
 
-                <div className="space-y-6 pb-8">
+                <div className="space-y-6 pb-8 md:p-2">
                     {activeTab !== 'overview' && (
                         <div className="flex h-10 items-center justify-between bg-white dark:bg-[var(--background)] p-4 rounded-lg ">
                             <div className="flex items-center space-x-3">
@@ -115,11 +120,10 @@ export default function UserProfilePage() {
                                 <select
                                     value={sort}
                                     onChange={(e) => setSort(e.target.value as typeof sort)}
-                                    className="text-sm border border-zinc-300 dark:border-zinc-600 rounded-md px-3 py-1.5 bg-white dark:bg-zinc-800"
+                                    className="cursor-pointer text-sm border border-zinc-300 dark:border-zinc-600 rounded-md px-3 py-1.5 bg-white dark:bg-zinc-800"
                                 >
-                                    <option value="hot">Hot</option>
-                                    <option value="new">New</option>
                                     <option value="top">Top</option>
+                                    <option value="new">New</option>
                                 </select>
                             </div>
                         </div>
@@ -152,31 +156,9 @@ export default function UserProfilePage() {
                         </div>
                     )}
 
-                    {activeTab === 'posts' && (
-                        <div className="space-y-4">
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800">
-                                    <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Posts</h3>
-                                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">Posts will be displayed here.</p>
-                                </div>
-                                <article className={`w-full p-6 border-t border-zinc-100 dark:border-zinc-800`}>
-                                    <div className="flex justify-between items-center text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-                                        <span className="bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-200 px-2 py-1 rounded-full">r/example</span>
-                                        <span>5 hr. ago</span>
-                                    </div>
-                                    <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3 text-base">Example Post Title</h4>
-                                    <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4 leading-relaxed">Post content or excerpt...</p>
-                                    <div className="flex justify-between items-center text-xs text-zinc-500 dark:text-zinc-400">
-                                        <span className="flex items-center space-x-1">
-                                            <MessageCircle size={14} />
-                                            <span>0 comments</span>
-                                        </span>
-                                        <MoreVertical size={16} className="cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300" />
-                                    </div>
-                                </article>
-                            </div>
-                        </div>
-                    )}
+                    <div style={{ display: activeTab === 'posts' ? 'block' : 'none' }}>
+                        <UserPostList userSlug={slug} filter={getFilter(sort)} />
+                    </div>
 
                     {activeTab === 'comments' && (
                         <div className="space-y-4">

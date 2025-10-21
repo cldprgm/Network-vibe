@@ -224,4 +224,25 @@ export async function deleteCommunity(community_id: string) {
 }
 
 
+export async function fetchPostsForUserProfile(
+    userSlug: string,
+    filter: 'new' | 'popular',
+    cursor?: string
+): Promise<{ results: Post[]; nextCursor: string | null }> {
+    try {
+        const params: { filter: 'new' | 'popular'; cursor?: string } = { filter };
+        if (cursor) {
+            params.cursor = cursor;
+        }
+        const response = await api.get<PaginatedResponse<Post>>(
+            `users/${userSlug}/posts/`,
+            { params }
+        );
+        const { results, next } = response.data;
+        const nextCursor = next ? new URL(next).searchParams.get('cursor') : null;
+        return { results, nextCursor };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch users posts in client.');
+    }
+}
 
