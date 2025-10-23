@@ -4,7 +4,7 @@ from django.conf import settings
 
 from apps.services.verification import send_verification_code
 from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
-
+from apps.communities.serializers import CommunityBaseSerializer
 
 from .models import CustomUser, VerificationCode
 
@@ -25,6 +25,16 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "date_joined"
         )
         read_only_fields = fields
+
+
+class CustomUserCommunitiesSerializer(CommunityBaseSerializer):
+    class Meta(CommunityBaseSerializer.Meta):
+        fields = CommunityBaseSerializer.Meta.fields
+
+    # categories not needed here
+    def __init__(self, instance=None, data=..., **kwargs):
+        super().__init__(instance, data, **kwargs)
+        self.fields.pop('categories', None)
 
 
 class CustomUserInfoSerializer(serializers.ModelSerializer):
