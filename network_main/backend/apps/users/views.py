@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import CursorPagination
+from rest_framework.exceptions import PermissionDenied
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -11,12 +12,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Count, Q, ExpressionWrapper, F, FloatField
+from django.db.models import ExpressionWrapper, F, FloatField
+from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 
 from apps.services.verification import send_verification_code
 from apps.posts.serializers import PostListSerializer
-from apps.posts.models import Post
+from apps.communities.models import Community
 from apps.posts.views import get_optimized_post_queryset
 
 from .models import CustomUser, VerificationCode
@@ -26,7 +28,8 @@ from .serializers import (
     RegisterUserSerializer,
     LoginUserSerializer,
     VerifyCodeSerializer,
-    ResendVerificationSerializer
+    ResendVerificationSerializer,
+    CustomUserCommunitiesSerializer
 )
 
 
@@ -222,3 +225,43 @@ class CustomUserPostsView(ListAPIView):
             )
 
         return queryset.order_by('-id')
+
+
+class CommunityListCursorPagination(CursorPagination):
+    page_size = 10
+    ordering = '-id'
+
+
+class CustomUserCommunitiesView(ListAPIView):
+    serializer_class = CustomUserCommunitiesSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = CommunityListCursorPagination
+
+    def get_queryset(self):
+        slug = self.kwargs['slug']
+        target_user = get_object_or_404(CustomUser, slug=slug)
+
+        if self.request.user != target_user and not self.request.user.is_staff:
+            raise PermissionDenied('Permission denied')
+
+        queryset = Community.objects.filter(
+            members__user=target_user
+        ).select_related('creator')
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        slug = self.kwargs['slug']
+        cursor = request.query_params.get('cursor')
+
+        if cursor is None:
+            cache_key = f'user_communities:{slug}:first_page'
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data)
+
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, timeout=300)
+            return response
+
+        return super().list(request, *args, **kwargs)
