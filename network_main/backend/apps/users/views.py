@@ -228,21 +228,18 @@ class CustomUserPostsView(ListAPIView):
 
 
 class CommunityListCursorPagination(CursorPagination):
-    page_size = 10
+    page_size = 3
     ordering = '-id'
 
 
 class CustomUserCommunitiesView(ListAPIView):
     serializer_class = CustomUserCommunitiesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     pagination_class = CommunityListCursorPagination
 
     def get_queryset(self):
         slug = self.kwargs['slug']
         target_user = get_object_or_404(CustomUser, slug=slug)
-
-        if self.request.user != target_user and not self.request.user.is_staff:
-            raise PermissionDenied('Permission denied')
 
         queryset = Community.objects.filter(
             members__user=target_user

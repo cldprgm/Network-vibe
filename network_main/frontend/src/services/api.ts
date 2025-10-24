@@ -246,3 +246,40 @@ export async function fetchPostsForUserProfile(
     }
 }
 
+export async function fetchCommunitiesForUserProfile(
+    userSlug: string,
+    cursor?: string
+): Promise<{ results: CommunityType[]; nextCursor: string | null }> {
+    try {
+        const params = new URLSearchParams();
+        if (cursor) params.append('cursor', cursor);
+
+        const url = `${baseUrl}/users/${userSlug}/communities/${params.toString() ? `?${params}` : ''}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            let errorMessage = 'Failed to fetch user communities.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch {
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data: PaginatedResponse<CommunityType> = await response.json();
+        const nextCursor = data.next ? new URL(data.next).searchParams.get('cursor') : null;
+
+        return { results: data.results, nextCursor };
+    } catch (error: any) {
+        throw new Error(error.message || 'Failed to fetch user communities.');
+    }
+}
+
+

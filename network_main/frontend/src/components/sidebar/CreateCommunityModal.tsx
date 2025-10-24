@@ -74,6 +74,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     const [iconError, setIconError] = useState<string | null>(null);
     const [bannerError, setBannerError] = useState<string | null>(null);
 
+    const [originalBannerFile, setOriginalBannerFile] = useState<File | null>(null);
     const [uncroppedBanner, setUncroppedBanner] = useState<string | null>(null);
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -181,6 +182,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
             const file = e.target.files[0];
             const allowedTypes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
             if (validateImage(file, 10, allowedTypes, setBannerError)) {
+                setOriginalBannerFile(file);
                 setUncroppedBanner(URL.createObjectURL(file));
                 setIsCropperOpen(true);
             }
@@ -192,7 +194,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
     }, []);
 
     const showCroppedImage = useCallback(async () => {
-        if (!croppedAreaPixels || !uncroppedBanner) {
+        if (!croppedAreaPixels || !uncroppedBanner || !originalBannerFile) {
             return;
         }
         try {
@@ -201,23 +203,36 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                 croppedAreaPixels
             );
             if (croppedImage) {
+                URL.revokeObjectURL(uncroppedBanner);
+
+                const originalName = originalBannerFile.name;
+                const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+                const uniqueName = `${nameWithoutExt}_cropped.jpeg`;
+                const renamedFile = new File([croppedImage.file], uniqueName, { type: 'image/jpeg' });
+
                 setBannerPreview(croppedImage.url);
-                setBanner(croppedImage.file);
+                setBanner(renamedFile);
             }
         } catch (e) {
             console.error(e);
             setBannerError("Could not crop the image. Please try again.");
         } finally {
-            setIsCropperOpen(false);
+            URL.revokeObjectURL(uncroppedBanner);
             setUncroppedBanner(null);
+            setOriginalBannerFile(null);
             setZoom(1);
             setCrop({ x: 0, y: 0 });
+            setIsCropperOpen(false);
         }
-    }, [croppedAreaPixels, uncroppedBanner]);
+    }, [croppedAreaPixels, uncroppedBanner, originalBannerFile]);
 
     const handleCloseCropper = () => {
+        if (uncroppedBanner) {
+            URL.revokeObjectURL(uncroppedBanner);
+        }
         setIsCropperOpen(false);
         setUncroppedBanner(null);
+        setOriginalBannerFile(null);
         setZoom(1);
         setCrop({ x: 0, y: 0 });
     }
