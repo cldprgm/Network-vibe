@@ -26,7 +26,6 @@ class CustomUser(AbstractUser):
         default='uploads/avatars/default.png',
         validators=[FileExtensionValidator(
             allowed_extensions=('jpg', 'png', 'jpeg', 'webp', 'gif')),
-            validate_file_size
         ]
     )
     description = models.TextField(max_length=200, blank=True)

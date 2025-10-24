@@ -106,7 +106,7 @@ export default function UserProfilePage() {
                                     : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
                                     }`}
                             >
-                                Comments
+                                Comments(Not working yet.)
                             </Link>
                         </nav>
                     </div>
@@ -116,11 +116,11 @@ export default function UserProfilePage() {
                     {activeTab !== 'overview' && (
                         <div className="flex h-10 items-center justify-between bg-white dark:bg-[var(--background)] p-4 rounded-lg ">
                             <div className="flex items-center space-x-3">
-                                <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Sort by:</span>
+                                <span className="text-base text-zinc-600 dark:text-zinc-400 font-medium">Sort by:</span>
                                 <select
                                     value={sort}
                                     onChange={(e) => setSort(e.target.value as typeof sort)}
-                                    className="cursor-pointer text-sm border border-zinc-300 dark:border-zinc-600 rounded-md px-3 py-1.5 bg-white dark:bg-zinc-800"
+                                    className="cursor-pointer text-base border border-zinc-300 dark:border-zinc-600 rounded-md px-3 py-1.5 bg-white dark:bg-zinc-800"
                                 >
                                     <option value="top">Top</option>
                                     <option value="new">New</option>
