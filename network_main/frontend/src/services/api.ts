@@ -152,6 +152,15 @@ export async function getCommunities(page: number): Promise<{ results: Community
     }
 }
 
+export async function getTopCommunities(): Promise<CommunityType[]> {
+    try {
+        const response = await axios.get<CommunityType[]>(`${baseUrl}/communities/top/`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to get top communities.');
+    }
+}
+
 export async function fetchPostsForCommunity(communitySlug: string, page: number): Promise<{ results: Post[]; nextPage: number | null }> {
     try {
         const response = await api.get<PaginatedResponse<Post>>(
