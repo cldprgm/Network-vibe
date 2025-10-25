@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from datetime import timedelta
 
-from apps.services.utils import unique_slugify, validate_file_size
+from apps.services.utils import unique_slugify
 
 from .managers import CustomUserManager
 
