@@ -42,8 +42,21 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # for debug toolbar
-# hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-# INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
+
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {'console': {'class': 'logging.StreamHandler'}},
+#     'loggers': {
+#         'django.db.backends': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#         },
+#     }
+# }
 
 
 # Application definition

@@ -130,6 +130,29 @@ class CommunityViewSet(viewsets.ModelViewSet):
         community = self.get_object()
         return Response({'status': 'ok'})
 
+    @action(detail=False, methods=['get'], url_path='top')
+    def top_communities(self, request):
+        cache_key = 'top_100_community'
+
+        data = cache.get(cache_key)
+        if data:
+            return Response(data)
+
+        queryset = Community.objects.all().select_related('creator')
+
+        top_communities = queryset.annotate(
+            members_count=Count('members')
+        ).order_by('-members_count')[:100]
+
+        serializer = CommunityListSerializer(
+            top_communities,
+            many=True,
+            context={'request': request}
+        )
+
+        cache.set(cache_key, serializer.data, timeout=86400)
+        return Response(serializer.data)
+
     @transaction.atomic
     def perform_create(self, serializer):
         community = serializer.save(creator=self.request.user)

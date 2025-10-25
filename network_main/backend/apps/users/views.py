@@ -228,7 +228,7 @@ class CustomUserPostsView(ListAPIView):
 
 
 class CommunityListCursorPagination(CursorPagination):
-    page_size = 3
+    page_size = 7
     ordering = '-id'
 
 
