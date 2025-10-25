@@ -1,0 +1,39 @@
+.sidebar-custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    scrollbar-gutter: stable;
+}
+
+/* (Chrome, Safari, Edge) */
+.sidebar-custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 10px;
+}
+
+.sidebar-custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: #1a1a29ce;
+}
+
+.dark .sidebar-custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: #535469b9;
+}
+
+.sidebar-custom-scrollbar:hover {
+    scrollbar-color: #535469b9 transparent;
+}
+
+.dark .sidebar-custom-scrollbar:hover {
+    scrollbar-color: #535469b9 transparent;
+}
+
+.dark .sidebar-custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
