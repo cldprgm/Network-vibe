@@ -118,7 +118,7 @@ class CategoryCommunityListView(generics.ListAPIView):
 
         base_queryset = Community.objects.filter(categories=subcategory_id) \
             .select_related('creator') \
-            .annotate(members_count=Count('members'))
+            .annotate(members_count=Count('members', distinct=True))
 
         # add (members__is_approved=True) later
         if user.is_authenticated:
