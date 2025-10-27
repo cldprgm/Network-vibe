@@ -24,7 +24,7 @@ urlpatterns = [
     path('resend/', ResendVerificationView.as_view(), name='resend_code'),
     path('<slug:slug>/', CustomUserView.as_view(), name='user'),
     path('<slug:slug>/communities/',
-         CustomUserCommunitiesView.as_view(), name='user_community'),
+         CustomUserCommunitiesView.as_view(), name='user_communities'),
     path('<slug:slug>/posts/', CustomUserPostsView.as_view(), name='user_posts'),
     # path('<slug:slug>/comments/', CustomUserPostsView.as_view(), name='user_posts'),
 ]

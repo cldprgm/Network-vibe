@@ -3,13 +3,19 @@ from datetime import timedelta
 import os
 from PIL import Image
 import io
+
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 from django.utils import timezone
 from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.communities.models import Community
+from apps.memberships.models import Membership
 from .models import CustomUser, VerificationCode
+from .views import CustomUserCommunitiesView
 
 
 @pytest.fixture
@@ -21,8 +27,20 @@ def api_client():
 def test_user():
     return CustomUser.objects.create_user(
         username='testuser',
+        slug='testuser',
         email='test@example.com',
         password='testpassword',
+        is_active=True
+    )
+
+
+@pytest.fixture
+def another_user():
+    return CustomUser.objects.create_user(
+        username='anotheruser',
+        slug='anotheruser',
+        email='another@example.com',
+        password='anotherpassword',
         is_active=True
     )
 
@@ -321,3 +339,92 @@ class TestResendVerification:
         data = {}
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestCustomUserCommunitiesView:
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, db, test_user, another_user):
+        self.target_user = test_user
+        self.creator_user = another_user
+
+        self.community1 = Community.objects.create(
+            name='Community 1', creator=self.creator_user)
+        self.community2 = Community.objects.create(
+            name='Community 2', creator=self.creator_user)
+        self.community3 = Community.objects.create(
+            name='Community 3', creator=self.target_user)
+
+        Membership.objects.create(
+            user=self.target_user, community=self.community1)
+        Membership.objects.create(
+            user=self.target_user, community=self.community2)
+
+        cache.clear()
+
+    def test_get_user_communities_success(self, api_client, test_user):
+        url = reverse('user_communities', kwargs={'slug': test_user.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 2
+        community_names = {item['name'] for item in response.data['results']}
+        assert 'Community 1' in community_names
+        assert 'Community 2' in community_names
+        assert 'Community 3' not in community_names
+
+    def test_get_user_communities_not_found(self, api_client):
+        url = reverse('user_communities', kwargs={'slug': 'non-existent-slug'})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_user_has_no_communities(self, api_client, another_user):
+        url = reverse('user_communities', kwargs={'slug': another_user.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 0
+
+    def test_pagination_works(self, api_client, test_user):
+        for i in range(15):
+            community = Community.objects.create(
+                name=f'Pag-Comm-{i}', creator=self.creator_user)
+            Membership.objects.create(user=test_user, community=community)
+
+        url = reverse('user_communities', kwargs={'slug': test_user.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert 'next' in response.data
+        assert response.data['next'] is not None
+        assert 'results' in response.data
+        next_url = response.data['next']
+        response_next = api_client.get(next_url)
+        assert response_next.status_code == status.HTTP_200_OK
+        assert len(response_next.data['results']) > 0
+
+    def test_caching_first_page(self, api_client, test_user):
+        slug = test_user.slug
+        url = reverse('user_communities', kwargs={'slug': slug})
+        cache_key = f'user_communities:{slug}:first_page'
+
+        assert cache.get(cache_key) is None
+
+        response1 = api_client.get(url)
+        assert response1.status_code == status.HTTP_200_OK
+
+        cached_data = cache.get(cache_key)
+        assert cached_data is not None
+        assert cached_data == response1.data
+
+    def test_caching_is_not_used_for_paginated_pages(self, api_client, test_user):
+        slug = test_user.slug
+        url = reverse('user_communities', kwargs={'slug': slug})
+        paginated_url = f"{url}?cursor=somecursorvalue"
+        cache_key = f'user_communities:{slug}:first_page'
+
+        api_client.get(paginated_url)
+
+        assert cache.get(cache_key) is None
