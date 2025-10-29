@@ -103,7 +103,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             for child in category.get('subcategories', []):
                 for community in child.get('communities', []):
                     community.pop('is_member', None)
-        cache.set(cache_key, cache_data, 60 * 1)
+        cache.set(cache_key, cache_data, 60 * 15)
 
         return Response(data)
 
