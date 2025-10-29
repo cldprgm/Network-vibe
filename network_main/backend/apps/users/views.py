@@ -194,7 +194,7 @@ class PostListCursorPagination(CursorPagination):
     ordering = None
 
     def get_ordering(self, request, queryset, view):
-        filter_type = self.request.query_params.get('filter')
+        filter_type = self.request.query_params.get('filter', 'popular')
 
         if filter_type == 'new':
             return '-created', '-id'
@@ -214,7 +214,7 @@ class CustomUserPostsView(ListAPIView):
         queryset = get_optimized_post_queryset(request)
         queryset = queryset.filter(author__slug=self.kwargs['slug'])
 
-        filter_type = request.query_params.get('filter')
+        filter_type = request.query_params.get('filter', 'popular')
 
         if filter_type == 'popular':
             queryset = queryset.annotate(
@@ -224,7 +224,23 @@ class CustomUserPostsView(ListAPIView):
                 )
             )
 
-        return queryset.order_by('-id')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        cursor = request.query_params.get('cursor')
+
+        if cursor is None:
+            filter_type = request.query_params.get('filter', 'popular')
+            cache_key = f"user_posts_first_page:{self.kwargs['slug']}:{filter_type}"
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data)
+
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, timeout=60 * 15)
+            return response
+
+        return super().list(request, *args, **kwargs)
 
 
 class CommunityListCursorPagination(CursorPagination):
@@ -252,13 +268,13 @@ class CustomUserCommunitiesView(ListAPIView):
         cursor = request.query_params.get('cursor')
 
         if cursor is None:
-            cache_key = f'user_communities:{slug}:first_page'
+            cache_key = f'user_communities_first_page:{slug}'
             cached_data = cache.get(cache_key)
             if cached_data is not None:
                 return Response(cached_data)
 
             response = super().list(request, *args, **kwargs)
-            cache.set(cache_key, response.data, timeout=300)
+            cache.set(cache_key, response.data, timeout=500)
             return response
 
         return super().list(request, *args, **kwargs)

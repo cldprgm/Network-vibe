@@ -408,7 +408,7 @@ class TestCustomUserCommunitiesView:
     def test_caching_first_page(self, api_client, test_user):
         slug = test_user.slug
         url = reverse('user_communities', kwargs={'slug': slug})
-        cache_key = f'user_communities:{slug}:first_page'
+        cache_key = f'user_communities_first_page:{slug}'
 
         assert cache.get(cache_key) is None
 
@@ -423,7 +423,7 @@ class TestCustomUserCommunitiesView:
         slug = test_user.slug
         url = reverse('user_communities', kwargs={'slug': slug})
         paginated_url = f"{url}?cursor=somecursorvalue"
-        cache_key = f'user_communities:{slug}:first_page'
+        cache_key = f'user_communities_first_page:{slug}'
 
         api_client.get(paginated_url)
 
