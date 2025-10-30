@@ -8,12 +8,14 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
 from django.utils import timezone
 from django.urls import reverse
+from django.db.models import F, ExpressionWrapper, FloatField
 
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.communities.models import Community
 from apps.memberships.models import Membership
+from apps.posts.models import Post
 from .models import CustomUser, VerificationCode
 from .views import CustomUserCommunitiesView
 
@@ -41,6 +43,17 @@ def another_user():
         slug='anotheruser',
         email='another@example.com',
         password='anotherpassword',
+        is_active=True
+    )
+
+
+@pytest.fixture
+def user_with_no_posts():
+    return CustomUser.objects.create_user(
+        username='nopostsuser',
+        slug='nopostsuser',
+        email='noposts@example.com',
+        password='nopostspassword',
         is_active=True
     )
 
@@ -428,3 +441,128 @@ class TestCustomUserCommunitiesView:
         api_client.get(paginated_url)
 
         assert cache.get(cache_key) is None
+
+
+@pytest.mark.django_db
+class TestCustomUserPostsView:
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, db, test_user, another_user):
+        self.target_user = test_user
+        self.another_user = another_user
+        self.community = Community.objects.create(
+            name='Test Community', creator=self.another_user)
+
+        self.post_oldest = Post.objects.create(
+            author=self.target_user, community=self.community, title='Oldest Post', status='PB')
+        self.post_oldest.created = timezone.now() - timedelta(days=2)
+        self.post_oldest.save()
+
+        self.post_middle = Post.objects.create(
+            author=self.target_user, community=self.community, title='Middle Post', status='PB')
+        self.post_middle.created = timezone.now() - timedelta(days=1)
+        self.post_middle.save()
+
+        self.post_second_newest = Post.objects.create(
+            author=self.target_user, community=self.community, title='Second Newest Post', status='PB')
+
+        self.post_newest = Post.objects.create(
+            author=self.target_user, community=self.community, title='Newest Post', status='PB')
+
+        self.other_user_post = Post.objects.create(
+            author=self.another_user, community=self.community, title='Another User Post', status='PB')
+
+        self.post_draft = Post.objects.create(
+            author=self.target_user, community=self.community, title='Draft Post', status='DF')
+
+        cache.clear()
+
+    def test_get_user_posts_success_popular_filter(self, api_client):
+        url = reverse('user_posts', kwargs={'slug': self.target_user.slug})
+        response = api_client.get(url, {'filter': 'popular'})
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.data['results']
+        assert len(results) == 4
+
+    def test_get_user_posts_success_new_filter(self, api_client):
+        url = reverse('user_posts', kwargs={'slug': self.target_user.slug})
+        response = api_client.get(url, {'filter': 'new'})
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.data['results']
+        assert len(results) == 4
+
+        assert results[0]['title'] == self.post_newest.title
+        assert results[1]['title'] == self.post_second_newest.title
+        assert results[2]['title'] == self.post_middle.title
+        assert results[3]['title'] == self.post_oldest.title
+
+    def test_draft_posts_are_not_included(self, api_client):
+        url = reverse('user_posts', kwargs={'slug': self.target_user.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 4
+
+        post_titles = [post['title'] for post in response.data['results']]
+        assert self.post_draft.title not in post_titles
+
+    def test_user_with_no_posts(self, api_client, user_with_no_posts):
+        url = reverse('user_posts', kwargs={'slug': user_with_no_posts.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 0
+
+    def test_get_user_posts_user_not_found(self, api_client):
+        url = reverse('user_posts', kwargs={'slug': 'non-existent-slug'})
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 0
+
+    def test_pagination_works_for_posts(self, api_client):
+        for i in range(22):
+            Post.objects.create(
+                author=self.target_user, community=self.community, title=f'Pag Post {i}', status='PB')
+
+        url = reverse('user_posts', kwargs={'slug': self.target_user.slug})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 25
+        assert response.data['next'] is not None
+
+        next_page_url = response.data['next']
+        next_response = api_client.get(next_page_url)
+        assert next_response.status_code == status.HTTP_200_OK
+        assert len(next_response.data['results']) == 1
+
+    def test_caching_works_for_first_page_popular(self, api_client):
+        slug = self.target_user.slug
+        url = reverse('user_posts', kwargs={'slug': slug})
+        cache_key = f"user_posts_first_page:{slug}:popular"
+        assert cache.get(cache_key) is None
+        response = api_client.get(url, {'filter': 'popular'})
+        assert response.status_code == status.HTTP_200_OK
+        cached_response_data = cache.get(cache_key)
+        assert cached_response_data is not None
+        assert cached_response_data == response.data
+
+    def test_caching_works_for_first_page_new(self, api_client):
+        slug = self.target_user.slug
+        url = reverse('user_posts', kwargs={'slug': slug})
+        cache_key = f"user_posts_first_page:{slug}:new"
+        assert cache.get(cache_key) is None
+        response = api_client.get(url, {'filter': 'new'})
+        assert response.status_code == status.HTTP_200_OK
+        cached_response_data = cache.get(cache_key)
+        assert cached_response_data is not None
+        assert cached_response_data == response.data
+
+    def test_caching_is_not_used_for_paginated_pages_for_posts(self, api_client):
+        slug = self.target_user.slug
+        url = reverse('user_posts', kwargs={'slug': slug})
+        cache_key_popular = f"user_posts_first_page:{slug}:popular"
+        api_client.get(url, {'cursor': 'randomcursorvalue'})
+        assert cache.get(cache_key_popular) is None
