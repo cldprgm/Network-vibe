@@ -83,6 +83,7 @@ class Community(models.Model):
         auto_now_add=True, verbose_name='Create time')
     updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
     slug = models.SlugField(max_length=100, verbose_name='URL', blank=True)
+    # delete this
     status = models.CharField(choices=Status.choices, default=Status.PUBLISHED,
                               max_length=10, verbose_name="Community status")
 

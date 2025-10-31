@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate
-from rest_framework import serializers
 from django.conf import settings
+from django.core.cache import cache
+
+from rest_framework import serializers
 
 from apps.services.verification import send_verification_code
 from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
@@ -17,14 +19,23 @@ ALLOWED_MIME_TYPES = {
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = (
             'id', 'slug', 'username', 'first_name',
             'last_name', 'avatar', 'description', 'birth_date', 'gender',
-            "date_joined"
+            "date_joined", 'status'
         )
         read_only_fields = fields
+
+    def get_status(self, obj):
+        cache_key = obj.get_online_status_cache_key()
+        data = cache.get(cache_key)
+        if data is not None:
+            return 'online'
+        return 'offline'
 
 
 class CustomUserCommunitiesSerializer(CommunityBaseSerializer):
