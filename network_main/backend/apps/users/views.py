@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView, RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import CursorPagination
-from rest_framework.exceptions import PermissionDenied
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -278,3 +277,15 @@ class CustomUserCommunitiesView(ListAPIView):
             return response
 
         return super().list(request, *args, **kwargs)
+
+
+class CustomUserStatusCheck(APIView):
+    http_method_names = ['post']
+
+    def post(self, request):
+        user = request.user
+        if user.is_authenticated:
+            cache_key = user.get_online_status_cache_key()
+            cache.set(cache_key, value=True, timeout=60*5)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

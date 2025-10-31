@@ -11,6 +11,7 @@ from .views import (
     CookieTokenRefreshView,
     CustomUserPostsView,
     CustomUserCommunitiesView,
+    CustomUserStatusCheck,
 )
 
 
@@ -22,6 +23,7 @@ urlpatterns = [
     path('refresh/', CookieTokenRefreshView.as_view(), name='refresh'),
     path('verify/', VerifyCodeView.as_view(), name='verify_code'),
     path('resend/', ResendVerificationView.as_view(), name='resend_code'),
+    path('heartbeat/', CustomUserStatusCheck.as_view(), name='user_status'),
     path('<slug:slug>/', CustomUserView.as_view(), name='user'),
     path('<slug:slug>/communities/',
          CustomUserCommunitiesView.as_view(), name='user_communities'),
