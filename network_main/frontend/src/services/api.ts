@@ -291,4 +291,12 @@ export async function fetchCommunitiesForUserProfile(
     }
 }
 
+export const sendHeartbeat = async (): Promise<void> => {
+    try {
+        await api.post('/users/heartbeat/');
+    } catch (error) {
+        console.error('Failed to send heartbeat:', error);
+    }
+};
+
 
