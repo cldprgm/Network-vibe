@@ -152,7 +152,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="mt-12 min-h-screen bg-gray-50 py-8 dark:bg-[var(--background)]">
+        <div className="mt-15 min-h-screen bg-gray-50 py-8 dark:bg-[var(--background)]">
             <div className="max-w-4xl mx-auto px-4">
                 <div className="flex items-center justify-between mb-8">
                     <div>
