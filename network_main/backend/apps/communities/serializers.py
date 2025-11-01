@@ -78,6 +78,8 @@ class CommunityDetailSerializer(CommunityBaseSerializer):
     current_user_roles = serializers.SerializerMethodField()
     current_user_permissions = serializers.SerializerMethodField()
 
+    online_members = serializers.IntegerField(read_only=True)
+
     icon_upload = serializers.FileField(
         write_only=True, required=False, source='icon'
     )
@@ -88,7 +90,7 @@ class CommunityDetailSerializer(CommunityBaseSerializer):
     class Meta(CommunityBaseSerializer.Meta):
         fields = CommunityBaseSerializer.Meta.fields + ('is_member', 'icon_upload',
                                                         'banner_upload', 'current_user_roles',
-                                                        'current_user_permissions')
+                                                        'current_user_permissions', 'online_members')
         read_only_fields = ('current_user_roles', 'current_user_permissions')
 
     def get_is_member(self, obj):

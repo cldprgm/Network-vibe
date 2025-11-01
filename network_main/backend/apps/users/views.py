@@ -14,6 +14,9 @@ from django_ratelimit.decorators import ratelimit
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
+from django_redis import get_redis_connection
+
+import time
 
 from apps.services.verification import send_verification_code
 from apps.posts.serializers import PostListSerializer
@@ -273,7 +276,7 @@ class CustomUserCommunitiesView(ListAPIView):
                 return Response(cached_data)
 
             response = super().list(request, *args, **kwargs)
-            cache.set(cache_key, response.data, timeout=500)
+            cache.set(cache_key, response.data, timeout=600)
             return response
 
         return super().list(request, *args, **kwargs)
@@ -285,7 +288,22 @@ class CustomUserStatusCheck(APIView):
     def post(self, request):
         user = request.user
         if user.is_authenticated:
-            cache_key = user.get_online_status_cache_key()
-            cache.set(cache_key, value=True, timeout=60*5)
+            community_ids = user.user_memberships.values_list(
+                'community_id',
+                flat=True
+            )
+
+            if community_ids:
+                current_timestamp = int(time.time())
+
+                r = get_redis_connection("default")
+                pipe = r.pipeline()
+
+                for community_id in community_ids:
+                    key = f'community:{community_id}:online'
+                    pipe.zadd(key, {user.pk: current_timestamp})
+                    pipe.expire(key, 60 * 15)
+
+                pipe.execute()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
