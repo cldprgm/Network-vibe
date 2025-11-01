@@ -49,9 +49,6 @@ class CustomUser(AbstractUser):
             self.slug = unique_slugify(self, self.username)
         super().save(*args, **kwargs)
 
-    def get_online_status_cache_key(self):
-        return f'{self.pk}_online_status'
-
     def __str__(self):
         return self.username
 
