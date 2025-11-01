@@ -19,23 +19,14 @@ ALLOWED_MIME_TYPES = {
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    status = serializers.SerializerMethodField()
-
     class Meta:
         model = CustomUser
         fields = (
             'id', 'slug', 'username', 'first_name',
             'last_name', 'avatar', 'description', 'birth_date', 'gender',
-            "date_joined", 'status'
+            "date_joined"
         )
         read_only_fields = fields
-
-    def get_status(self, obj):
-        cache_key = obj.get_online_status_cache_key()
-        data = cache.get(cache_key)
-        if data is not None:
-            return 'online'
-        return 'offline'
 
 
 class CustomUserCommunitiesSerializer(CommunityBaseSerializer):
