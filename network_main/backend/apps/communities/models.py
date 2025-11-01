@@ -1,6 +1,10 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, FileExtensionValidator, RegexValidator
+from django.core.cache import cache
 from django.conf import settings
+from django_redis import get_redis_connection
+
+import time
 
 from mptt.fields import TreeManyToManyField
 
@@ -11,7 +15,7 @@ from apps.services.utils import unique_slugify, MimeTypeValidator, FileSizeValid
 User = settings.AUTH_USER_MODEL
 
 
-class Community(models.Model):
+class Community(models.Model):  # add members_count later
     """Community model"""
 
     class Visibility(models.TextChoices):
@@ -98,6 +102,21 @@ class Community(models.Model):
         if not self.slug or Community.objects.filter(pk=self.pk, name=self.name).exists() is False:
             self.slug = unique_slugify(self, self.name)
         super().save(*args, **kwargs)
+
+    def get_online_members_count(self) -> int:
+        try:
+            r = get_redis_connection('default')
+            key = f'community:{self.pk}:online'
+
+            border_time = int(time.time()) - 300
+
+            r.zremrangebyscore(key, '-inf', border_time)
+
+            online_count = r.zcard(key)
+
+            return online_count
+        except Exception:
+            return 0
 
     def __str__(self):
         return self.name
