@@ -47,7 +47,7 @@ const CardContent = ({ community, onJoin }: CardContentProps) => (
                 <span className="mx-2">·</span>
                 <span className="flex items-center">
                     <span className="h-2 w-2 bg-green-500 rounded-full mr-1.5"></span>
-                    3 online
+                    {community.online_members} online
                 </span>
             </div>
 
