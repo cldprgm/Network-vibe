@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { sendHeartbeat } from '../api';
 import { useAuthStore } from '@/zustand_store/authStore';
 
-const HEARTBEAT_INTERVAL_MS = 60 * 3000;
+const HEARTBEAT_INTERVAL_MS = 60 * 4000;
 
 export const useHeartbeat = () => {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
