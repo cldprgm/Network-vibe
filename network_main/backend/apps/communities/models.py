@@ -1,15 +1,16 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, FileExtensionValidator, RegexValidator
-from django.core.cache import cache
 from django.conf import settings
 from django_redis import get_redis_connection
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 
 import time
 
 from mptt.fields import TreeManyToManyField
 
 from apps.categories.models import Category
-from apps.services.utils import unique_slugify, MimeTypeValidator, FileSizeValidator
+from apps.services.utils import unique_slugify, FileSizeValidator
 
 
 User = settings.AUTH_USER_MODEL
@@ -96,7 +97,13 @@ class Community(models.Model):  # add members_count later
         ordering = ('created', )
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
-        indexes = [models.Index(fields=['slug', 'visibility'])]
+        indexes = [
+            models.Index(fields=['slug', 'visibility']),
+            GinIndex(
+                SearchVector('name', config='english'),
+                name='community_search_vector_idx'
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if not self.slug or Community.objects.filter(pk=self.pk, name=self.name).exists() is False:

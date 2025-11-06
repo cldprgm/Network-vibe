@@ -11,9 +11,6 @@ from django.db.models import Count, OuterRef, Exists, Value, Q, Prefetch
 from django.db.models.fields import BooleanField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
-
-import redis
 
 from apps.memberships.models import Membership
 from apps.posts.models import Post
