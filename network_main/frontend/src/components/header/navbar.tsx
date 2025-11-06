@@ -140,7 +140,7 @@ export default function Navbar() {
                 </button>
                 <div
                   ref={dropdownRef}
-                  className={`absolute right-0 mt-3 w-72 bg-white divide-y divide-zinc-100 rounded-xl shadow-xl border border-zinc-200 dark:bg-zinc-800 dark:divide-zinc-600 dark:border-zinc-700 transition-all duration-200 ease-out ${isDropdownOpen
+                  className={`absolute right-0 mt-3 w-72 bg-white divide-y divide-zinc-100 rounded-xl shadow-xl border border-zinc-200 dark:bg-zinc-800 dark:divide-zinc-600 dark:border-zinc-700 transition-all duration-150 ease-out ${isDropdownOpen
                     ? 'opacity-100 scale-100 translate-y-0'
                     : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
                     }`}

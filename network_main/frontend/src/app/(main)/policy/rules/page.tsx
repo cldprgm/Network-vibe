@@ -70,7 +70,7 @@ export default function RulesPage() {
                         Core Principles
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <User size={36} />
                             </div>
@@ -89,7 +89,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <Users size={36} />
                             </div>
@@ -106,7 +106,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <EyeOff size={36} />
                             </div>
@@ -123,7 +123,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-red-600 dark:text-red-500 shrink-0">
                                 <AlertTriangle size={36} />
                             </div>
@@ -139,7 +139,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <UserCheck size={36} />
                             </div>
@@ -155,7 +155,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <FileText size={36} />
                             </div>
@@ -171,7 +171,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <Scale size={36} />
                             </div>
@@ -186,7 +186,7 @@ export default function RulesPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-[var(--button-sidebar-background-hover)] transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
+                        <div className="bg-gray-50 dark:bg-[var(--background-secondary)] rounded-xl shadow-lg p-8 flex items-start hover:bg-gray-100 dark:hover:bg-gray-600/10 transition-colors duration-300 border border-gray-200 dark:border-[var(--border)]">
                             <div className="mr-6 text-gray-500 dark:text-gray-400 shrink-0">
                                 <Code size={36} />
                             </div>

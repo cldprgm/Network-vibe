@@ -60,7 +60,7 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
                 )}
                 {nextPage && !loading && <div ref={observerTarget} className="h-2" />}
             </section>
-            <div className="w-[250px] hidden xl:block"></div>
+            <div className="w-[200px] hidden xl:block"></div>
 
         </div>
     );

@@ -51,7 +51,7 @@ const CardContent = ({ community, onJoin }: CardContentProps) => (
                 </span>
             </div>
 
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 break-words line-clamp-2">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 break-words line-clamp-2">
                 {community.description || "No description provided."}
             </p>
 
