@@ -79,7 +79,7 @@ class Post(models.Model):
     title = models.CharField(max_length=300, validators=[
                              MinLengthValidator(5)], verbose_name="Post title")
     slug = models.SlugField(
-        max_length=300, verbose_name="URL", blank=True)
+        max_length=310, verbose_name="URL", blank=True)
     description = models.TextField(
         max_length=600, verbose_name="Post description", blank=True, default='')
     status = models.CharField(choices=STATUS_OPTIONS,
@@ -91,8 +91,7 @@ class Post(models.Model):
                                on_delete=models.CASCADE, related_name="posts_created")
     ratings = GenericRelation(to=Rating)
     community = models.ForeignKey(
-        # delete a null=True
-        to=Community, on_delete=models.CASCADE, related_name='owned_posts', null=True)
+        to=Community, on_delete=models.CASCADE, related_name='owned_posts')
 
     objects = models.Manager()
     published = PublishedManager()
@@ -100,7 +99,7 @@ class Post(models.Model):
     class Meta:
         db_table = 'api_network_post'
         ordering = ['-created']
-        indexes = [models.Index(fields=['-created', 'status'])]
+        indexes = [models.Index(fields=['slug', '-created', 'status'])]
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
 

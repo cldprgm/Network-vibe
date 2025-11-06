@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'apps.ratings.apps.RatingsConfig',
     'apps.posts.apps.PostsConfig',
     'apps.recommendations.apps.RecommendationsConfig',
+    'apps.search.apps.SearchConfig',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
