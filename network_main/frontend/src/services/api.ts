@@ -15,6 +15,27 @@ export interface PaginatedResponse<T> {
     next: string | null;
 }
 
+// search results
+export interface CommunityResult {
+    id: number;
+    slug: string;
+    name: string;
+    icon: string;
+    type: 'community';
+}
+
+export interface UserResult {
+    id: number;
+    slug: string;
+    username: string;
+    avatar: string;
+    type: 'user';
+}
+
+export type SearchResult = CommunityResult | UserResult;
+
+//
+
 export async function fetchPosts(page: number): Promise<{ results: Post[]; nextPage: number | null }> {
     try {
         const response = await api.get<PaginatedResponse<Post>>(
@@ -299,4 +320,12 @@ export const sendHeartbeat = async (): Promise<void> => {
     }
 };
 
+export async function searchQuery(query: string): Promise<SearchResult[]> {
+    const response = await fetch(`${baseUrl}/search/?q=${encodeURIComponent(query)}`);
 
+    if (!response.ok) {
+        throw new Error(`Failed to fetch search results: ${response.statusText}`);
+    }
+
+    return response.json();
+}
