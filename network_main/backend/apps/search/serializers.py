@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.communities.models import Community
-from apps.users.serializers import CustomUserSerializer
 from apps.users.models import CustomUser
 
 
@@ -36,24 +35,26 @@ class SearchSerializer(serializers.Serializer):
 
         obj_type = instance.get('type')
         obj_id = instance.get('id')
+        obj_rank = instance.get('rank')
+
+        serializer = None
 
         if obj_type == 'community':
             obj = communities_map.get(obj_id)
             if obj:
                 serializer = CommunitySearchSerializer(obj)
-            else:
-                None
+
         elif obj_type == 'user':
             obj = users_map.get(obj_id)
             if obj:
                 serializer = UserSearchSerializer(obj)
-            else:
-                None
-        else:
+
+        if not serializer:
             return super().to_representation(instance)
 
         data = serializer.data
         data['type'] = obj_type
+        data['rank'] = obj_rank
         return data
 
     def to_internal_value(self, data):
