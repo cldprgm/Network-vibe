@@ -8,6 +8,7 @@ import IconComponent from './icon_component';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Settings, LogOut, User as UserIcon } from 'lucide-react';
+import SearchComponent from './SearchComponent';
 
 export default function Navbar() {
   const router = useRouter();
@@ -101,6 +102,10 @@ export default function Navbar() {
                 Network
               </span>
             </Link>
+          </div>
+
+          <div className="flex-1 flex justify-center px-4">
+            <SearchComponent />
           </div>
 
           <div className="flex items-center space-x-2">
