@@ -15,6 +15,9 @@ from django.db.models import ExpressionWrapper, F, FloatField
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django_redis import get_redis_connection
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 
 import time
 
@@ -60,43 +63,86 @@ class UserRegistrationView(CreateAPIView):
     permission_classes = [AllowAny]
 
 
-class VerifyCodeView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = VerifyCodeSerializer(data=request.data)
-        if serializer.is_valid():
-            user = CustomUser.objects.get(
-                email=serializer.validated_data['email']
-            )
-            user.is_active = True
-            user.save()
-            VerificationCode.objects.filter(user=user).delete()
-            return Response({"message": "Email verified successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ResendVerificationView(APIView):
+class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
 
-    @method_decorator(ratelimit(key=email_key, rate='5/h', method='POST', block=False))
-    @method_decorator(ratelimit(key=email_key, rate='1/m', method='POST', block=False))
-    def post(self, request, *args, **kwargs):
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
 
-        if getattr(request, "limited", False):
-            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+        if user is not None and default_token_generator.check_token(user, token):
+            if not user.is_active:
+                user.is_active = True
+                user.save()
 
-        serializer = ResendVerificationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        email = serializer.validated_data['email']
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
 
-        user = CustomUser.objects.filter(email=email, is_active=False).first()
-        if user:
-            send_verification_code(user=user)
+            response = Response(
+                data={
+                    'user': CustomUserInfoSerializer(
+                        user,
+                        context={'request': request}).data
+                },
+                status=status.HTTP_200_OK
+            )
+            response.set_cookie(key='access_token',
+                                value=access_token,
+                                httponly=True,
+                                domain=None,
+                                samesite='Lax')
+            response.set_cookie(key='refresh_token',
+                                value=str(refresh),
+                                httponly=True,
+                                domain=None,
+                                samesite='Lax')
 
-        return Response(
-            {'message': 'Verification code resent if email is registered'},
-            status=status.HTTP_200_OK
-        )
+            return response
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+# it's not necessary yet
+#
+# class VerifyCodeView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         serializer = VerifyCodeSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = CustomUser.objects.get(
+#                 email=serializer.validated_data['email']
+#             )
+#             user.is_active = True
+#             user.save()
+#             VerificationCode.objects.filter(user=user).delete()
+#             return Response({"message": "Email verified successfully"}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class ResendVerificationView(APIView):
+#     permission_classes = [AllowAny]
+
+#     @method_decorator(ratelimit(key=email_key, rate='5/h', method='POST', block=False))
+#     @method_decorator(ratelimit(key=email_key, rate='1/m', method='POST', block=False))
+#     def post(self, request, *args, **kwargs):
+
+#         if getattr(request, "limited", False):
+#             return Response(status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+#         serializer = ResendVerificationSerializer(data=request.data)
+#         if not serializer.is_valid():
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         email = serializer.validated_data['email']
+
+#         user = CustomUser.objects.filter(email=email, is_active=False).first()
+#         if user:
+#             send_verification_code(user=user)
+
+#         return Response(
+#             {'message': 'Verification code resent if email is registered'},
+#             status=status.HTTP_200_OK
+#         )
 
 
 class LoginView(APIView):

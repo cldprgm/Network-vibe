@@ -4,7 +4,7 @@ from django.core.cache import cache
 
 from rest_framework import serializers
 
-from apps.services.verification import send_verification_code
+from apps.services.verification import send_verification_code, send_verification_link
 from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
 from apps.communities.serializers import CommunityBaseSerializer
 
@@ -73,7 +73,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             is_active=False
         )
-        send_verification_code(user)
+        send_verification_link(user)
         return user
 
 
