@@ -43,7 +43,7 @@ api.interceptors.response.use(
             !originalRequest._retry &&
             !originalRequest.url.includes('/users/login/') &&
             !originalRequest.url.includes('/users/refresh/') &&
-            !originalRequest.url.includes('/users/verify-email/')
+            !originalRequest.url.includes('/user/verify-email/')
         ) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {

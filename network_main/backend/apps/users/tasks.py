@@ -13,7 +13,10 @@ def send_verification_link_email(user_id, token, uid):
         verification_link = f'{settings.FRONTEND_VERIFICATION_URL}/{uid}/{token}'
 
         subject = 'Verify Your Email'
-        message = f'Hi {user.username}! Follow this link to verify your account: {verification_link}'
+        message = (
+            f'Hi {user.username}!\n'
+            f'Follow this link to verify your account: {verification_link}'
+        )
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [user.email]
 

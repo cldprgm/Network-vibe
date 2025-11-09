@@ -76,7 +76,7 @@ export default function RegisterModal({
                     <p className="text-gray-700 dark:text-gray-300 mb-6">
                         We’ve sent a confirmation link to <strong>{email}</strong>.
                     </p>
-                    <button onClick={onClose} className="cursor-pointer w-full bg-blue-600 text-white py-2 rounded-xl">Закрыть</button>
+                    <button onClick={onClose} className="cursor-pointer w-full bg-blue-600 text-white py-2 rounded-xl">Close</button>
                 </div>
             </div>
         );
