@@ -8,7 +8,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
 from django.utils import timezone
 from django.urls import reverse
-from django.db.models import F, ExpressionWrapper, FloatField
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -16,8 +18,7 @@ from rest_framework.test import APIClient
 from apps.communities.models import Community
 from apps.memberships.models import Membership
 from apps.posts.models import Post
-from .models import CustomUser, VerificationCode
-from .views import CustomUserCommunitiesView
+from .models import CustomUser
 
 
 @pytest.fixture
@@ -85,7 +86,6 @@ class TestUserRegistration:
         assert response.status_code == status.HTTP_201_CREATED
         user = CustomUser.objects.get(email='test2@example.com')
         assert user.is_active is False
-        assert VerificationCode.objects.filter(user=user).exists()
 
     def test_missing_fields(self, api_client):
         data = {'email': 'incomplete@example.com'}
@@ -253,8 +253,7 @@ class TestRefreshToken:
 
 
 @pytest.mark.django_db
-class TestVerifyCode:
-    url = reverse('verify_code')
+class TestVerifyEmail:
 
     def test_successful_verification(self, api_client):
         user = CustomUser.objects.create_user(
@@ -263,95 +262,79 @@ class TestVerifyCode:
             password='verifypassword',
             is_active=False
         )
-        code = VerificationCode.generate_for_user(user)
-        data = {
-            'email': 'verify@example.com',
-            'code': code
-        }
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_201_CREATED
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+
+        url = reverse('verify_email', kwargs={'uidb64': uid, 'token': token})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
         user.refresh_from_db()
         assert user.is_active is True
-        assert not VerificationCode.objects.filter(user=user).exists()
 
-    def test_invalid_code(self, api_client):
+        assert 'access_token' in response.cookies
+        assert 'refresh_token' in response.cookies
+
+    def test_invalid_token(self, api_client):
         user = CustomUser.objects.create_user(
-            username='invalidcodeuser',
-            email='invalidcode@example.com',
-            password='invalidcodepassword',
+            username='invalidtokenuser',
+            email='invalidtoken@example.com',
+            password='testpassword',
             is_active=False
         )
-        VerificationCode.generate_for_user(user)
-        data = {
-            'email': 'invalidcode@example.com',
-            'code': 'wrongcode'
-        }
-        response = api_client.post(self.url, data)
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = 'some-invalid-token'
+
+        url = reverse('verify_email', kwargs={'uidb64': uid, 'token': token})
+        response = api_client.get(url)
+
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_expired_code(self, api_client):
+        user.refresh_from_db()
+        assert user.is_active is False
+
+    def test_invalid_uid(self, api_client):
         user = CustomUser.objects.create_user(
-            username='expireduser',
-            email='expired@example.com',
-            password='expiredpassword',
+            username='invaliduiduser',
+            email='invaliduid@example.com',
+            password='testpassword',
             is_active=False
         )
-        code = VerificationCode.generate_for_user(user)
-        verification_code = VerificationCode.objects.get(user=user)
-        verification_code.expired_at = timezone.now() - timedelta(minutes=1)
-        verification_code.save()
-        data = {
-            'email': 'expired@example.com',
-            'code': code
-        }
-        response = api_client.post(self.url, data)
+
+        uid = 'invalid-uid'
+        token = default_token_generator.make_token(user)
+
+        url = reverse('verify_email', kwargs={'uidb64': uid, 'token': token})
+        response = api_client.get(url)
+
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_missing_fields(self, api_client):
-        data = {'email': 'missing@example.com'}
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        user.refresh_from_db()
+        assert user.is_active is False
 
-
-@pytest.mark.django_db
-class TestResendVerification:
-    url = reverse('resend_code')
-
-    def test_resend_for_inactive_user(self, api_client):
-        user = CustomUser.objects.create_user(
-            username='resenduser',
-            email='resend@example.com',
-            password='resendpassword',
-            is_active=False
-        )
-        old_code = VerificationCode.generate_for_user(user)
-        data = {'email': 'resend@example.com'}
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_200_OK
-        assert not VerificationCode.objects.filter(code=old_code).exists()
-        assert VerificationCode.objects.filter(user=user).exists()
-
-    def test_resend_for_non_existing_email(self, api_client):
-        data = {'email': 'nonexisting@example.com'}
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_resend_for_active_user(self, api_client):
+    def test_already_active_user(self, api_client):
         user = CustomUser.objects.create_user(
             username='activeuser',
             email='active@example.com',
-            password='activepassword',
+            password='testpassword',
             is_active=True
         )
-        data = {'email': 'active@example.com'}
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_200_OK
-        assert not VerificationCode.objects.filter(user=user).exists()
 
-    def test_missing_email(self, api_client):
-        data = {}
-        response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+
+        url = reverse('verify_email', kwargs={'uidb64': uid, 'token': token})
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert 'access_token' in response.cookies
+        assert 'refresh_token' in response.cookies
+
+        user.refresh_from_db()
+        assert user.is_active is True
 
 
 @pytest.mark.django_db
