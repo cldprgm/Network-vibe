@@ -789,6 +789,7 @@ class TestAnnotations:
 @pytest.mark.django_db
 class TestPostMedia:
     def test_media_in_post(self, api_client, post, media_file):
+        # test will crush if you use local storage
         url = reverse('post-detail', kwargs={'slug': post.slug})
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
