@@ -9,12 +9,15 @@ from apps.communities.models import Community
 from apps.users.models import CustomUser
 
 from .serializers import SearchSerializer
+from .throttles import SearchThrottle
 
 
 TOP_RESULT_LIMIT = 10
 
 
 class SearchView(APIView):
+    throttle_classes = [SearchThrottle]
+
     def get(self, request, *args, **kwargs):
         query_param = request.query_params.get('q', '')
         if not query_param:

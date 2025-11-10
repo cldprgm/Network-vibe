@@ -198,7 +198,7 @@ export async function fetchPostsForCommunity(communitySlug: string, page: number
 
 export async function getCommunityBySlug(slug: string): Promise<CommunityType> {
     try {
-        const res = await api.get(`/communities/${encodeURIComponent(slug)}`);
+        const res = await api.get(`/communities/${encodeURIComponent(slug)}/`);
         return res.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to get community.');

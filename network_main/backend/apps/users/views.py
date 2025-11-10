@@ -21,7 +21,6 @@ from django.contrib.auth.tokens import default_token_generator
 
 import time
 
-from apps.services.verification import send_verification_code
 from apps.posts.serializers import PostListSerializer
 from apps.communities.models import Community
 from apps.posts.views import get_optimized_post_queryset
@@ -35,6 +34,11 @@ from .serializers import (
     VerifyCodeSerializer,
     ResendVerificationSerializer,
     CustomUserCommunitiesSerializer
+)
+from .throttles import (
+    RegistrationThrottle,
+    EmailVerifyThrottle,
+    UserStatusUpdateThrottle
 )
 
 
@@ -60,10 +64,12 @@ class CustomUserInfoView(RetrieveUpdateAPIView):
 
 class UserRegistrationView(CreateAPIView):
     serializer_class = RegisterUserSerializer
+    throttle_classes = [RegistrationThrottle]
     permission_classes = [AllowAny]
 
 
 class VerifyEmailView(APIView):
+    throttle_classes = [EmailVerifyThrottle]
     permission_classes = [AllowAny]
 
     def get(self, request, uidb64, token):
@@ -329,6 +335,7 @@ class CustomUserCommunitiesView(ListAPIView):
 
 
 class CustomUserStatusCheck(APIView):
+    throttle_classes = [UserStatusUpdateThrottle]
     http_method_names = ['post']
 
     def post(self, request):
