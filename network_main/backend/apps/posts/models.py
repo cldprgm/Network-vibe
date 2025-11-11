@@ -90,6 +90,7 @@ class Post(models.Model):
     author = models.ForeignKey(to=User, verbose_name="Author",
                                on_delete=models.CASCADE, related_name="posts_created")
     ratings = GenericRelation(to=Rating)
+    sum_rating = models.IntegerField(default=0, verbose_name='Rating sum')
     community = models.ForeignKey(
         to=Community, on_delete=models.CASCADE, related_name='owned_posts')
 

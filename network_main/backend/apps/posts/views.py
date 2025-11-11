@@ -155,30 +155,13 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
 
 
 def get_annotated_ratings(queryset, request, content_type: ContentType):
-    ratings_sum_subquery = (
-        Rating.objects.filter(
-            content_type=content_type,
-            object_id=OuterRef('pk')
-        ).values('object_id').annotate(total=Coalesce(Sum('value'), Value(0))).values('total')[:1]
-    )
-
-    queryset = queryset.annotate(
-        sum_rating=Coalesce(
-            Subquery(ratings_sum_subquery, output_field=IntegerField()),
-            Value(0),
-            output_field=IntegerField()
-        )
-    )
-
     user = request.user
     if user.is_authenticated:
-        user_vote_subquery = (
-            Rating.objects.filter(
-                content_type=content_type,
-                object_id=OuterRef('pk'),
-                user=user
-            ).values('object_id').annotate(max_value=Max('value')).values('max_value')[:1]
-        )
+        user_vote_subquery = Rating.objects.filter(
+            content_type=content_type,
+            object_id=OuterRef('pk'),
+            user=user
+        ).values('value')[:1]
 
         queryset = queryset.annotate(
             user_vote=Coalesce(
@@ -301,35 +284,15 @@ class PostViewSet(viewsets.ModelViewSet):
                 context={'request': request, 'view': self}
             )
             serializer.is_valid(raise_exception=True)
-            rating = serializer.save()
 
-            post = Post.published.filter(pk=post.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Post))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Coalesce(
-                    Subquery(
-                        Rating.objects.filter(
-                            content_type=ContentType.objects.get_for_model(
-                                Post),
-                            object_id=OuterRef('pk'),
-                            user=request.user
-                        ).order_by('-time_created').values('value')[:1],
-                        output_field=IntegerField()
-                    ),
-                    Value(0),
-                    output_field=IntegerField()
-                )
+            rating_instance = serializer.save()
 
-            ).first()
+            post.refresh_from_db()
 
             return Response({
                 'rating': serializer.data,
                 'sum_rating': post.sum_rating,
-                'user_vote': post.user_vote,
+                'user_vote': rating_instance.value,
             }, status=status.HTTP_201_CREATED if serializer.created else status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
@@ -338,19 +301,12 @@ class PostViewSet(viewsets.ModelViewSet):
                 object_id=post.id,
                 user=request.user
             ).delete()
-            post = Post.published.filter(pk=post.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Post))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Value(0, output_field=IntegerField())
-            ).first()
+
+            post.refresh_from_db()
 
             return Response({
                 'sum_rating': post.sum_rating,
-                'user_vote': post.user_vote,
+                'user_vote': 0,
             }, status=status.HTTP_202_ACCEPTED)
 
 
