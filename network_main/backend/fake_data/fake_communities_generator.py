@@ -1,5 +1,6 @@
 import psycopg2
 import random
+import uuid
 from faker import Faker
 from django.utils.text import slugify
 from unidecode import unidecode
@@ -36,8 +37,8 @@ try:
         'SELECT id FROM api_network_category WHERE parent_id IS NOT NULL')
     categories_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(120):
-        name = fake.text(max_nb_chars=21)
+    for _ in range(10000):
+        name = fake.text(max_nb_chars=10) + str(uuid.uuid4().int)[:10]
         slug = unique_slugify(name)
         description = fake.text(max_nb_chars=150)
         status = 'PB'

@@ -51,6 +51,7 @@ try:
             (email, username, slug, is_active, password, is_superuser, is_staff, 
             date_joined, avatar, description, first_name, last_name, gender)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
             """,
             (email, username, slug, is_active, password,
              is_superuser, is_staff, date_joined, avatar, description, first_name, last_name, gender)
