@@ -185,11 +185,7 @@ class CommunityPostsListView(viewsets.GenericViewSet, mixins.ListModelMixin):
             community__slug=self.kwargs['community_slug']
         ).prefetch_related('media_data')
         queryset = get_annotated_ratings(
-            queryset, self.request, ContentType.objects.get_for_model(Post))
-        queryset = queryset.annotate(
-            comment_count=Count(
-                'owned_comments', filter=Q(owned_comments__status='PB')
-            )
+            queryset, self.request, ContentType.objects.get_for_model(Post)
         )
         return queryset
 
