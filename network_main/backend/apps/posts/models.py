@@ -36,14 +36,7 @@ class PublishedManager(models.Manager):
 class CommentQuerySet(models.QuerySet):
     def with_ratings(self, user):
         comment_content_type = ContentType.objects.get_for_model(Comment)
-        qs = self.annotate(
-            sum_rating=Coalesce(
-                Sum('ratings__value', filter=Q(
-                    ratings__content_type=comment_content_type)),
-                Value(0),
-                output_field=IntegerField()
-            )
-        )
+        qs = self
         if user.is_authenticated:
             latest = Rating.objects.filter(
                 content_type=comment_content_type, object_id=OuterRef('pk'), user=user
@@ -152,9 +145,15 @@ class Comment(MPTTModel):
     )
 
     post = models.ForeignKey(
-        to=Post, on_delete=models.CASCADE, related_name='owned_comments')
+        to=Post,
+        on_delete=models.CASCADE,
+        related_name='owned_comments'
+    )
     author = models.ForeignKey(
-        to=User, on_delete=models.CASCADE, related_name='author')
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='author'
+    )
     content = models.TextField(max_length=500)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
@@ -162,8 +161,14 @@ class Comment(MPTTModel):
     status = models.CharField(
         max_length=10, choices=STATUS_OPTIONS, default='PB')
     #
-    parent = TreeForeignKey('self', on_delete=models.CASCADE,
-                            null=True, blank=True, related_name='children')
+    sum_rating = models.IntegerField(default=0, verbose_name='Rating sum')
+    parent = TreeForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children'
+    )
     ratings = GenericRelation(to=Rating)
 
     objects = CommentManager()

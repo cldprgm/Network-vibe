@@ -91,7 +91,6 @@ def get_user_recommendations(request, randomize_factor=0.05):
 
 def get_trending_posts(request, days=3, randomize_factor=0.05):
     now = timezone.now()
-    post_content_type = ContentType.objects.get_for_model(Post)
 
     time_threshold = now - timedelta(days=days)
 
@@ -296,7 +295,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         queryset = (
             Comment.objects
-            .filter(post=post, status='PB')
+            .filter(post=post)
             .select_related('author')
             .with_ratings(self.request.user)
             .order_by('-time_created')
