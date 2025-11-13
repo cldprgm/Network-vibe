@@ -81,4 +81,4 @@ def _select_parent(comments, max_depth):
 
 
 if __name__ == '__main__':
-    generate_comments(post_id=15172, count=1000, max_depth=3)
+    generate_comments(post_id=23184, count=1000, max_depth=3)

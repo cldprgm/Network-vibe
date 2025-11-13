@@ -3,28 +3,38 @@ from django.dispatch import receiver
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 
-from apps.posts.models import Post
+from apps.posts.models import Post, Comment
 from apps.ratings.models import Rating
 
 
-def update_post_rating(post_id):
+def update_object_rating(object_id, model):
     try:
-        post = Post.objects.get(pk=post_id)
+        object = model.objects.get(pk=object_id)
 
-        new_sum = post.ratings.aggregate(
+        new_sum = object.ratings.aggregate(
             total=Coalesce(Sum('value'), Value(0))
         )['total']
 
-        Post.objects.filter(pk=post_id).update(sum_rating=new_sum)
-    except Post.DoesNotExist:
+        model.objects.filter(pk=object_id).update(sum_rating=new_sum)
+    except model.DoesNotExist:
         pass
 
 
 @receiver(post_save, sender=Rating)
-def on_rating_save(sender, instance, **kwargs):
-    update_post_rating(instance.object_id)
+def on_post_rating_save(sender, instance, **kwargs):
+    update_object_rating(instance.object_id, Post)
 
 
 @receiver(post_delete, sender=Rating)
-def on_rating_delete(sender, instance, **kwargs):
-    update_post_rating(instance.object_id)
+def on_post_rating_delete(sender, instance, **kwargs):
+    update_object_rating(instance.object_id, Post)
+
+
+@receiver(post_save, sender=Rating)
+def on_comment_rating_save(sender, instance, **kwargs):
+    update_object_rating(instance.object_id, Comment)
+
+
+@receiver(post_delete, sender=Rating)
+def on_comment_rating_delete(sender, instance, **kwargs):
+    update_object_rating(instance.object_id, Comment)
