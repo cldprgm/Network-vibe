@@ -42,7 +42,7 @@ def get_user_recommendations(request, randomize_factor=0.05):
 
     liked_posts = Rating.objects.filter(
         user=user, value=1, content_type=post_content_type
-    ).values_list('object_id', flat=True)
+    ).values_list('object_id', flat=True)[:50]
 
     liked_communities = Post.objects.filter(
         id__in=liked_posts).values_list('community', flat=True).distinct()
@@ -53,24 +53,12 @@ def get_user_recommendations(request, randomize_factor=0.05):
     w_freshness = 0.2
     w_random = randomize_factor
 
-    queryset = Post.published.all().exclude(id__in=liked_posts)
-
-    queryset = get_annotated_ratings(
-        queryset,
-        request,
-        content_type=post_content_type
-    )
-
-    comment_count_subquery = Comment.objects.filter(
-        post=OuterRef('pk'),
-        status='PB'
-    ).values('post').annotate(count=Count('pk')).values('count')
+    time_threshold = timezone.now() - timedelta(days=90)
+    queryset = Post.published.filter(
+        created__gte=time_threshold
+    ).exclude(id__in=liked_posts)
 
     queryset = queryset.annotate(
-        comment_count=Coalesce(
-            Subquery(comment_count_subquery, output_field=IntegerField()),
-            Value(0)
-        ),
         hours_since_created=ExpressionWrapper(
             Extract((now - F('created')), 'epoch') / 3600.0,
             output_field=FloatField()
@@ -114,22 +102,7 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
 
     queryset = Post.published.filter(created__gte=time_threshold)
 
-    queryset = get_annotated_ratings(
-        queryset,
-        request,
-        content_type=post_content_type
-    )
-
-    comment_count_subquery = Comment.objects.filter(
-        post=OuterRef('pk'),
-        status='PB'
-    ).values('post').annotate(count=Count('pk')).values('count')
-
     queryset = queryset.annotate(
-        comment_count=Coalesce(
-            Subquery(comment_count_subquery, output_field=IntegerField()),
-            Value(0)
-        ),
         hours_since_created=ExpressionWrapper(
             Extract((now - F('created')), 'epoch') / 3600.0,
             output_field=FloatField()
@@ -183,11 +156,6 @@ def get_optimized_post_queryset(request):
     post_content_type = ContentType.objects.get_for_model(Post)
 
     queryset = get_annotated_ratings(queryset, request, post_content_type)
-    queryset = queryset.annotate(
-        comment_count=Count(
-            'owned_comments', filter=Q(owned_comments__status='PB')
-        )
-    )
 
     common_prefetch = [
         'media_data',

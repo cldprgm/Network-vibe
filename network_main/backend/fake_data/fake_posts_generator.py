@@ -45,12 +45,13 @@ try:
         author_id = random.choice(author_ids)
         community_id = random.choice(community_ids)
         sum_rating = 0
+        comment_count = 0
 
         cursor.execute(
             """
-            INSERT INTO api_network_post (title, slug, description, status, created, updated, author_id, community_id, sum_rating)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (title, slug, description, status, created, updated, author_id, community_id, sum_rating)
+            INSERT INTO api_network_post (title, slug, description, status, created, updated, author_id, community_id, sum_rating, comment_count)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (title, slug, description, status, created, updated, author_id, community_id, sum_rating, comment_count)
         )
     conn.commit()
 
