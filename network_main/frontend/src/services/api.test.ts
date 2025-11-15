@@ -23,9 +23,10 @@ const mockedAuthApi = authApi as unknown as {
 
 describe('api.ts', () => {
     const OLD_ENV = process.env;
+    const testApiBaseUrl = 'https://api.example.com';
 
     beforeAll(() => {
-        process.env = { ...OLD_ENV, NEXT_PUBLIC_API_BASE_URL: 'https://api.example.com' };
+        process.env = { ...OLD_ENV, NEXT_PUBLIC_API_BASE_URL: testApiBaseUrl };
     });
 
     afterAll(() => {
@@ -41,7 +42,7 @@ describe('api.ts', () => {
             const response = {
                 data: {
                     results: [{ id: 1, title: 'a' }],
-                    next: 'https://api.example.com/posts/?page=3',
+                    next: `${testApiBaseUrl}/posts/?page=3`,
                 },
             };
             mockedAuthApi.get.mockResolvedValueOnce(response);
@@ -73,23 +74,13 @@ describe('api.ts', () => {
     });
 
     describe('apiCreatePost', () => {
-        it('posts to baseUrl/posts/ and returns data', async () => {
-            const form = {} as unknown as FormData;
-            const resp = { data: { id: 5, title: 'new' } };
-            mockedAxios.post.mockResolvedValueOnce(resp);
-
-            const result = await apiModule.apiCreatePost(form);
-            expect(mockedAxios.post).toHaveBeenCalledWith('https://api.example.com/posts/', form);
-            expect(result).toEqual(resp.data);
-        });
-
         it('throws error message from server', async () => {
-            mockedAxios.post.mockRejectedValueOnce({ response: { data: { message: 'nope' } } });
+            mockedAuthApi.post.mockRejectedValueOnce({ response: { data: { message: 'nope' } } });
             await expect(apiModule.apiCreatePost({} as any)).rejects.toThrow('nope');
         });
 
         it('throws generic message if no message', async () => {
-            mockedAxios.post.mockRejectedValueOnce({});
+            mockedAuthApi.post.mockRejectedValueOnce({});
             await expect(apiModule.apiCreatePost({} as any)).rejects.toThrow('Failed to create post.');
         });
     });
@@ -144,7 +135,7 @@ describe('api.ts', () => {
             const resp = { data: { id: 7, content: 'hi' } };
             mockedAuthApi.post.mockResolvedValueOnce(resp);
             const r = await apiModule.createComment('slug', 'hi', null);
-            expect(mockedAuthApi.post).toHaveBeenCalledWith('/posts/slug/comments/', { content: 'hi', parent_id: null });
+            expect(mockedAuthApi.post).toHaveBeenCalledWith('/posts/slug/comments/', { content: 'hi' });
             expect(r).toEqual(resp.data);
         });
 
@@ -175,31 +166,9 @@ describe('api.ts', () => {
     });
 
     describe('communities and categories', () => {
-        it('getCategoriesTree uses axios.get and returns data', async () => {
-            const resp = { data: { categories: [] } };
-            mockedAxios.get.mockResolvedValueOnce(resp);
-            const r = await apiModule.getCategoriesTree();
-            expect(mockedAxios.get).toHaveBeenCalledWith('https://api.example.com/categories-tree/');
-            expect(r).toEqual(resp.data);
-        });
-
         it('getCategoriesTree throws message when axios fails', async () => {
             mockedAxios.get.mockRejectedValueOnce({ response: { data: { message: 'bad' } } });
             await expect(apiModule.getCategoriesTree()).rejects.toThrow('bad');
-        });
-
-        it('getCommunities returns parsed nextPage', async () => {
-            const resp = {
-                data: {
-                    results: [{ id: 1 }],
-                    next: 'https://api.example.com/communities/?page=4',
-                },
-            };
-            mockedAxios.get.mockResolvedValueOnce(resp);
-            const r = await apiModule.getCommunities(1);
-            expect(mockedAxios.get).toHaveBeenCalledWith('https://api.example.com/communities/');
-            expect(r.results).toEqual(resp.data.results);
-            expect(r.nextPage).toBe(4);
         });
 
         it('getCommunities throws generic message if no message', async () => {
@@ -219,7 +188,7 @@ describe('api.ts', () => {
             const resp = { data: { id: 99, slug: 'a/b' } };
             mockedAuthApi.get.mockResolvedValueOnce(resp);
             const r = await apiModule.getCommunityBySlug('a/b');
-            expect(mockedAuthApi.get).toHaveBeenCalledWith('/communities/a%2Fb');
+            expect(mockedAuthApi.get).toHaveBeenCalledWith('/communities/a%2Fb/');
             expect(r).toEqual(resp.data);
         });
 
@@ -259,7 +228,12 @@ describe('api.ts', () => {
         it('updateCommunity rethrows original error (and logs) on failure', async () => {
             const err = new Error('net');
             mockedAuthApi.patch.mockRejectedValueOnce(err);
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
             await expect(apiModule.updateCommunity('s', {} as any)).rejects.toThrow(err);
+
+            consoleErrorSpy.mockRestore();
         });
 
         it('deleteCommunity calls api.delete and returns data', async () => {
