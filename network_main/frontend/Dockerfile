@@ -1,4 +1,4 @@
-FROM node:24-alpine3.22
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /usr/src/frontend
 
@@ -6,11 +6,19 @@ COPY package*.json ./
 
 RUN npm ci
 
-# for old cpu
-RUN npm install --cpu=wasm32 sharp
-
 COPY . .
 
 RUN npm run build
 
-CMD ["npx", "next", "start"]
+
+FROM node:24-bookworm-slim AS runner
+
+WORKDIR /usr/src/frontend
+
+ENV NODE_ENV=production
+
+COPY --from=builder /usr/src/frontend/.next/standalone ./
+COPY --from=builder /usr/src/frontend/.next/static ./.next/static
+COPY --from=builder /usr/src/frontend/public ./public
+
+CMD ["node", "server.js"]
