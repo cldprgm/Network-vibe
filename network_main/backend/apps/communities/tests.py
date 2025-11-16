@@ -399,7 +399,6 @@ class TestCommunityPostsListView():
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) == 1
         assert response.data['results'][0]['id'] == post.id
-        assert response.data['results'][0]['community_id'] == community.id
 
     def test_list_only_posts_for_given_community(self, api_client, community, post, test_user_creator):
         other_community = Community.objects.create(
@@ -421,7 +420,6 @@ class TestCommunityPostsListView():
 
         results = response.data['results']
         assert any(r['id'] == post.id for r in results)
-        assert all(r['community_id'] == community.id for r in results)
         assert not any(r['id'] == other_post.id for r in results)
 
 

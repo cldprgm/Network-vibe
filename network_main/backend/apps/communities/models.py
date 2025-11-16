@@ -1,17 +1,22 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, FileExtensionValidator, RegexValidator
 from django.conf import settings
+from django_redis import get_redis_connection
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
+
+import time
 
 from mptt.fields import TreeManyToManyField
 
 from apps.categories.models import Category
-from apps.services.utils import unique_slugify, MimeTypeValidator, FileSizeValidator
+from apps.services.utils import unique_slugify, FileSizeValidator
 
 
 User = settings.AUTH_USER_MODEL
 
 
-class Community(models.Model):
+class Community(models.Model):  # add members_count later
     """Community model"""
 
     class Visibility(models.TextChoices):
@@ -83,6 +88,7 @@ class Community(models.Model):
         auto_now_add=True, verbose_name='Create time')
     updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
     slug = models.SlugField(max_length=100, verbose_name='URL', blank=True)
+    # delete this
     status = models.CharField(choices=Status.choices, default=Status.PUBLISHED,
                               max_length=10, verbose_name="Community status")
 
@@ -91,12 +97,33 @@ class Community(models.Model):
         ordering = ('created', )
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
-        indexes = [models.Index(fields=['slug', 'visibility'])]
+        indexes = [
+            models.Index(fields=['slug', 'visibility']),
+            GinIndex(
+                SearchVector('name', config='english'),
+                name='community_search_vector_idx'
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if not self.slug or Community.objects.filter(pk=self.pk, name=self.name).exists() is False:
             self.slug = unique_slugify(self, self.name)
         super().save(*args, **kwargs)
+
+    def get_online_members_count(self) -> int:
+        try:
+            r = get_redis_connection('default')
+            key = f'community:{self.pk}:online'
+
+            border_time = int(time.time()) - 300
+
+            r.zremrangebyscore(key, '-inf', border_time)
+
+            online_count = r.zcard(key)
+
+            return online_count
+        except Exception:
+            return 0
 
     def __str__(self):
         return self.name

@@ -4,7 +4,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from copy import deepcopy
 
-from django.db.models import Count, Exists, Value, OuterRef, Prefetch, Subquery
+from django.db.models import Count, Window, Exists, Value, OuterRef, Prefetch, F
+from django.db.models.functions import RowNumber
 from django.db.models.fields import BooleanField
 from django.core.cache import cache
 
@@ -26,12 +27,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        limited_communities = Community.objects.filter(
-            categories=OuterRef('categories')
-        )[:6]
+        communities_with_row_number = Community.objects.annotate(
+            row_number=Window(
+                expression=RowNumber(),
+                partition_by=[F('categories__id')],
+                order_by=F('created').asc()
+            )
+        ).filter(row_number__lte=6)
 
         base_communities_qs = Community.objects.filter(
-            id__in=Subquery(limited_communities.values('id'))
+            id__in=communities_with_row_number.values('id')
         ).select_related('creator').annotate(members_count=Count('members', distinct=True))
 
         # add (members__is_approved=True) later
@@ -103,7 +108,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             for child in category.get('subcategories', []):
                 for community in child.get('communities', []):
                     community.pop('is_member', None)
-        cache.set(cache_key, cache_data, 60 * 1)
+        cache.set(cache_key, cache_data, 60 * 15)
 
         return Response(data)
 
@@ -118,7 +123,7 @@ class CategoryCommunityListView(generics.ListAPIView):
 
         base_queryset = Community.objects.filter(categories=subcategory_id) \
             .select_related('creator') \
-            .annotate(members_count=Count('members'))
+            .annotate(members_count=Count('members', distinct=True))
 
         # add (members__is_approved=True) later
         if user.is_authenticated:

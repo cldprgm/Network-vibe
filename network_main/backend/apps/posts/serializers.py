@@ -12,6 +12,11 @@ from apps.services.utils import validate_magic_mime, validate_file_size, validat
 
 from .models import Post, Comment, Media
 
+ALLOWED_MIME_TYPES = {
+    'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    'video': ['video/mp4', 'video/webm'],
+}
+
 
 class MediaSerializer(serializers.ModelSerializer):
     media_type = serializers.SerializerMethodField()
@@ -142,7 +147,7 @@ class PostListSerializer(serializers.ModelSerializer):
                             'author', 'media_data')
 
     def get_community_icon(self, obj):
-        return obj.community.icon.url if obj.community.icon else 'uploads/community/icons/default_icon.png'
+        return obj.community.icon.url
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -194,7 +199,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
                             'author', 'media_data')
 
     def get_community_icon(self, obj):
-        return obj.community.icon.url if obj.community.icon else 'uploads/community/icons/default_icon.png'
+        return obj.community.icon.url
 
     def get_is_creator(self, obj):
         request = self.context.get('request')
@@ -211,10 +216,10 @@ class PostDetailSerializer(serializers.ModelSerializer):
     #     return clean(value, tags=[], attributes={}, strip=True)
 
     def validate_media_files(self, media_files):
-        validate_files_length(media_files)
+        validate_files_length(media_files, max_files=5)
         for file in media_files:
-            validate_file_size(file)
-            validate_magic_mime(file)
+            validate_file_size(file, max_file_size_mb=10)
+            validate_magic_mime(file, allowed_mime_types=ALLOWED_MIME_TYPES)
         return media_files
 
     def create(self, validated_data):

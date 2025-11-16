@@ -4,10 +4,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 
 from datetime import timedelta
 
-from apps.services.utils import unique_slugify, validate_file_size
+from apps.services.utils import unique_slugify
 
 from .managers import CustomUserManager
 
@@ -17,26 +19,38 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(unique=True, blank=False)
+    username = models.CharField(max_length=25, unique=True,)
     slug = models.SlugField(
-        verbose_name='URL', max_length=75, blank=True, unique=True)
+        verbose_name='URL', max_length=30, blank=True, unique=True)
     is_active = models.BooleanField(default=False)
     avatar = models.ImageField(
         upload_to='uploads/avatars/%Y/%m/%d',
         default='uploads/avatars/default.png',
         validators=[FileExtensionValidator(
-            allowed_extensions=('jpg', 'png', 'jpeg')),
-            validate_file_size
+            allowed_extensions=('jpg', 'png', 'jpeg', 'webp', 'gif')),
         ]
     )
     description = models.TextField(max_length=200, blank=True)
     birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=6, choices=[(
-        'male', 'Male'), ('female', 'Female'), ('other', 'Other')], blank=True)
+    first_name = models.CharField(max_length=20, blank=True)
+    last_name = models.CharField(max_length=20, blank=True)
+    gender = models.CharField(
+        max_length=6,
+        choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
+        blank=True
+    )
 
     objects = CustomUserManager()
 
     class Meta:
         ordering = ('username',)
+        indexes = [
+            models.Index(fields=['slug']),
+            GinIndex(
+                SearchVector('username', config='english'),
+                name='user_search_vector_idx'
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if not self.slug:

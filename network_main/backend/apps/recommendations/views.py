@@ -40,7 +40,7 @@ class CommunityRecommendationView(generics.ListAPIView):
         if not subscribed.exists():
             queryset = (
                 Community.objects
-                .annotate(members_count=Count('members'))
+                .annotate(members_count=Count('members', distinct=True))
                 .order_by('-members_count')[:6]
                 .select_related('creator')
             )
@@ -55,7 +55,7 @@ class CommunityRecommendationView(generics.ListAPIView):
                 Community.objects
                 .filter(categories__id__in=category_ids)
                 .exclude(pk__in=subscribed)
-                .annotate(members_count=Count('members'))
+                .annotate(members_count=Count('members', distinct=True))
                 .select_related('creator')
             )
             self._response_type = 'recommended_communities'

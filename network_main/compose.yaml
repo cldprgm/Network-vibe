@@ -9,7 +9,7 @@ services:
       - ./backend/.env
     expose:
       - 8001
-    command: [ "apibackend", "gunicorn", "network.wsgi:application", "--bind", "0.0.0.0:8001", "--access-logfile", "-" ]
+    command: [ "apibackend", "gunicorn", "network.wsgi:application", "--workers", "6", "--bind", "0.0.0.0:8001", "--access-logfile", "-", "--error-logfile", "-" ]
     depends_on:
       - db
   redis:
@@ -60,7 +60,7 @@ services:
     restart: unless-stopped
     env_file:
       - ./frontend/.env
-    command: npx next start
+    command: node server.js
     depends_on:
       - apibackend
 

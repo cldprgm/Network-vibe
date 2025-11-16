@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 import socket
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,6 +46,19 @@ CORS_ALLOW_CREDENTIALS = True
 # INTERNAL_IPS = ["127.0.0.1"] + [ip[:-1] + "1" for ip in ips]
 
 
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {'console': {'class': 'logging.StreamHandler'}},
+#     'loggers': {
+#         'django.db.backends': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#         },
+#     }
+# }
+
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -54,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'mptt',
     # 'debug_toolbar',
     'rest_framework',
@@ -64,6 +78,7 @@ INSTALLED_APPS = [
     'apps.ratings.apps.RatingsConfig',
     'apps.posts.apps.PostsConfig',
     'apps.recommendations.apps.RecommendationsConfig',
+    'apps.search.apps.SearchConfig',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
@@ -172,8 +187,8 @@ if DEBUG:
         },
     }
 else:
-    STATIC_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/static/'
-    MEDIA_URL = f'https://{os.getenv("AWS_STORAGE_BUCKET_NAME")}.{os.getenv("AWS_S3_ENDPOINT_URL")}/media/'
+    STATIC_URL = f'https://{os.getenv("AWS_PUBLIC_DOMAIN")}/static/'
+    MEDIA_URL = f'https://{os.getenv("AWS_PUBLIC_DOMAIN")}/media/'
 
     STORAGES = {
         "default": {
@@ -187,7 +202,10 @@ else:
                 "addressing_style": "virtual",
                 "signature_version": 's3v4',
                 "default_acl": 'public-read',
-                "querystring_auth": True,
+                "querystring_auth": False,
+                # for public access(for browser caching)
+                "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
+                #
                 "object_parameters": {"CacheControl": "max-age=20000"},
                 "location": 'media',
             },
@@ -203,7 +221,10 @@ else:
                 "addressing_style": "virtual",
                 "signature_version": 's3v4',
                 "default_acl": 'public-read',
-                "querystring_auth": True,
+                "querystring_auth": False,
+                # for public access(for browser caching)
+                "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
+                #
                 "object_parameters": {"CacheControl": "max-age=86400"},
                 "location": 'static',
                 "gzip": True,
@@ -229,6 +250,21 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        # for tests (150/170)
+        'anon': '15000/minute',
+        'user': '17000/minute',
+
+        # custom scopes
+        'user_status_update': '30/hour',
+        'registration': '5/minute',
+        'email_verify': '7/minute',
+        'search': '30/minute',
+    },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -279,3 +315,6 @@ CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_DEFAULT_RATE_LIMIT = '5/s'
 CELERY_RESULT_EXPIRES = 100
 CELERY_IGNORE_RESULT = True
+
+# Frontend url for email verification
+FRONTEND_VERIFICATION_URL = os.getenv("FRONTEND_VERIFICATION_URL")

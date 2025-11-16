@@ -42,7 +42,8 @@ api.interceptors.response.use(
             error.response?.status === 401 &&
             !originalRequest._retry &&
             !originalRequest.url.includes('/users/login/') &&
-            !originalRequest.url.includes('/users/refresh/')
+            !originalRequest.url.includes('/users/refresh/') &&
+            !originalRequest.url.includes('/user/verify-email/')
         ) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
@@ -90,6 +91,11 @@ export const registerUser = async (email: string, username: string, password: st
             `Registration failed${status ? ` (status ${status})` : ''}: ${details?.message || error.message}`
         );
     }
+};
+
+export const verifyUserEmail = async (uid: string, token: string): Promise<LoginResponse> => {
+    const response = await api.get<LoginResponse>(`/users/verify-email/${uid}/${token}/`);
+    return response.data;
 };
 
 export const loginUser = async (email: string, password: string): Promise<AxiosResponse<LoginResponse>> => {
@@ -157,6 +163,19 @@ export const getUserInfo = async (): Promise<User> => {
     try {
         const response = await api.get<User>(
             '/users/user-info/',
+            { withCredentials: true }
+        );
+        return response.data;
+    }
+    catch (e) {
+        throw new Error('Getting user info failed!')
+    }
+};
+
+export const getUser = async (slug: string): Promise<User> => {
+    try {
+        const response = await api.get<User>(
+            `/users/${slug}/`,
             { withCredentials: true }
         );
         return response.data;

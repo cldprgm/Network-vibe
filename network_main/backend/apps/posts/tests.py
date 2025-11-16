@@ -475,7 +475,7 @@ class TestPostRecommendations:
     def test_get_optimized_post_queryset(self, authenticated_client, test_user, post, comment, media_file):
         request = authenticated_client.get(reverse('post-list')).wsgi_request
         request.user = test_user
-        queryset = get_optimized_post_queryset(request, action='list')
+        queryset = get_optimized_post_queryset(request)
 
         post = queryset.get(id=post.id)
         assert hasattr(post, 'sum_rating')
@@ -789,10 +789,11 @@ class TestAnnotations:
 @pytest.mark.django_db
 class TestPostMedia:
     def test_media_in_post(self, api_client, post, media_file):
+        # test will crush if you use local storage
         url = reverse('post-detail', kwargs={'slug': post.slug})
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert 'media_data' in response.data
         assert len(response.data['media_data']) == 1
-        expected_url = f'http://testserver{media_file.file.url}'
+        expected_url = media_file.file.url
         assert response.data['media_data'][0]['file'] == expected_url
