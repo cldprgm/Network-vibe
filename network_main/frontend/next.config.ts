@@ -7,6 +7,7 @@ const publicDomain = process.env.AWS_PUBLIC_DOMAIN;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   allowedDevOrigins: [`http://${baseUrl}:80`, `http://${baseUrl}:3000`, "http://apibackend:8001", "http://localhost", `https://${s3BacketName}.${s3Url}`],
   images: {
     remotePatterns: [
