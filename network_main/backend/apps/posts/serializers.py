@@ -147,7 +147,7 @@ class PostListSerializer(serializers.ModelSerializer):
                             'author', 'media_data')
 
     def get_community_icon(self, obj):
-        return obj.community.icon.url if obj.community.icon else 'uploads/community/icons/default_icon.png'
+        return obj.community.icon.url
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -199,7 +199,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
                             'author', 'media_data')
 
     def get_community_icon(self, obj):
-        return obj.community.icon.url if obj.community.icon else 'uploads/community/icons/default_icon.png'
+        return obj.community.icon.url
 
     def get_is_creator(self, obj):
         request = self.context.get('request')

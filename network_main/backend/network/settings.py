@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 import socket
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.dev')
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -255,8 +255,9 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '150/minute',
-        'user': '170/minute',
+        # for tests (150/170)
+        'anon': '15000/minute',
+        'user': '17000/minute',
 
         # custom scopes
         'user_status_update': '30/hour',
