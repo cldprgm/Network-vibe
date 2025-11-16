@@ -42,8 +42,8 @@ try:
         slug = unique_slugify(name)
         description = fake.text(max_nb_chars=150)
         status = 'PB'
-        icon = '/media/uploads/community/icons/default_icon.png'
-        banner = '/media/uploads/community/icons/default_icon.png'
+        icon = 'uploads/community/icons/default_icon.png'
+        banner = 'uploads/community/icons/default_icon.png'
         created = fake.date_time_between(start_date='-1y', end_date='now')
         updated = fake.date_time_between(start_date='-1m', end_date='now')
         is_nsfw = False
