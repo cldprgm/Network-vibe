@@ -1,17 +1,21 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { logoutUser, getUserInfo } from '@/services/auth';
 import IconComponent from './icon_component';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Settings, LogOut, User as UserIcon } from 'lucide-react';
+import SearchComponent from './SearchComponent';
 
 export default function Navbar() {
   const router = useRouter();
   const { hasHydrated, user, isAuthenticated, isLoading, setLoading, logout } = useAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const setShowAuthModal = useAuthStore((s) => s.setShowAuthModal);
 
@@ -34,6 +38,33 @@ export default function Navbar() {
     fetchUser();
   }, [isAuthenticated, user, setLoading, logout, router]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isDropdownOpen]);
+
   const handleLogout = async () => {
     setLoading(true);
     try {
@@ -49,6 +80,10 @@ export default function Navbar() {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const closeDropdown = () => {
+    setIsDropdownOpen(false);
   };
 
   if (!hasHydrated || isLoading || (isAuthenticated && !user)) {
@@ -69,6 +104,10 @@ export default function Navbar() {
             </Link>
           </div>
 
+          <div className="flex-1 flex justify-center px-4">
+            <SearchComponent />
+          </div>
+
           <div className="flex items-center space-x-2">
             <Link
               href={'/submit'}
@@ -80,13 +119,19 @@ export default function Navbar() {
               Create
             </Link>
             {isLoading ? (
-              <span className="text-gray-500 dark:text-gray-400">Loading...</span>
+              <span className="text-zinc-500 dark:text-zinc-400">Loading...</span>
             ) : isAuthenticated && user ? (
               <div className="relative">
                 <button
+                  ref={buttonRef}
                   type="button"
                   onClick={toggleDropdown}
-                  className="flex items-center text-sm rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                  className="cursor-pointer flex items-center text-sm rounded-full 
+                  focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600 hover:shadow-xl hover:ring-3 hover:ring-zinc-300 dark:hover:ring-zinc-600 
+                  transition-all duration-200
+                  "
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="true"
                 >
                   <div className="w-9 h-9 rounded-full overflow-hidden relative">
                     <span className="sr-only">Open user menu</span>
@@ -97,43 +142,68 @@ export default function Navbar() {
                       className="object-cover"
                     />
                   </div>
-
                 </button>
                 <div
-                  className={`absolute right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg shadow-black dark:bg-gray-700 dark:divide-gray-600 ${isDropdownOpen ? '' : 'hidden'}`}
-                  id="dropdown-user"
+                  ref={dropdownRef}
+                  className={`absolute right-0 mt-3 w-72 bg-white divide-y divide-zinc-100 rounded-xl shadow-xl border border-zinc-200 dark:bg-zinc-800 dark:divide-zinc-600 dark:border-zinc-700 transition-all duration-150 ease-out ${isDropdownOpen
+                    ? 'opacity-100 scale-100 translate-y-0'
+                    : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+                    }`}
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-button"
                 >
                   <div className="px-4 py-3">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {user.first_name} {user.last_name}
-                    </p>
-                    <p className="text-sm font-medium text-gray-900 truncate dark:text-gray-300">
-                      {user.email}
-                    </p>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0">
+                        <Image
+                          src={`${user.avatar}`}
+                          alt={`${user.username}'s avatar`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-md font-medium text-zinc-900 dark:text-white">
+                          {user.first_name} {user.last_name}
+                        </p>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <ul className="py-1">
+                  <ul className="py-2" role="none">
                     <li>
                       <Link
-                        href="/"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                        href={`/user/${user.slug}`}
+                        onClick={closeDropdown}
+                        className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
+                        role="menuitem"
                       >
-                        Dashboard
+                        <UserIcon size={19} className="mr-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors duration-150 flex-shrink-0" />
+                        View Profile
                       </Link>
                     </li>
                     <li>
                       <Link
-                        href="/"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                        href="/settings"
+                        onClick={closeDropdown}
+                        className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
+                        role="menuitem"
                       >
+                        <Settings size={19} className="mr-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors duration-150 flex-shrink-0" />
                         Settings
                       </Link>
                     </li>
                     <li>
                       <button
                         onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                        className="group cursor-pointer flex items-center w-full text-left px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150 disabled:opacity-50"
                         disabled={isLoading}
+                        role="menuitem"
                       >
+                        <LogOut size={19} className="mr-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors duration-150 flex-shrink-0" />
                         Sign out
                       </button>
                     </li>
@@ -144,7 +214,7 @@ export default function Navbar() {
               <>
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="cursor-pointer text-sm text-white bg-[var(--button-login-background)] hover:bg-[var(--button-login-background-hover)] px-4 py-2.5 rounded-full"
+                  className="cursor-pointer text-sm text-white bg-[var(--button-login-background)] hover:bg-[var(--button-login-background-hover)] px-4 py-2.5 rounded-full transition-colors duration-150"
                 >
                   Log in
                 </button>

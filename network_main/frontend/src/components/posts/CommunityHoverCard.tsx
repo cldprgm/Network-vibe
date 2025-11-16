@@ -47,11 +47,11 @@ const CardContent = ({ community, onJoin }: CardContentProps) => (
                 <span className="mx-2">·</span>
                 <span className="flex items-center">
                     <span className="h-2 w-2 bg-green-500 rounded-full mr-1.5"></span>
-                    3 online
+                    {community.online_members} online
                 </span>
             </div>
 
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 break-words line-clamp-2">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 break-words line-clamp-2">
                 {community.description || "No description provided."}
             </p>
 
@@ -59,7 +59,7 @@ const CardContent = ({ community, onJoin }: CardContentProps) => (
                 <button
                     type='button'
                     onClick={() => onJoin(community.id)}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                    className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
                 >
                     Join
                 </button>

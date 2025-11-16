@@ -30,20 +30,13 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related('author', 'community').filter(status='PB').order_by('-created')
+        return super().get_queryset().select_related('author').filter(status='PB').order_by('-created')
 
 
 class CommentQuerySet(models.QuerySet):
     def with_ratings(self, user):
         comment_content_type = ContentType.objects.get_for_model(Comment)
-        qs = self.annotate(
-            sum_rating=Coalesce(
-                Sum('ratings__value', filter=Q(
-                    ratings__content_type=comment_content_type)),
-                Value(0),
-                output_field=IntegerField()
-            )
-        )
+        qs = self
         if user.is_authenticated:
             latest = Rating.objects.filter(
                 content_type=comment_content_type, object_id=OuterRef('pk'), user=user
@@ -76,23 +69,52 @@ class Post(models.Model):
         ("PB", "Published"),
     )
 
-    title = models.CharField(max_length=300, validators=[
-                             MinLengthValidator(5)], verbose_name="Post title")
+    title = models.CharField(
+        max_length=300,
+        validators=[
+            MinLengthValidator(5)
+        ],
+        verbose_name="Post title"
+    )
     slug = models.SlugField(
-        max_length=300, verbose_name="URL", blank=True)
+        max_length=310,
+        verbose_name="URL",
+        blank=True
+    )
     description = models.TextField(
-        max_length=600, verbose_name="Post description", blank=True, default='')
-    status = models.CharField(choices=STATUS_OPTIONS,
-                              default='PB', max_length=10, verbose_name="Post status")
+        max_length=600,
+        verbose_name="Post description",
+        blank=True,
+        default=''
+    )
+    status = models.CharField(
+        choices=STATUS_OPTIONS,
+        default='PB',
+        max_length=10,
+        verbose_name="Post status"
+    )
     created = models.DateTimeField(
-        auto_now_add=True, verbose_name="Create time")
+        auto_now_add=True,
+        verbose_name="Create time"
+    )
     updated = models.DateTimeField(auto_now=True, verbose_name="Update time")
-    author = models.ForeignKey(to=User, verbose_name="Author",
-                               on_delete=models.CASCADE, related_name="posts_created")
+    author = models.ForeignKey(
+        to=User,
+        verbose_name="Author",
+        on_delete=models.CASCADE,
+        related_name="posts_created"
+    )
     ratings = GenericRelation(to=Rating)
+    sum_rating = models.IntegerField(default=0, verbose_name='Rating sum')
+    comment_count = models.IntegerField(
+        default=0,
+        verbose_name='Comment count'
+    )
     community = models.ForeignKey(
-        # delete a null=True
-        to=Community, on_delete=models.CASCADE, related_name='owned_posts', null=True)
+        to=Community,
+        on_delete=models.CASCADE,
+        related_name='owned_posts'
+    )
 
     objects = models.Manager()
     published = PublishedManager()
@@ -100,7 +122,7 @@ class Post(models.Model):
     class Meta:
         db_table = 'api_network_post'
         ordering = ['-created']
-        indexes = [models.Index(fields=['-created', 'status'])]
+        indexes = [models.Index(fields=['slug', '-created', 'status'])]
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
 
@@ -123,16 +145,30 @@ class Comment(MPTTModel):
     )
 
     post = models.ForeignKey(
-        to=Post, on_delete=models.CASCADE, related_name='owned_comments')
+        to=Post,
+        on_delete=models.CASCADE,
+        related_name='owned_comments'
+    )
     author = models.ForeignKey(
-        to=User, on_delete=models.CASCADE, related_name='author')
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='author'
+    )
     content = models.TextField(max_length=500)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
+    # delete status later
     status = models.CharField(
         max_length=10, choices=STATUS_OPTIONS, default='PB')
-    parent = TreeForeignKey('self', on_delete=models.CASCADE,
-                            null=True, blank=True, related_name='children')
+    #
+    sum_rating = models.IntegerField(default=0, verbose_name='Rating sum')
+    parent = TreeForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children'
+    )
     ratings = GenericRelation(to=Rating)
 
     objects = CommentManager()

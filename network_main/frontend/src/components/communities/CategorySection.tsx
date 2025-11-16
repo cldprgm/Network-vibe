@@ -23,7 +23,14 @@ export const CategorySection = ({ subcategory }: Props) => {
         setError(null);
         try {
             const res = await api.get(nextPage);
-            setCommunities(prev => [...prev, ...res.data.results]);
+
+            const existingIds = new Set(communities.map(c => c.id));
+
+            const newUniqueCommunities = res.data.results.filter(
+                (community: any) => !existingIds.has(community.id)
+            );
+
+            setCommunities(prev => [...prev, ...newUniqueCommunities]);
             setNextPage(res.data.next);
         } catch (err) {
             setError('Error loading communities');

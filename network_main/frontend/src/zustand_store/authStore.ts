@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             hasHydrated: false,
             showAuthModal: false,
-            login: (user) => set({ user, isAuthenticated: true, isLoading: false }),
+            login: (user) => set({ user, isAuthenticated: true, isLoading: false, showAuthModal: false }),
             logout: () => set({ user: null, isAuthenticated: false, isLoading: false }),
             setLoading: (loading) => set({ isLoading: loading }),
             setHasHydrated: (state) => set({ hasHydrated: state }),

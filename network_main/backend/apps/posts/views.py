@@ -1,9 +1,8 @@
-import random
 import time
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -43,7 +42,7 @@ def get_user_recommendations(request, randomize_factor=0.05):
 
     liked_posts = Rating.objects.filter(
         user=user, value=1, content_type=post_content_type
-    ).values_list('object_id', flat=True)
+    ).values_list('object_id', flat=True)[:50]
 
     liked_communities = Post.objects.filter(
         id__in=liked_posts).values_list('community', flat=True).distinct()
@@ -54,24 +53,12 @@ def get_user_recommendations(request, randomize_factor=0.05):
     w_freshness = 0.2
     w_random = randomize_factor
 
-    queryset = Post.published.all().exclude(id__in=liked_posts)
-
-    queryset = get_annotated_ratings(
-        queryset,
-        request,
-        content_type=post_content_type
-    )
-
-    comment_count_subquery = Comment.objects.filter(
-        post=OuterRef('pk'),
-        status='PB'
-    ).values('post').annotate(count=Count('pk')).values('count')
+    time_threshold = timezone.now() - timedelta(days=90)
+    queryset = Post.published.filter(
+        created__gte=time_threshold
+    ).exclude(id__in=liked_posts)
 
     queryset = queryset.annotate(
-        comment_count=Coalesce(
-            Subquery(comment_count_subquery, output_field=IntegerField()),
-            Value(0)
-        ),
         hours_since_created=ExpressionWrapper(
             Extract((now - F('created')), 'epoch') / 3600.0,
             output_field=FloatField()
@@ -104,7 +91,6 @@ def get_user_recommendations(request, randomize_factor=0.05):
 
 def get_trending_posts(request, days=3, randomize_factor=0.05):
     now = timezone.now()
-    post_content_type = ContentType.objects.get_for_model(Post)
 
     time_threshold = now - timedelta(days=days)
 
@@ -115,22 +101,7 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
 
     queryset = Post.published.filter(created__gte=time_threshold)
 
-    queryset = get_annotated_ratings(
-        queryset,
-        request,
-        content_type=post_content_type
-    )
-
-    comment_count_subquery = Comment.objects.filter(
-        post=OuterRef('pk'),
-        status='PB'
-    ).values('post').annotate(count=Count('pk')).values('count')
-
     queryset = queryset.annotate(
-        comment_count=Coalesce(
-            Subquery(comment_count_subquery, output_field=IntegerField()),
-            Value(0)
-        ),
         hours_since_created=ExpressionWrapper(
             Extract((now - F('created')), 'epoch') / 3600.0,
             output_field=FloatField()
@@ -156,30 +127,13 @@ def get_trending_posts(request, days=3, randomize_factor=0.05):
 
 
 def get_annotated_ratings(queryset, request, content_type: ContentType):
-    ratings_sum_subquery = (
-        Rating.objects.filter(
-            content_type=content_type,
-            object_id=OuterRef('pk')
-        ).values('object_id').annotate(total=Coalesce(Sum('value'), Value(0))).values('total')[:1]
-    )
-
-    queryset = queryset.annotate(
-        sum_rating=Coalesce(
-            Subquery(ratings_sum_subquery, output_field=IntegerField()),
-            Value(0),
-            output_field=IntegerField()
-        )
-    )
-
     user = request.user
     if user.is_authenticated:
-        user_vote_subquery = (
-            Rating.objects.filter(
-                content_type=content_type,
-                object_id=OuterRef('pk'),
-                user=user
-            ).values('object_id').annotate(max_value=Max('value')).values('max_value')[:1]
-        )
+        user_vote_subquery = Rating.objects.filter(
+            content_type=content_type,
+            object_id=OuterRef('pk'),
+            user=user
+        ).values('value')[:1]
 
         queryset = queryset.annotate(
             user_vote=Coalesce(
@@ -196,16 +150,11 @@ def get_annotated_ratings(queryset, request, content_type: ContentType):
     return queryset
 
 
-def get_optimized_post_queryset(request, action):
-    queryset = Post.published.all()
+def get_optimized_post_queryset(request):
+    queryset = Post.published.all().select_related('community')
     post_content_type = ContentType.objects.get_for_model(Post)
 
     queryset = get_annotated_ratings(queryset, request, post_content_type)
-    queryset = queryset.annotate(
-        comment_count=Count(
-            'owned_comments', filter=Q(owned_comments__status='PB')
-        )
-    )
 
     common_prefetch = [
         'media_data',
@@ -229,7 +178,7 @@ class PostViewSet(viewsets.ModelViewSet):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def get_queryset(self):
-        return get_optimized_post_queryset(request=self.request, action=self.action)
+        return get_optimized_post_queryset(request=self.request)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -302,35 +251,15 @@ class PostViewSet(viewsets.ModelViewSet):
                 context={'request': request, 'view': self}
             )
             serializer.is_valid(raise_exception=True)
-            rating = serializer.save()
 
-            post = Post.published.filter(pk=post.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Post))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Coalesce(
-                    Subquery(
-                        Rating.objects.filter(
-                            content_type=ContentType.objects.get_for_model(
-                                Post),
-                            object_id=OuterRef('pk'),
-                            user=request.user
-                        ).order_by('-time_created').values('value')[:1],
-                        output_field=IntegerField()
-                    ),
-                    Value(0),
-                    output_field=IntegerField()
-                )
+            rating_instance = serializer.save()
 
-            ).first()
+            post.refresh_from_db()
 
             return Response({
                 'rating': serializer.data,
                 'sum_rating': post.sum_rating,
-                'user_vote': post.user_vote,
+                'user_vote': rating_instance.value,
             }, status=status.HTTP_201_CREATED if serializer.created else status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
@@ -339,19 +268,12 @@ class PostViewSet(viewsets.ModelViewSet):
                 object_id=post.id,
                 user=request.user
             ).delete()
-            post = Post.published.filter(pk=post.pk).annotate(
-                sum_rating=Coalesce(
-                    Sum('ratings__value', filter=Q(
-                        ratings__content_type=ContentType.objects.get_for_model(Post))),
-                    Value(0),
-                    output_field=IntegerField()
-                ),
-                user_vote=Value(0, output_field=IntegerField())
-            ).first()
+
+            post.refresh_from_db()
 
             return Response({
                 'sum_rating': post.sum_rating,
-                'user_vote': post.user_vote,
+                'user_vote': 0,
             }, status=status.HTTP_202_ACCEPTED)
 
 
@@ -373,7 +295,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         queryset = (
             Comment.objects
-            .filter(post=post, status='PB')
+            .filter(post=post)
             .select_related('author')
             .with_ratings(self.request.user)
             .order_by('-time_created')

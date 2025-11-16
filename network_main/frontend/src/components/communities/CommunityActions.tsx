@@ -18,7 +18,6 @@ export default function CommunityActions({ community, isMember }: CommunityActio
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
 
-
     const handleJoinToggle = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         if (loading) return;
@@ -74,6 +73,7 @@ export default function CommunityActions({ community, isMember }: CommunityActio
     focus:outline-none focus:ring-2 focus:ring-gray-500`;
 
     const canEditCommunity = community.current_user_permissions?.includes('edit_community');
+    const formattedMembersCount = new Intl.NumberFormat('en-US').format(memberCount ?? 0);
 
     return (
         <div className="mt-8 flex flex-wrap justify-center gap-4 px-4">
@@ -89,7 +89,8 @@ export default function CommunityActions({ community, isMember }: CommunityActio
 
             <div className="flex items-center space-x-1 text-gray-400">
                 <Users size={18} />
-                <span>{memberCount.toLocaleString()}</span>
+                <span className="font-semibold">{formattedMembersCount}</span>
+                <span className="ml-0.5"> members</span>
             </div>
 
             <button

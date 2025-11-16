@@ -15,6 +15,27 @@ export interface PaginatedResponse<T> {
     next: string | null;
 }
 
+// search results
+export interface CommunityResult {
+    id: number;
+    slug: string;
+    name: string;
+    icon: string;
+    type: 'community';
+}
+
+export interface UserResult {
+    id: number;
+    slug: string;
+    username: string;
+    avatar: string;
+    type: 'user';
+}
+
+export type SearchResult = CommunityResult | UserResult;
+
+//
+
 export async function fetchPosts(page: number): Promise<{ results: Post[]; nextPage: number | null }> {
     try {
         const response = await api.get<PaginatedResponse<Post>>(
@@ -152,6 +173,15 @@ export async function getCommunities(page: number): Promise<{ results: Community
     }
 }
 
+export async function getTopCommunities(): Promise<CommunityType[]> {
+    try {
+        const response = await axios.get<CommunityType[]>(`${baseUrl}/communities/top/`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to get top communities.');
+    }
+}
+
 export async function fetchPostsForCommunity(communitySlug: string, page: number): Promise<{ results: Post[]; nextPage: number | null }> {
     try {
         const response = await api.get<PaginatedResponse<Post>>(
@@ -168,7 +198,7 @@ export async function fetchPostsForCommunity(communitySlug: string, page: number
 
 export async function getCommunityBySlug(slug: string): Promise<CommunityType> {
     try {
-        const res = await api.get(`/communities/${encodeURIComponent(slug)}`);
+        const res = await api.get(`/communities/${encodeURIComponent(slug)}/`);
         return res.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to get community.');
@@ -224,4 +254,78 @@ export async function deleteCommunity(community_id: string) {
 }
 
 
+export async function fetchPostsForUserProfile(
+    userSlug: string,
+    filter: 'new' | 'popular',
+    cursor?: string
+): Promise<{ results: Post[]; nextCursor: string | null }> {
+    try {
+        const params: { filter: 'new' | 'popular'; cursor?: string } = { filter };
+        if (cursor) {
+            params.cursor = cursor;
+        }
+        const response = await api.get<PaginatedResponse<Post>>(
+            `users/${userSlug}/posts/`,
+            { params }
+        );
+        const { results, next } = response.data;
+        const nextCursor = next ? new URL(next).searchParams.get('cursor') : null;
+        return { results, nextCursor };
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch users posts in client.');
+    }
+}
 
+export async function fetchCommunitiesForUserProfile(
+    userSlug: string,
+    cursor?: string
+): Promise<{ results: CommunityType[]; nextCursor: string | null }> {
+    try {
+        const params = new URLSearchParams();
+        if (cursor) params.append('cursor', cursor);
+
+        const url = `${baseUrl}/users/${userSlug}/communities/${params.toString() ? `?${params}` : ''}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            let errorMessage = 'Failed to fetch user communities.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch {
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data: PaginatedResponse<CommunityType> = await response.json();
+        const nextCursor = data.next ? new URL(data.next).searchParams.get('cursor') : null;
+
+        return { results: data.results, nextCursor };
+    } catch (error: any) {
+        throw new Error(error.message || 'Failed to fetch user communities.');
+    }
+}
+
+export const sendHeartbeat = async (): Promise<void> => {
+    try {
+        await api.post('/users/heartbeat/');
+    } catch (error) {
+        console.error('Failed to send heartbeat:', error);
+    }
+};
+
+export async function searchQuery(query: string): Promise<SearchResult[]> {
+    const response = await fetch(`${baseUrl}/search/?q=${encodeURIComponent(query)}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch search results: ${response.statusText}`);
+    }
+
+    return response.json();
+}

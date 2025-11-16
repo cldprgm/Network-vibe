@@ -81,15 +81,6 @@ export default function ExplorePage() {
 
     const current = categories.find(c => c.slug === selected);
 
-    console.log('ExplorePage render', {
-        loading,
-        error,
-        selected,
-        categoriesLength: categories.length,
-        recommendedCommunitiesLength: recommendedCommunities.length,
-        current: !!current
-    });
-
     return (
         <div className="mt-5 max-w-[1300px] p-5 sm:p-10 md:p-16 mx-auto">
             <h1 className="text-white text-2xl font-bold mb-4">Explore Communities</h1>

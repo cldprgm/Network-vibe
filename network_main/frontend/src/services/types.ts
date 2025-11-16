@@ -13,6 +13,8 @@ export type Post = {
     slug: string;
     description: string;
     author: string;
+    author_icon: string;
+    author_slug: string;
     created: string;
     updated: string;
     sum_rating: number;
@@ -55,6 +57,7 @@ export type CommunityType = {
     status: string;
     is_member: boolean;
     members_count: number;
+    online_members: number;
     current_user_roles: string[];
     current_user_permissions: string[];
 };
@@ -77,9 +80,13 @@ export interface Subcategory {
 export type User = {
     id: number;
     username: string;
+    slug: string;
     email: string;
     first_name: string;
     last_name: string;
-    avatar?: string;
+    avatar: string;
     description: string;
+    birth_date: string;
+    gender: string;
+    date_joined: string;
 };

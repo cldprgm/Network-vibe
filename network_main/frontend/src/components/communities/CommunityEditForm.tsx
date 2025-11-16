@@ -141,6 +141,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     const [bannerError, setBannerError] = useState<string | null>(null);
     const [showNoChangesMessage, setShowNoChangesMessage] = useState(false);
 
+    const [originalBannerFile, setOriginalBannerFile] = useState<File | null>(null);
     const [uncroppedBanner, setUncroppedBanner] = useState<string | null>(null);
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -209,6 +210,10 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     };
 
     const handleCloseCropper = () => {
+        if (uncroppedBanner) {
+            URL.revokeObjectURL(uncroppedBanner);
+        }
+        setOriginalBannerFile(null);
         setIsCropperOpen(false);
         setUncroppedBanner(null);
         setZoom(1);
@@ -232,6 +237,7 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
         const file = e.target.files?.[0];
         if (file) {
             if (validateImage(file, 10, setBannerError)) {
+                setOriginalBannerFile(file);
                 setUncroppedBanner(URL.createObjectURL(file));
                 setIsCropperOpen(true);
             } else {
@@ -247,20 +253,32 @@ export default function CommunityEditForm({ community }: CommunityEditFormProps)
     }, []);
 
     const showCroppedImage = useCallback(async () => {
-        if (!croppedAreaPixels || !uncroppedBanner) return;
+        if (!croppedAreaPixels || !uncroppedBanner || !originalBannerFile) return;
         try {
             const croppedImage = await getCroppedImg(uncroppedBanner, croppedAreaPixels);
             if (croppedImage) {
+                URL.revokeObjectURL(uncroppedBanner);
+
+                const originalName = originalBannerFile.name;
+                const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+                const uniqueName = `${nameWithoutExt}_cropped.jpeg`;
+                const renamedFile = new File([croppedImage.file], uniqueName, { type: 'image/jpeg' });
+
                 setBannerPreview(croppedImage.url);
-                setBannerFile(croppedImage.file);
+                setBannerFile(renamedFile);
             }
         } catch (e) {
             console.error(e);
             setBannerError("Could not crop the image. Please try again.");
         } finally {
-            handleCloseCropper();
+            URL.revokeObjectURL(uncroppedBanner);
+            setOriginalBannerFile(null);
+            setUncroppedBanner(null);
+            setZoom(1);
+            setCrop({ x: 0, y: 0 });
+            setIsCropperOpen(false);
         }
-    }, [croppedAreaPixels, uncroppedBanner]);
+    }, [croppedAreaPixels, uncroppedBanner, originalBannerFile]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();

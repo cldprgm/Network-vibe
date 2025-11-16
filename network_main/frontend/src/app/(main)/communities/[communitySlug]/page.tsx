@@ -20,7 +20,7 @@ async function getCommunityData(communitySlug: string) {
         throw new Error('Error in getting "host"');
     }
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const url = `http://localhost:3000/api/proxy/communities/${communitySlug}`;
+    const url = `http://frontend:3000/api/proxy/communities/${communitySlug}`;
 
     const cookieHeader = headersList.get('cookie') || '';
     const res = await fetch(url, {
@@ -45,7 +45,7 @@ async function getCommunityPosts(communitySlug: string) {
         throw new Error('Error in getting "host"');
     }
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const url = new URL(`http://localhost:3000/api/proxy/communities/${communitySlug}/posts`);
+    const url = new URL(`http://frontend:3000/api/proxy/communities/${communitySlug}/posts`);
     url.searchParams.append('page', '1')
 
 
@@ -79,11 +79,22 @@ export async function generateMetadata({ params }: { params: Promise<{ community
     };
 }
 
+const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return num.toString();
+};
+
 export default async function CommunityDetailPage({ params }: { params: Promise<{ communitySlug: string }> }) {
     const { communitySlug } = await params;
     const community = await getCommunityData(communitySlug);
     const postList = await getCommunityPosts(communitySlug)
 
+    const formattedMembersCount = new Intl.NumberFormat('en-US').format(community.members_count ?? 0);
     const formattedDate = format(new Date(community.created), "d MMMM yyyy", { locale: enUS });
 
     return (
@@ -162,12 +173,12 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                         <div className="text-sm text-gray-500">Created by u/{community.creator}</div>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                             <div className="text-center">
-                                <div className="text-white font-bold">{community.members_count}</div>
+                                <div className="text-white font-bold">{formattedMembersCount}</div>
                                 <div className="text-gray-400 text-xs">Members</div>
                             </div>
                             <div className="text-center">
-                                <div className="text-white font-bold">2.4K</div>
-                                <div className="text-gray-400 text-xs">Online(Not Working yet)</div>
+                                <div className="text-white font-bold">{formatNumber(community.online_members)}</div>
+                                <div className="text-gray-400 text-xs">Online</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-white font-bold">Top 1%</div>
