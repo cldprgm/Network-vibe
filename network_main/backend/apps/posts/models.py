@@ -116,6 +116,8 @@ class Post(models.Model):
         related_name='owned_posts'
     )
 
+    score = models.FloatField(default=0.0, db_index=True)
+
     objects = models.Manager()
     published = PublishedManager()
 
