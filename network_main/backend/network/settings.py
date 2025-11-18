@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 import os
 import socket
 
+from celery.schedules import crontab
+
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
@@ -84,6 +86,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     'storages',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -315,6 +318,14 @@ CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_DEFAULT_RATE_LIMIT = '5/s'
 CELERY_RESULT_EXPIRES = 100
 CELERY_IGNORE_RESULT = True
+
+# Celery Beat settings
+CELERY_BEAT_SCHEDULE = {
+    'update-posts-score-every-5-minutes': {
+        'task': 'apps.posts.tasks.update_posts_score',
+        'schedule': crontab(minute='*/5'),
+    },
+}
 
 # Frontend url for email verification
 FRONTEND_VERIFICATION_URL = os.getenv("FRONTEND_VERIFICATION_URL")
