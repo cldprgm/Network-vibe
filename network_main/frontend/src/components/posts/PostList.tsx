@@ -19,13 +19,10 @@ export default async function PostList() {
     headers: {
       Cookie: cookieHeader,
     },
+    cache: 'no-store'
   });
 
-  const data: { results: Post[]; next: string | null } = await res.json();
+  const data: { results: Post[]; next_cursor: string | number | null } = await res.json();
 
-  const nextPage = data.next
-    ? Number(new URL(data.next).searchParams.get('page'))
-    : null;
-
-  return <PostsSection initialPosts={data.results} initialNextPage={nextPage} />;
+  return <PostsSection initialPosts={data.results} initialNextCursor={data.next_cursor} />;
 }

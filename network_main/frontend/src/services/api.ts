@@ -15,6 +15,11 @@ export interface PaginatedResponse<T> {
     next: string | null;
 }
 
+interface MainPaginatedResponse<T> {
+    results: T[];
+    next_cursor: string | number | null;
+}
+
 // search results
 export interface CommunityResult {
     id: number;
@@ -33,18 +38,18 @@ export interface UserResult {
 }
 
 export type SearchResult = CommunityResult | UserResult;
-
 //
 
-export async function fetchPosts(page: number): Promise<{ results: Post[]; nextPage: number | null }> {
+export async function fetchPosts(cursor?: string | number | null): Promise<{ results: Post[]; nextCursor: string | number | null }> {
     try {
-        const response = await api.get<PaginatedResponse<Post>>(
+        const params = cursor ? { cursor } : {};
+        const response = await api.get<MainPaginatedResponse<Post>>(
             `/posts/`,
-            { params: { page } }
+            { params }
         );
-        const { results, next } = response.data;
-        const nextPage = next ? Number(new URL(next).searchParams.get('page')) : null;
-        return { results, nextPage };
+        const { results, next_cursor } = response.data;
+
+        return { results, nextCursor: next_cursor };
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to fetch posts in client.');
     }
