@@ -173,7 +173,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if post_ids is None:
             queryset = query_function()
-            post_ids = list(queryset.values_list('id', flat=True)[:10000])
+            post_ids = list(queryset.values_list('id', flat=True)[:2000])
             cache.set(cache_key, post_ids, timeout=cache_timeout)
 
         page_ids, next_cursor = paginate_ids_by_cursor(
