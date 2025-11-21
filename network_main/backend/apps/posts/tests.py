@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
+from django.core.cache import cache
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -23,6 +24,7 @@ from apps.posts.views import (
     get_annotated_ratings,
     get_optimized_post_queryset
 )
+from apps.posts.tasks import update_posts_score
 
 
 @pytest.fixture
@@ -103,6 +105,8 @@ class TestPostView:
     url = reverse('post-list')
 
     def test_list_posts(self, api_client, post):
+        cache.clear()
+
         response = api_client.get(self.url)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) == 1
@@ -392,7 +396,7 @@ class TestPostRecommendations:
 
         request = authenticated_client.get(reverse('post-list')).wsgi_request
         request.user = test_user
-        queryset = get_user_recommendations(request, randomize_factor=0.0)
+        queryset = get_user_recommendations(request)
 
         assert queryset.count() >= 0
         for post in queryset:
@@ -404,6 +408,8 @@ class TestPostRecommendations:
             assert post.user_vote is not None
 
     def test_get_user_recommendations_excludes_liked_posts(self, authenticated_client, test_user, post, community):
+        cache.clear()
+
         post_content_type = ContentType.objects.get_for_model(Post)
         Rating.objects.create(
             content_type=post_content_type,
@@ -415,35 +421,40 @@ class TestPostRecommendations:
 
         request = authenticated_client.get(reverse('post-list')).wsgi_request
         request.user = test_user
-        queryset = get_user_recommendations(request, randomize_factor=0.0)
+        queryset = get_user_recommendations(request)
 
         assert post.id not in queryset.values_list('id', flat=True)
 
     def test_get_trending_posts(self, api_client, post):
+        cache.clear()
+
         post.created = timezone.now() - timedelta(hours=1)
         post.save()
 
         request = api_client.get(reverse('post-list')).wsgi_request
-        queryset = get_trending_posts(request, days=3, randomize_factor=0.0)
+        queryset = get_trending_posts(days=3)
 
         assert queryset.count() >= 1
         assert post.id in queryset.values_list('id', flat=True)
         for post in queryset:
             assert hasattr(post, 'sum_rating')
             assert hasattr(post, 'comment_count')
-            assert hasattr(post, 'freshness')
             assert hasattr(post, 'score')
 
     def test_get_trending_posts_excludes_old_posts(self, api_client, post):
+        cache.clear()
+
         post.created = timezone.now() - timedelta(days=10)
         post.save()
 
         request = api_client.get(reverse('post-list')).wsgi_request
-        queryset = get_trending_posts(request, days=3, randomize_factor=0.0)
+        queryset = get_trending_posts(days=3)
 
         assert post.id not in queryset.values_list('id', flat=True)
 
     def test_get_annotated_ratings_authenticated(self, authenticated_client, test_user, post):
+        cache.clear()
+
         post_content_type = ContentType.objects.get_for_model(Post)
         Rating.objects.create(
             content_type=post_content_type,
@@ -463,6 +474,8 @@ class TestPostRecommendations:
         assert post.user_vote == 1
 
     def test_get_annotated_ratings_unauthenticated(self, api_client, post):
+        cache.clear()
+
         post_content_type = ContentType.objects.get_for_model(Post)
         request = api_client.get(reverse('post-list')).wsgi_request
         queryset = get_annotated_ratings(
@@ -473,6 +486,8 @@ class TestPostRecommendations:
         assert post.user_vote == 0
 
     def test_get_optimized_post_queryset(self, authenticated_client, test_user, post, comment, media_file):
+        cache.clear()
+
         request = authenticated_client.get(reverse('post-list')).wsgi_request
         request.user = test_user
         queryset = get_optimized_post_queryset(request)
@@ -485,6 +500,8 @@ class TestPostRecommendations:
         assert post.media_data.count() == 1
 
     def test_post_list_pagination(self, authenticated_client, test_user, community):
+        cache.clear()
+
         for i in range(30):
             Post.objects.create(
                 author=test_user,
@@ -493,42 +510,29 @@ class TestPostRecommendations:
                 status='PB'
             )
 
-        response = authenticated_client.get(
-            reverse('post-list'), {'page_size': 10})
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == 10
-        assert response.data['count'] == 30
-        assert 'next' in response.data
-        assert 'previous' in response.data
-
-    def test_post_list_session_caching(self, authenticated_client, test_user, post):
         response = authenticated_client.get(reverse('post-list'))
         assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == 25
+        assert 'next_cursor' in response.data
 
-        assert 'random_post_ids' in authenticated_client.session
-        assert 'random_posts_timestamp' in authenticated_client.session
-        assert len(authenticated_client.session['random_post_ids']) >= 1
+    def test_post_list_unauthenticated_trending_with_task(self, api_client, post):
+        cache.clear()
 
-    def test_post_list_session_cache_expiry(self, authenticated_client, test_user, post):
-        authenticated_client.session['random_post_ids'] = [post.id]
-        authenticated_client.session['random_posts_timestamp'] = time.time(
-        ) - 50
-        authenticated_client.session.save()
-
-        response = authenticated_client.get(reverse('post-list'))
-        assert response.status_code == status.HTTP_200_OK
-
-        assert authenticated_client.session['random_posts_timestamp'] > time.time(
-        ) - 5
-
-    def test_post_list_unauthenticated_trending(self, api_client, post):
         post.created = timezone.now() - timedelta(hours=1)
+        post.status = 'PB'
+        post.sum_rating = 10
+        post.comment_count = 5
         post.save()
 
+        update_posts_score()
+
+        post.refresh_from_db()
+        assert post.score > 0
+
         response = api_client.get(reverse('post-list'))
+
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
-        assert response.data['results'][0]['title'] == 'testpost'
 
 
 @pytest.mark.django_db
