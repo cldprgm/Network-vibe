@@ -7,10 +7,10 @@ import { fetchPosts } from '@/services/api';
 
 interface PostsSectionProps {
     initialPosts: Post[];
-    initialNextPage: number | null;
+    initialNextCursor: string | number | null;
 }
 
-export default function PostsSection({ initialPosts, initialNextPage }: PostsSectionProps) {
+export default function PostsSection({ initialPosts, initialNextCursor }: PostsSectionProps) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             window.scrollTo(0, 0);
@@ -18,7 +18,7 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
     }, []);
 
     const [posts, setPosts] = useState<Post[]>(initialPosts);
-    const [nextPage, setNextPage] = useState<number | null>(initialNextPage);
+    const [nextCursor, setNextCursor] = useState<string | number | null>(initialNextCursor);
     const [loading, setLoading] = useState(false);
 
     const observerTarget = useRef<HTMLDivElement>(null);
@@ -26,12 +26,12 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
         if (!observerTarget.current) return;
         const observer = new IntersectionObserver(
             async ([entry]) => {
-                if (entry.isIntersecting && nextPage && !loading) {
+                if (entry.isIntersecting && nextCursor !== null && !loading) {
                     setLoading(true);
                     try {
-                        const data = await fetchPosts(nextPage);
+                        const data = await fetchPosts(nextCursor);
                         setPosts(prev => [...prev, ...data.results]);
-                        setNextPage(data.nextPage ?? null);
+                        setNextCursor(data.nextCursor);
                     } catch (error) {
                         console.error('Failed to load more posts:', error);
                     } finally {
@@ -44,7 +44,7 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
 
         observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, [nextPage, loading]);
+    }, [nextCursor, loading]);
 
     return (
         <div className='flex'>
@@ -58,7 +58,7 @@ export default function PostsSection({ initialPosts, initialNextPage }: PostsSec
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-200" />
                     </div>
                 )}
-                {nextPage && !loading && <div ref={observerTarget} className="h-2" />}
+                {nextCursor !== null && !loading && <div ref={observerTarget} className="h-2" />}
             </section>
             <div className="w-[200px] hidden xl:block"></div>
 

@@ -253,7 +253,7 @@ class PostListCursorPagination(CursorPagination):
         if filter_type == 'new':
             return '-created', '-id'
         elif filter_type == 'popular':
-            return '-score', '-id'
+            return '-user_posts_score', '-id'
 
         return '-id'
 
@@ -270,9 +270,10 @@ class CustomUserPostsView(ListAPIView):
 
         filter_type = request.query_params.get('filter', 'popular')
 
+        # optimize later
         if filter_type == 'popular':
             queryset = queryset.annotate(
-                score=ExpressionWrapper(
+                user_posts_score=ExpressionWrapper(
                     (F('sum_rating') + 0.5) * (F('comment_count') + 0.5) * 0.01,
                     output_field=FloatField()
                 )
