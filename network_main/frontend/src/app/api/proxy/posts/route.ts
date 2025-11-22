@@ -57,7 +57,9 @@ async function refreshAccessToken(cookies: string): Promise<RefreshResult> {
 export async function GET(req: NextRequest) {
     const cookieHeader = req.headers.get('cookie') || '';
     const { searchParams } = req.nextUrl;
-    const page = parseInt(searchParams.get('page') || '1', 10);
+
+    const cursor = searchParams.get('cursor');
+    const params = cursor ? { cursor } : {};
 
     try {
         const authApi = axios.create({
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
             headers: { Cookie: cookieHeader },
             withCredentials: true,
         });
-        const authRes = await authApi.get('/posts/', { params: { page } });
+        const authRes = await authApi.get('/posts/', { params });
         return NextResponse.json(authRes.data);
     } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -80,7 +82,7 @@ export async function GET(req: NextRequest) {
                     withCredentials: true,
                 });
                 try {
-                    const retryRes = await retryApi.get('/posts/');
+                    const retryRes = await retryApi.get('/posts/', { params });
                     const response = NextResponse.json(retryRes.data);
                     response.headers.append('Set-Cookie', newAccessCookie);
                     return response;
@@ -109,7 +111,7 @@ export async function GET(req: NextRequest) {
                         baseURL: baseUrl,
                         withCredentials: false,
                     });
-                    const publicRes = await publicApi.get('/posts/');
+                    const publicRes = await publicApi.get('/posts/', { params });
                     const response = NextResponse.json(publicRes.data);
                     logoutCookies.forEach((c) => response.headers.append('Set-Cookie', c));
                     return response;
