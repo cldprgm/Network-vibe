@@ -22,9 +22,27 @@ services:
       - 127.0.0.1:8000:8000
     env_file:
       - ./backend/.env.dev
+    environment:
+      - DJANGO_SETTINGS_MODULE=network.settings_api
     command: [ "apibackend", "python", "manage.py", "runserver", "0.0.0.0:8000" ]
     depends_on:
       - db
+  admin_panel:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    image: api_backend:1.0.0
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.dev
+    environment:
+      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+    ports:
+      - 127.0.0.1:8001:8001
+    command: [ "adminpanel", "python", "manage.py", "runserver", "0.0.0.0:8001" ]
+    depends_on:
+      - db
+      - redis
   redis:
     image: redis:8.2.1-alpine3.22
     container_name: redis_db
@@ -48,6 +66,8 @@ services:
     container_name: celery_worker
     env_file:
       - ./backend/.env.dev
+    environment:
+      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
     command: celery -A network worker --loglevel=info
     depends_on:
       - redis
@@ -56,12 +76,14 @@ services:
   celery_beat:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    image: celery:1.0.0
+      dockerfile: Dockerfile.dev
+    image: celery_beat:1.0.0
     restart: unless-stopped
     container_name: celery_beat_scheduler
     env_file:
       - ./backend/.env.dev
+    environment:
+      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
     command: celery -A network beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - redis

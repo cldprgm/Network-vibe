@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-if [ "$1" = "apibackend" ]; then
+if [ "$1" = "apibackend" ] || [ "$1" = "adminpanel" ]; then
   shift
 
   python manage.py makemigrations
