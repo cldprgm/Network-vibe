@@ -60,6 +60,7 @@ CORS_ALLOW_CREDENTIALS = True
 #     }
 # }
 
+ROOT_URLCONF = 'network.urls_admin_panel'
 
 # Application definition
 INSTALLED_APPS = [
@@ -100,8 +101,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
-
-ROOT_URLCONF = 'network.urls'
 
 TEMPLATES = [
     {
@@ -280,11 +279,9 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'None',
-    'AUTH_COOKIE_SECURE': True,
-    'AUTH_COOKIE_DOMAIN': None,
-    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
 
