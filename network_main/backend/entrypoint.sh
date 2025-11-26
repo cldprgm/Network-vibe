@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-
+# fix later
 if [ "$1" = "apibackend" ] || [ "$1" = "adminpanel" ]; then
   shift
 
