@@ -247,8 +247,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'apps.users.authentication.CookieJWTAuthentication',
     ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'drf_orjson_renderer.renderers.ORJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
+        'drf_orjson_renderer.parsers.ORJSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
@@ -281,6 +285,10 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
 
     'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SAMESITE': 'None',
+    'AUTH_COOKIE_SECURE': True,
+    'AUTH_COOKIE_DOMAIN': None,
+    'AUTH_COOKIE_PATH': '/',
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
