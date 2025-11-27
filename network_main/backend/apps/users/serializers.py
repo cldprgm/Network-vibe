@@ -77,6 +77,10 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         return user
 
 
+class GoogleAuthSerializer(serializers.Serializer):
+    code = serializers.CharField(required=True)
+
+
 class VerifyCodeSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     code = serializers.CharField(max_length=6)
