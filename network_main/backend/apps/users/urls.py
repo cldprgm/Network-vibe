@@ -11,6 +11,7 @@ from .views import (
     CustomUserPostsView,
     CustomUserCommunitiesView,
     CustomUserStatusCheck,
+    GoogleLoginView,
 )
 
 
@@ -18,6 +19,7 @@ urlpatterns = [
     path('user-info/', CustomUserInfoView.as_view(), name='user-info'),
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('login/google/', GoogleLoginView.as_view(), name='google_login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('refresh/', CookieTokenRefreshView.as_view(), name='refresh'),
     path('verify-email/<str:uidb64>/<str:token>/',

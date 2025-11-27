@@ -9,17 +9,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError
 
-from django.utils.decorators import method_decorator
-from django_ratelimit.decorators import ratelimit
+from django.conf import settings
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django_redis import get_redis_connection
 from django.utils.encoding import force_str
+from django.utils.crypto import get_random_string
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 
 import time
+import requests
+import jwt
 
 from apps.posts.serializers import PostListSerializer
 from apps.communities.models import Community
@@ -33,7 +35,8 @@ from .serializers import (
     LoginUserSerializer,
     VerifyCodeSerializer,
     ResendVerificationSerializer,
-    CustomUserCommunitiesSerializer
+    CustomUserCommunitiesSerializer,
+    GoogleAuthSerializer
 )
 from .throttles import (
     RegistrationThrottle,
@@ -66,6 +69,113 @@ class UserRegistrationView(CreateAPIView):
     serializer_class = RegisterUserSerializer
     throttle_classes = [RegistrationThrottle]
     permission_classes = [AllowAny]
+
+
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        code = serializer.validated_data['code']
+
+        # Exchange code for tokens
+        token_endpoint = 'https://oauth2.googleapis.com/token'
+        token_data = {
+            "code": code,
+            "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
+            "client_secret": settings.GOOGLE_OAUTH2_SECRET_ID,
+            "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
+
+        token_res = requests.post(token_endpoint, data=token_data)
+        if token_res.status_code != 200:
+            return Response(
+                {"error": "Failed to exchange code with Google"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        google_tokens = token_res.json()
+        id_token = google_tokens.get('id_token')
+
+        if not id_token:
+            return Response(
+                {"error": "No ID token provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create user
+        try:
+            payload = jwt.decode(id_token, options={'verify_signature': False})
+        except jwt.PyJWTError:
+            return Response(
+                {'error': 'Invalid ID token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = payload.get('email')
+        google_user_id = payload.get('sub')
+
+        if not email or not google_user_id:
+            return Response({"error": "Incomplete data from Google"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+
+        try:
+            user = CustomUser.objects.get(google_id=google_user_id)
+        except CustomUser.DoesNotExist:
+            pass
+
+        if not user:
+            try:
+                user = CustomUser.objects.get(email=email)
+                user.google_id = google_user_id
+                user.save()
+            except CustomUser.DoesNotExist:
+                user = CustomUser.objects.create_user(
+                    email=email,
+                    username=payload.get('name'),
+                    first_name=payload.get('given_name'),
+                    last_name=payload.get('family_name'),
+                    avatar=payload.get('picture'),
+                    password=get_random_string(length=32),
+                    google_id=google_user_id
+                )
+                user.is_active = True
+                user.save()
+
+        # Send jwt
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response(
+            data={
+                'user': CustomUserInfoSerializer(
+                    user,
+                    context={'request': request}).data
+            },
+            status=status.HTTP_200_OK
+        )
+        response.set_cookie(key='access_token',
+                            value=access_token,
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=False,
+                            samesite='Lax')
+        response.set_cookie(key='refresh_token',
+                            value=str(refresh),
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=False,
+                            samesite='Lax')
+        return response
 
 
 class VerifyEmailView(APIView):
