@@ -129,7 +129,7 @@ export default function SettingsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-[var(--background)] flex items-center justify-center">
                 <div className="flex flex-col items-center space-y-4">
                     <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
                     <p className="text-zinc-600 dark:text-zinc-400">Loading settings...</p>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
 
     if (!userInfo) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-[var(--background)] flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-zinc-600 dark:text-zinc-400">Unable to load user info.</p>
                     <Link href="/" className="mt-4 inline-block text-blue-600 hover:underline">
