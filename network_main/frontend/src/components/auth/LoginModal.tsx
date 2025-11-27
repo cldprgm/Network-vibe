@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { loginUser } from "@/services/auth";
 import { useAuthStore } from "@/zustand_store/authStore";
+import GoogleButton from "./auth_buttons/GoogleButtons";
 
 export default function LoginModal({
     onClose,
@@ -78,17 +79,51 @@ export default function LoginModal({
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-500 font-medium">{error}</p>
+                        <p className="text-sm text-red-500 font-medium text-center">{error}</p>
                     )}
 
                     <button
                         type="submit"
-                        className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold"
+                        disabled={isLoading}
+                        className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold disabled:opacity-70"
                     >
                         {isLoading ? 'Logging in...' : 'Log In'}
                     </button>
                 </form>
-                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+
+                {/* --- Social Login Section --- */}
+                <div className="my-6 flex items-center">
+                    <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                    <span className="mx-4 text-sm text-gray-500 dark:text-gray-400">or continue with</span>
+                    <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                </div>
+
+                <div className="space-y-3">
+                    <GoogleButton
+                        onSuccess={onClose}
+                        onError={setError}
+                        setLoading={setLoading}
+                    />
+
+                    {/* GitHub Button (Placeholder) */}
+                    <button
+                        type="button"
+                        onClick={() => alert("GitHub integration coming soon!")}
+                        className="cursor-pointer flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 transition-all"
+                    >
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                fillRule="evenodd"
+                                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                        Continue with GitHub
+                    </button>
+                </div>
+                {/* --------------------------- */}
+
+                <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
                     Don&apos;t have an account?{' '}
                     <button
                         type="button"
