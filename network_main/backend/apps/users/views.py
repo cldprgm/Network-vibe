@@ -26,6 +26,7 @@ import jwt
 from apps.posts.serializers import PostListSerializer
 from apps.communities.models import Community
 from apps.posts.views import get_optimized_post_queryset
+from apps.services.oauth_tokens import get_google_tokens
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
@@ -77,37 +78,18 @@ class GoogleLoginView(APIView):
 
     def post(self, request):
         serializer = GoogleAuthSerializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         code = serializer.validated_data['code']
 
         # Exchange code for tokens
-        token_endpoint = 'https://oauth2.googleapis.com/token'
-        token_data = {
-            "code": code,
-            "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
-            "client_secret": settings.GOOGLE_OAUTH2_SECRET_ID,
-            "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
-            "grant_type": "authorization_code",
-        }
+        try:
+            google_tokens = get_google_tokens(code)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        token_res = requests.post(token_endpoint, data=token_data)
-        if token_res.status_code != 200:
-            return Response(
-                {"error": "Failed to exchange code with Google"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        google_tokens = token_res.json()
         id_token = google_tokens.get('id_token')
-
-        if not id_token:
-            return Response(
-                {"error": "No ID token provided"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         # Get or create user
         try:
@@ -124,30 +106,7 @@ class GoogleLoginView(APIView):
         if not email or not google_user_id:
             return Response({"error": "Incomplete data from Google"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-
-        try:
-            user = CustomUser.objects.get(google_id=google_user_id)
-        except CustomUser.DoesNotExist:
-            pass
-
-        if not user:
-            try:
-                user = CustomUser.objects.get(email=email)
-                user.google_id = google_user_id
-                user.save()
-            except CustomUser.DoesNotExist:
-                user = CustomUser.objects.create_user(
-                    email=email,
-                    username=payload.get('name'),
-                    first_name=payload.get('given_name'),
-                    last_name=payload.get('family_name'),
-                    avatar=payload.get('picture'),
-                    password=get_random_string(length=32),
-                    google_id=google_user_id
-                )
-                user.is_active = True
-                user.save()
+        user = self._get_or_create_user(email, google_user_id, payload)
 
         # Send jwt
         refresh = RefreshToken.for_user(user)
@@ -155,9 +114,7 @@ class GoogleLoginView(APIView):
 
         response = Response(
             data={
-                'user': CustomUserInfoSerializer(
-                    user,
-                    context={'request': request}).data
+                'user': CustomUserInfoSerializer(user, context={'request': request}).data
             },
             status=status.HTTP_200_OK
         )
@@ -176,6 +133,32 @@ class GoogleLoginView(APIView):
                             secure=False,
                             samesite='Lax')
         return response
+
+    def _get_or_create_user(self, email, google_user_id, payload):
+        """Searching or creating user"""
+        try:
+            return CustomUser.objects.get(google_id=google_user_id)
+        except CustomUser.DoesNotExist:
+            pass
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            user.google_id = google_user_id
+            user.save()
+            return user
+        except CustomUser.DoesNotExist:
+            user = CustomUser.objects.create_user(
+                email=email,
+                username=payload.get('name') or email.split('@')[0],
+                first_name=payload.get('given_name', ''),
+                last_name=payload.get('family_name', ''),
+                avatar=payload.get('picture'),
+                password=get_random_string(length=32),
+                google_id=google_user_id
+            )
+            user.is_active = True
+            user.save()
+            return user
 
 
 class VerifyEmailView(APIView):

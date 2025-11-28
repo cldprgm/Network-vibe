@@ -18,6 +18,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.exceptions import ErrorDetail
 
 from apps.communities.models import Community
 from apps.memberships.models import Membership
@@ -147,10 +148,8 @@ class TestGoogleLogin:
         assert 'code' in response.data
 
     def test_google_upstream_error(self, api_client, mocker):
-        mock_response = Mock()
-        mock_response.status_code = 400
-        mocker.patch('apps.users.views.requests.post',
-                     return_value=mock_response)
+        mocker.patch('apps.users.views.get_google_tokens',
+                     side_effect=Exception("Failed to exchange code with Google"))
 
         data = {'code': 'invalid_code'}
         response = api_client.post(self.url, data)
@@ -164,13 +163,14 @@ class TestGoogleLogin:
             'access_token': 'some_token'
         }
 
-        mocker.patch('apps.users.views.requests.post',
+        mocker.patch('apps.services.oauth_tokens.requests.post',
                      return_value=mock_response)
 
         data = {'code': 'valid_code'}
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == "No ID token provided"
+
+        assert response.data['error'] == "[ErrorDetail(string='No ID token provided', code='invalid')]"
 
     def test_successful_login_new_user(self, api_client, mocker):
         mock_response = Mock()
@@ -214,7 +214,7 @@ class TestGoogleLogin:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {'id_token': 'dummy_id_token'}
-        mocker.patch('apps.users.views.requests.post',
+        mocker.patch('apps.services.oauth_tokens.requests.post',
                      return_value=mock_response)
 
         google_payload = {
