@@ -63,4 +63,5 @@ wcwidth==0.2.14
 webencodings==0.5.1
 django-celery-beat==2.8.1
 drf-orjson-renderer==1.7.3
+pytest-mock==3.15.1
 gunicorn
