@@ -132,6 +132,21 @@ export const googleLoginAuth = async (code: string) => {
 
 };
 
+export const githubLoginAuth = async (code: string) => {
+    try {
+        const response = await api.post(
+            `/users/login/github/`,
+            { code },
+            { withCredentials: true }
+        );
+        return response
+    }
+    catch (e) {
+        throw new Error('Github Login failed')
+    }
+
+};
+
 export const verifyCode = async (email: string, code: string) => {
     try {
         const response = await api.post(
