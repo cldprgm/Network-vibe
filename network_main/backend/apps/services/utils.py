@@ -131,12 +131,12 @@ def get_or_create_social_user(
         return user
 
 
-def get_github_user_data(access_token: str) -> dict:
+def get_github_user_data(session: requests.Session, access_token: str) -> dict:
     """Get github user data with access_token"""
 
     auth_header = {"Authorization": f"token {access_token}"}
     try:
-        user_res = requests.get(GITHUB_USER_URL, headers=auth_header)
+        user_res = session.get(GITHUB_USER_URL, headers=auth_header)
         user_res.raise_for_status()
 
         data = user_res.json()
@@ -145,14 +145,14 @@ def get_github_user_data(access_token: str) -> dict:
         raise ValidationError("Failed to get Github user info")
 
 
-def get_github_user_email(access_token: str) -> str:
+def get_github_user_email(session: requests.Session, access_token: str) -> str:
     """Get github user email with access_token"""
 
     auth_header = {"Authorization": f"token {access_token}"}
     try:
         email = None
 
-        email_res = requests.get(GITHUB_USER_EMAIL, headers=auth_header)
+        email_res = session.get(GITHUB_USER_EMAIL, headers=auth_header)
         email_res.raise_for_status()
 
         emails = email_res.json()

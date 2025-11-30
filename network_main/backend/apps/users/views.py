@@ -18,6 +18,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 
 import time
+import requests
 import jwt
 
 from apps.posts.serializers import PostListSerializer
@@ -158,20 +159,21 @@ class GithubLoginView(APIView):
         code = serializer.validated_data['code']
 
         # Exchange code for tokens
-        try:
-            response = get_github_tokens(code)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        with requests.Session() as session:
+            try:
+                response = get_github_tokens(session, code)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        access_token = response.get('access_token')
+            access_token = response.get('access_token')
 
-        # Get or create user
-        user_data = get_github_user_data(access_token)
-        github_id = str(user_data.get("id"))
-        email = user_data.get("email")
+            # Get or create user
+            user_data = get_github_user_data(session, access_token)
+            github_id = str(user_data.get("id"))
+            email = user_data.get("email")
 
-        if not email:
-            email = get_github_user_email(access_token)
+            if not email:
+                email = get_github_user_email(session, access_token)
 
         full_name = user_data.get('name') or ''
         name_parts = full_name.split(' ', 1)
