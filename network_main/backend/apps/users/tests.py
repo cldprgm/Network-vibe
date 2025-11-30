@@ -173,11 +173,10 @@ class TestGoogleLogin:
         assert response.data['error'] == "[ErrorDetail(string='No ID token provided', code='invalid')]"
 
     def test_successful_login_new_user(self, api_client, mocker):
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {'id_token': 'dummy_id_token'}
-        mocker.patch('apps.users.views.requests.post',
-                     return_value=mock_response)
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
 
         google_payload = {
             'email': 'new_google@example.com',
@@ -239,11 +238,10 @@ class TestGoogleLogin:
         )
         assert user.google_id is None
 
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {'id_token': 'dummy_id_token'}
-        mocker.patch('apps.users.views.requests.post',
-                     return_value=mock_response)
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
 
         google_payload = {
             'email': 'link@example.com',
@@ -262,11 +260,10 @@ class TestGoogleLogin:
         assert user.google_id == '111222333'
 
     def test_jwt_decode_error(self, api_client, mocker):
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {'id_token': 'bad_token'}
-        mocker.patch('apps.users.views.requests.post',
-                     return_value=mock_response)
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'bad_token'}
+        )
 
         mocker.patch('apps.users.views.jwt.decode', side_effect=jwt.PyJWTError)
 
@@ -277,11 +274,10 @@ class TestGoogleLogin:
         assert response.data['error'] == 'Invalid ID token'
 
     def test_incomplete_google_data(self, api_client, mocker):
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {'id_token': 'dummy_token'}
-        mocker.patch('apps.users.views.requests.post',
-                     return_value=mock_response)
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
 
         google_payload = {
             'sub': '12345',

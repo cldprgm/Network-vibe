@@ -33,7 +33,7 @@ def get_google_tokens(code: str) -> dict:
         raise ValidationError("Failed to exchange code with Google")
 
 
-def get_github_tokens(code: str) -> dict:
+def get_github_tokens(session: requests.Session, code: str) -> dict:
     """Exchange code for tokens"""
 
     token_data = {
@@ -45,7 +45,7 @@ def get_github_tokens(code: str) -> dict:
     headers = {"Accept": "application/json"}
 
     try:
-        response = requests.post(
+        response = session.post(
             GITHUB_TOKEN_URL,
             data=token_data,
             headers=headers
