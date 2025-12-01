@@ -76,7 +76,37 @@ class UserRegistrationView(CreateAPIView):
     permission_classes = [AllowAny]
 
 
-class GoogleLoginView(APIView):
+class SetJWTCookiesMixin():
+    """Adds method to create a response with JWT cookies."""
+
+    def get_response_with_jwt_in_cookies(self, user, request):
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response(
+            data={
+                'user': CustomUserInfoSerializer(user, context={'request': request}).data
+            },
+            status=status.HTTP_200_OK
+        )
+        response.set_cookie(key='access_token',
+                            value=access_token,
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=False,
+                            samesite='Lax')
+        response.set_cookie(key='refresh_token',
+                            value=str(refresh),
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=False,
+                            samesite='Lax')
+        return response
+
+
+class GoogleLoginView(SetJWTCookiesMixin, APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -121,33 +151,10 @@ class GoogleLoginView(APIView):
         )
 
         # Send jwt
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        response = Response(
-            data={
-                'user': CustomUserInfoSerializer(user, context={'request': request}).data
-            },
-            status=status.HTTP_200_OK
-        )
-        response.set_cookie(key='access_token',
-                            value=access_token,
-                            httponly=True,
-                            domain=None,
-                            path='/',
-                            secure=False,
-                            samesite='Lax')
-        response.set_cookie(key='refresh_token',
-                            value=str(refresh),
-                            httponly=True,
-                            domain=None,
-                            path='/',
-                            secure=False,
-                            samesite='Lax')
-        return response
+        return self.get_response_with_jwt_in_cookies(user, request)
 
 
-class GithubLoginView(APIView):
+class GithubLoginView(SetJWTCookiesMixin, APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -192,33 +199,10 @@ class GithubLoginView(APIView):
         )
 
         # Send jwt
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        response = Response(
-            data={
-                'user': CustomUserInfoSerializer(user, context={'request': request}).data
-            },
-            status=status.HTTP_200_OK
-        )
-        response.set_cookie(key='access_token',
-                            value=access_token,
-                            httponly=True,
-                            domain=None,
-                            path='/',
-                            secure=False,
-                            samesite='Lax')
-        response.set_cookie(key='refresh_token',
-                            value=str(refresh),
-                            httponly=True,
-                            domain=None,
-                            path='/',
-                            secure=False,
-                            samesite='Lax')
-        return response
+        return self.get_response_with_jwt_in_cookies(user, request)
 
 
-class VerifyEmailView(APIView):
+class VerifyEmailView(SetJWTCookiesMixin, APIView):
     throttle_classes = [EmailVerifyThrottle]
     permission_classes = [AllowAny]
 
@@ -234,29 +218,7 @@ class VerifyEmailView(APIView):
                 user.is_active = True
                 user.save()
 
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            response = Response(
-                data={
-                    'user': CustomUserInfoSerializer(
-                        user,
-                        context={'request': request}).data
-                },
-                status=status.HTTP_200_OK
-            )
-            response.set_cookie(key='access_token',
-                                value=access_token,
-                                httponly=True,
-                                domain=None,
-                                samesite='Lax')
-            response.set_cookie(key='refresh_token',
-                                value=str(refresh),
-                                httponly=True,
-                                domain=None,
-                                samesite='Lax')
-
-            return response
+            return self.get_response_with_jwt_in_cookies(user, request)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -301,7 +263,7 @@ class VerifyEmailView(APIView):
 #         )
 
 
-class LoginView(APIView):
+class LoginView(SetJWTCookiesMixin, APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -310,32 +272,7 @@ class LoginView(APIView):
 
         if serializer.is_valid():
             user = serializer.validated_data
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            response = Response(
-                data={
-                    'user': CustomUserInfoSerializer(
-                        user,
-                        context={'request': request}).data
-                },
-                status=status.HTTP_200_OK
-            )
-            response.set_cookie(key='access_token',
-                                value=access_token,
-                                httponly=True,
-                                domain=None,
-                                path='/',
-                                secure=False,
-                                samesite='Lax')
-            response.set_cookie(key='refresh_token',
-                                value=str(refresh),
-                                httponly=True,
-                                domain=None,
-                                path='/',
-                                secure=False,
-                                samesite='Lax')
-            return response
+            return self.get_response_with_jwt_in_cookies(user, request)
         else:
             return Response(data=serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
