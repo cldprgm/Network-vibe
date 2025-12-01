@@ -158,22 +158,23 @@ class GithubLoginView(APIView):
 
         code = serializer.validated_data['code']
 
-        # Exchange code for tokens
         with requests.Session() as session:
             try:
+                # Exchange code for tokens
                 response = get_github_tokens(session, code)
+                access_token = response.get('access_token')
+
+                # Get user data
+                user_data = get_github_user_data(session, access_token)
+                github_id = str(user_data.get("id"))
+                email = user_data.get("email")
+
+                # Get email if missing
+                if not email:
+                    email = get_github_user_email(session, access_token)
+
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-            access_token = response.get('access_token')
-
-            # Get or create user
-            user_data = get_github_user_data(session, access_token)
-            github_id = str(user_data.get("id"))
-            email = user_data.get("email")
-
-            if not email:
-                email = get_github_user_email(session, access_token)
 
         full_name = user_data.get('name') or ''
         name_parts = full_name.split(' ', 1)
