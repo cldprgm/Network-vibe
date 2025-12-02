@@ -37,7 +37,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
         base_communities_qs = Community.objects.filter(
             id__in=communities_with_row_number.values('id')
-        ).select_related('creator').annotate(members_count=Count('members', distinct=True))
+        ).select_related('creator')
 
         # add (members__is_approved=True) later
         if user.is_authenticated:
@@ -122,8 +122,7 @@ class CategoryCommunityListView(generics.ListAPIView):
         user = self.request.user
 
         base_queryset = Community.objects.filter(categories=subcategory_id) \
-            .select_related('creator') \
-            .annotate(members_count=Count('members', distinct=True))
+            .select_related('creator')
 
         # add (members__is_approved=True) later
         if user.is_authenticated:

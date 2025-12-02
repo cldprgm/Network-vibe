@@ -80,7 +80,8 @@ def community_python(test_user_creator, category_python):
     community = Community.objects.create(
         creator=test_user_creator,
         name='Python Fans',
-        slug='python-fans'
+        slug='python-fans',
+        members_count=0
     )
     community.categories.add(category_python)
     return community
@@ -92,7 +93,8 @@ def community_django(second_user, category_python):
     community = Community.objects.create(
         creator=second_user,
         name='Django Ninjas',
-        slug='django-ninjas'
+        slug='django-ninjas',
+        members_count=0
     )
     community.categories.add(category_python)
     return community
@@ -104,7 +106,8 @@ def community_gaming(second_user, category_gaming):
     community = Community.objects.create(
         creator=second_user,
         name='Gamers United',
-        slug='gamers-united'
+        slug='gamers-united',
+        members_count=0
     )
     community.categories.add(category_gaming)
     return community
@@ -115,7 +118,8 @@ def popular_community(test_user_creator, category_gaming):
     community = Community.objects.create(
         creator=test_user_creator,
         name='Popular Community',
-        slug='popular-community'
+        slug='popular-community',
+        members_count=0
     )
     community.categories.add(category_gaming)
     return community

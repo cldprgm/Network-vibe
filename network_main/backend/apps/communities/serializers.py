@@ -42,7 +42,7 @@ class CommunityBaseSerializer(serializers.ModelSerializer):
         model = Community
         fields = ('id', 'slug', 'name', 'creator', 'description',
                   'banner', 'icon', 'is_nsfw', 'visibility',
-                  'created', 'updated', 'status', 'members_count',
+                  'created', 'updated', 'members_count',
                   'categories')
         read_only_fields = ('id', 'slug', 'creator', 'created',
                             'updated')
