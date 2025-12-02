@@ -27,8 +27,7 @@ class CommunityRecommendationView(generics.ListAPIView):
             since = timezone.now() - timedelta(days=3)
             queryset = (
                 Community.objects
-                .annotate(posts_last_days=Count('owned_posts', filter=Q(owned_posts__created__gte=since)),
-                          members_count=Count('members', distinct=True))
+                .annotate(posts_last_days=Count('owned_posts', filter=Q(owned_posts__created__gte=since)))
                 .order_by('-posts_last_days', '-members_count', '-pk')
                 .select_related('creator')
             )
@@ -40,7 +39,6 @@ class CommunityRecommendationView(generics.ListAPIView):
         if not subscribed.exists():
             queryset = (
                 Community.objects
-                .annotate(members_count=Count('members', distinct=True))
                 .order_by('-members_count')[:6]
                 .select_related('creator')
             )
@@ -55,7 +53,6 @@ class CommunityRecommendationView(generics.ListAPIView):
                 Community.objects
                 .filter(categories__id__in=category_ids)
                 .exclude(pk__in=subscribed)
-                .annotate(members_count=Count('members', distinct=True))
                 .select_related('creator')
             )
             self._response_type = 'recommended_communities'

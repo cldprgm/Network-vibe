@@ -54,9 +54,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
         return CommunityDetailSerializer
 
     def get_queryset(self):
-        queryset = Community.objects.select_related('creator').annotate(
-            members_count=Count('members')
-        )
+        queryset = Community.objects.select_related('creator')
 
         user = self.request.user
         # add (members__is_approved=True) later
@@ -143,9 +141,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
 
         queryset = Community.objects.all().select_related('creator')
 
-        top_communities = queryset.annotate(
-            members_count=Count('members')
-        ).order_by('-members_count')[:100]
+        top_communities = queryset.order_by('-members_count')[:100]
 
         serializer = CommunityListSerializer(
             top_communities,
