@@ -49,16 +49,17 @@ try:
         visibility = 'PUBLIC'
         creator_id = random.choice(author_ids)
         categories = random.choice(categories_ids)
+        members_count = random.randint(0, 100000)
 
         cursor.execute(
             """
             INSERT INTO api_network_community
-            (name, slug, description, created, updated, creator_id, is_nsfw, visibility, icon, banner)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (name, slug, description, created, updated, creator_id, is_nsfw, visibility, icon, banner, members_count)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (name, slug, description, created,
-             updated, creator_id, is_nsfw, visibility, icon, banner)
+             updated, creator_id, is_nsfw, visibility, icon, banner, members_count)
         )
         community_id = cursor.fetchone()[0]
 

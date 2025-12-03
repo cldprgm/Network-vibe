@@ -1,19 +1,15 @@
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import CursorPagination
 
-from django.db.models import Count, Q
-from django.utils import timezone
-
-from datetime import timedelta
+from django.db.models import Exists, OuterRef
 
 from apps.communities.models import Community
 from apps.communities.serializers import CommunityListSerializer
 
 
-class CommunityRecommendationPagination(PageNumberPagination):
+class CommunityRecommendationPagination(CursorPagination):
     page_size = 12
-    page_size_query_param = 'page_size'
-    max_page_size = 12
+    ordering = ('-activity_score', '-members_count', '-pk')
 
 
 class CommunityRecommendationView(generics.ListAPIView):
@@ -24,13 +20,12 @@ class CommunityRecommendationView(generics.ListAPIView):
         user = self.request.user
 
         if not user.is_authenticated:
-            since = timezone.now() - timedelta(days=3)
             queryset = (
                 Community.objects
-                .annotate(posts_last_days=Count('owned_posts', filter=Q(owned_posts__created__gte=since)))
-                .order_by('-posts_last_days', '-members_count', '-pk')
+                .order_by('-activity_score', '-members_count', '-pk')
                 .select_related('creator')
             )
+
             self._response_type = 'unauthenticated_recommendations'
             return queryset
 
@@ -39,22 +34,28 @@ class CommunityRecommendationView(generics.ListAPIView):
         if not subscribed.exists():
             queryset = (
                 Community.objects
-                .order_by('-members_count')[:6]
+                .order_by('-members_count', '-pk')
                 .select_related('creator')
             )
             self._response_type = 'just_popular_communities'
         else:
-            category_ids = (
-                subscribed
-                .values_list('categories', flat=True)
-                .distinct()
+            category_ids = subscribed.values_list(
+                'categories', flat=True
             )
+
+            has_category = Community.categories.through.objects.filter(
+                community_id=OuterRef('pk'),
+                category_id__in=category_ids
+            )
+
             queryset = (
                 Community.objects
-                .filter(categories__id__in=category_ids)
+                .filter(Exists(has_category))
                 .exclude(pk__in=subscribed)
+                .order_by('-activity_score', '-members_count', '-pk')
                 .select_related('creator')
             )
+
             self._response_type = 'recommended_communities'
 
         return queryset
