@@ -330,6 +330,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.posts.tasks.update_posts_score',
         'schedule': crontab(minute='*/5'),
     },
+    'update-community-activity-score-every-10-minutes': {
+        'task': 'apps.recommendations.tasks.update_community_score',
+        'schedule': crontab(minute='*/10'),
+    },
 }
 
 # Frontend url for email verification

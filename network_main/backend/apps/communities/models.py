@@ -88,6 +88,7 @@ class Community(models.Model):
         default=0,
         verbose_name='Members count'
     )
+    activity_score = models.IntegerField(default=0, db_index=True)
 
     class Meta:
         db_table = 'api_network_community'
