@@ -14,6 +14,13 @@ def invalidate_first_community_page_cache(sender, instance, **kwargs):
     cache.delete(key)
 
 
+@receiver([post_save, post_delete], sender=Membership)
+def invalidate_first_community_recommendations_page_cache(sender, instance, **kwargs):
+    user_id = instance.user.id
+    key = f'auth_recs_first_page:{user_id}'
+    cache.delete(key)
+
+
 @receiver(post_save, sender=Membership)
 def on_member_join(sender, instance, created, **kwargs):
     if created:

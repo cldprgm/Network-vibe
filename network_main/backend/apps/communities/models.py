@@ -83,7 +83,12 @@ class Community(models.Model):
     created = models.DateTimeField(
         auto_now_add=True, verbose_name='Create time')
     updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
-    slug = models.SlugField(max_length=100, verbose_name='URL', blank=True)
+    slug = models.SlugField(
+        max_length=100,
+        verbose_name='URL',
+        blank=True,
+        unique=True
+    )
     members_count = models.IntegerField(
         default=0,
         verbose_name='Members count'
@@ -92,11 +97,12 @@ class Community(models.Model):
 
     class Meta:
         db_table = 'api_network_community'
-        ordering = ('created', )
+        ordering = ('-created', )
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
         indexes = [
-            models.Index(fields=['slug', 'visibility']),
+            models.Index(fields=['-created']),
+            models.Index(fields=['-members_count', '-id']),
             models.Index(fields=['-activity_score', '-members_count', '-id']),
             GinIndex(
                 SearchVector('name', config='english'),

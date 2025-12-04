@@ -16,7 +16,11 @@ class Category(MPTTModel):
 
     title = models.CharField(max_length=255, verbose_name='Category name')
     slug = models.SlugField(
-        max_length=255, verbose_name='Category URL', blank=True)
+        max_length=255,
+        verbose_name='Category URL',
+        blank=True,
+        unique=True
+    )
     parent = TreeForeignKey(
         'self',
         on_delete=models.CASCADE,

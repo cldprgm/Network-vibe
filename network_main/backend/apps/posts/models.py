@@ -116,7 +116,7 @@ class Post(models.Model):
         related_name='owned_posts'
     )
 
-    score = models.FloatField(default=0.0, db_index=True)
+    score = models.FloatField(default=0.0)
 
     objects = models.Manager()
     published = PublishedManager()
@@ -124,7 +124,10 @@ class Post(models.Model):
     class Meta:
         db_table = 'api_network_post'
         ordering = ['-created']
-        indexes = [models.Index(fields=['slug', '-created', 'status'])]
+        indexes = [
+            models.Index(fields=['status', '-created']),
+            models.Index(fields=['status', '-score']),
+        ]
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
 
