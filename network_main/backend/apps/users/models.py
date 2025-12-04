@@ -59,7 +59,6 @@ class CustomUser(AbstractUser):
     class Meta:
         ordering = ('username',)
         indexes = [
-            models.Index(fields=['slug']),
             GinIndex(
                 SearchVector('username', config='english'),
                 name='user_search_vector_idx'

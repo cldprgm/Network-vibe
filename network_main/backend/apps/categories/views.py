@@ -2,10 +2,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import generics
 from rest_framework.response import Response
-from copy import deepcopy
 
-from django.db.models import Count, Window, Exists, Value, OuterRef, Prefetch, F
-from django.db.models.functions import RowNumber
+from django.db.models import Exists, Value, OuterRef
 from django.db.models.fields import BooleanField
 from django.core.cache import cache
 
@@ -25,90 +23,47 @@ class CategoryViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_queryset(self):
-        user = self.request.user
-
-        communities_with_row_number = Community.objects.annotate(
-            row_number=Window(
-                expression=RowNumber(),
-                partition_by=[F('categories__id')],
-                order_by=F('created').asc()
-            )
-        ).filter(row_number__lte=6)
-
-        base_communities_qs = Community.objects.filter(
-            id__in=communities_with_row_number.values('id')
-        ).select_related('creator')
-
-        # add (members__is_approved=True) later
-        if user.is_authenticated:
-            membership_qs = Membership.objects.filter(
-                user=user,
-                community=OuterRef('pk')
-            )
-            base_communities_qs = base_communities_qs.annotate(
-                is_member=Exists(membership_qs))
-        else:
-            base_communities_qs = base_communities_qs.annotate(
-                is_member=Value(False, output_field=BooleanField())
-            )
-
-        queryset = Category.objects.filter(parent__isnull=True).prefetch_related(
-            Prefetch(
-                'children',
-                queryset=Category.objects.prefetch_related(
-                    Prefetch(
-                        'communities',
-                        queryset=base_communities_qs
-                    )
-                )
-            )
-        )
-
-        return queryset
+        return Category.objects.filter(parent__isnull=True).prefetch_related('children')
 
     def list(self, request, *args, **kwargs):
         user = request.user
         cache_key = 'categories_tree:list'
 
-        cache_data = cache.get(cache_key)
-        if cache_data:
-            data = cache_data.copy()
+        data = cache.get(cache_key)
 
-            if user.is_authenticated:
+        # save data in cache without is_member
+        if data is None:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
 
-                community_ids = []
-                for category in data:
-                    for child in category.get('subcategories', []):
-                        for community in child.get('communities', []):
-                            community_ids.append(community['id'])
+            cache.set(cache_key, data, timeout=60*9)
 
-                membership = Membership.objects.filter(
-                    user=user,
-                    community__id__in=community_ids
-                ).values('community_id')
-                membership_set = {m['community_id'] for m in membership}
+        # cache or not, add is_member
+        if user.is_authenticated:
+            community_ids = set()
+            for category in data:
+                for child in category.get('subcategories', []):
+                    for community in child.get('communities', []):
+                        community_ids.add(community['id'])
+
+            if community_ids:
+                membership_set = set(
+                    Membership.objects.filter(
+                        user=user,
+                        community__id__in=community_ids
+                    ).values_list('community_id', flat=True)
+                )
 
                 for category in data:
                     for child in category.get('subcategories', []):
                         for community in child.get('communities', []):
                             community['is_member'] = community['id'] in membership_set
-            else:
-                for category in data:
-                    for child in category.get('subcategories', []):
-                        for community in child.get('communities', []):
-                            community['is_member'] = False
-            return Response(data)
-
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
-
-        cache_data = deepcopy(data)
-        for category in cache_data:
-            for child in category.get('subcategories', []):
-                for community in child.get('communities', []):
-                    community.pop('is_member', None)
-        cache.set(cache_key, cache_data, 60 * 15)
+        else:
+            for category in data:
+                for child in category.get('subcategories', []):
+                    for community in child.get('communities', []):
+                        community['is_member'] = False
 
         return Response(data)
 
@@ -122,7 +77,8 @@ class CategoryCommunityListView(generics.ListAPIView):
         user = self.request.user
 
         base_queryset = Community.objects.filter(categories=subcategory_id) \
-            .select_related('creator')
+            .select_related('creator') \
+            .order_by('-activity_score', '-id')
 
         # add (members__is_approved=True) later
         if user.is_authenticated:
