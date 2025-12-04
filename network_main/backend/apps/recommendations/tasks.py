@@ -12,6 +12,10 @@ from apps.communities.models import Community
 
 @shared_task
 def update_community_score():
+    """
+    A periodic task for recalculating activity_score in communities.
+    """
+
     since = timezone.now() - timedelta(days=7)
 
     active_stats = (

@@ -97,6 +97,7 @@ class Community(models.Model):
         verbose_name_plural = 'Communities'
         indexes = [
             models.Index(fields=['slug', 'visibility']),
+            models.Index(fields=['-activity_score', '-members_count', '-id']),
             GinIndex(
                 SearchVector('name', config='english'),
                 name='community_search_vector_idx'
