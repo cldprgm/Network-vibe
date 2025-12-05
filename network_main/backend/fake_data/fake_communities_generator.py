@@ -37,7 +37,7 @@ try:
         'SELECT id FROM api_network_category WHERE parent_id IS NOT NULL')
     categories_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(10000):
+    for _ in range(100000):
         name = fake.text(max_nb_chars=10) + str(uuid.uuid4().int)[:10]
         slug = unique_slugify(name)
         description = fake.text(max_nb_chars=150)
@@ -50,16 +50,17 @@ try:
         creator_id = random.choice(author_ids)
         categories = random.choice(categories_ids)
         members_count = random.randint(0, 100000)
+        activity_score = random.randint(0, 1000)
 
         cursor.execute(
             """
             INSERT INTO api_network_community
-            (name, slug, description, created, updated, creator_id, is_nsfw, visibility, icon, banner, members_count)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (name, slug, description, created, updated, creator_id, is_nsfw, visibility, icon, banner, members_count,activity_score)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (name, slug, description, created,
-             updated, creator_id, is_nsfw, visibility, icon, banner, members_count)
+             updated, creator_id, is_nsfw, visibility, icon, banner, members_count, activity_score)
         )
         community_id = cursor.fetchone()[0]
 
