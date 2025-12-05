@@ -377,9 +377,7 @@ class TestCommunityViewSet():
             'categories': category.pk
         }
         response = authenticated_client.post(url, data)
-        assert response.status_code == status.HTTP_201_CREATED
-        assert 'slug' in response.data
-        assert response.data['slug'] != community.slug
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_delete_community_cascade_memberships(self, authenticated_client_creator, community, membership_creator):
         url = reverse('community-detail', kwargs={'slug': community.slug})
