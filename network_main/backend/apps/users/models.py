@@ -71,7 +71,7 @@ class CustomUser(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.username
+        return self.slug
 
 
 def generate_code(length=6):

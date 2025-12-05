@@ -133,6 +133,7 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                                             day: "2-digit",
                                             month: "2-digit",
                                             year: "numeric",
+                                            timeZone: 'UTC'
                                         })}
                                     </p>
                                 </div>

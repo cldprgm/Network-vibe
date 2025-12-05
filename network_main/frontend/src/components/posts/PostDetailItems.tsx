@@ -110,7 +110,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
 
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center space-x-2">
-                                <div className="w-9 h-9 rounded-full overflow-hidden relative">
+                                <div className="w-9 h-9 rounded-full overflow-hidden relative flex-shrink-0">
                                     <Image
                                         className="object-cover"
                                         src={`${post.community_icon}`}
@@ -118,20 +118,36 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                         fill
                                     />
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-xs text-secondary flex items-center">
+
+                                <div className="min-w-0 flex flex-col">
+                                    <div className="flex items-center flex-wrap gap-1">
+
                                         <Link
                                             href={`communities/${post.community_slug}`}
-                                            className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400"
+                                            className="text-sm font-bold text-primary dark:text-gray-100 hover:underline hover:text-blue-700 dark:hover:text-blue-300 leading-snug"
                                         >
                                             n/{post.community_name}
                                         </Link>
-                                        • {new Date(post.created).toLocaleDateString("en-GB", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                            year: "numeric",
-                                        })}
-                                    </p>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            • {new Date(post.created).toLocaleDateString("en-GB", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                timeZone: 'UTC'
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center flex-wrap gap-1">
+                                        <Link
+                                            href={`/user/${post.author}`}
+                                            className="font-medium hover:text-gray-700 dark:hover:text-gray-300"
+                                        >
+                                            u/{post.author}
+                                        </Link>
+
+
+                                    </div>
                                 </div>
                             </div>
                             <div className="relative">
