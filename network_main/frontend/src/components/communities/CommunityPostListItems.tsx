@@ -3,14 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { votePost, deleteVotePost } from '@/services/api';
-import { Post, CommunityType } from '@/services/types';
+import { Post } from '@/services/types';
 import PostRating from '../posts/PostRating';
 import PostMedia from '../posts/media/PostMedia';
 import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
 import AuthModalController from '../auth/AuthModalController';
-import CommunityHoverCard from '../posts/CommunityHoverCard';
-import { getCommunityBySlug, joinCommunity } from '@/services/api';
 import Image from 'next/image';
 import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
 
@@ -20,12 +18,6 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const router = useRouter();
 
-    const [hoveredCommunity, setHoveredCommunity] = useState<CommunityType | null>(null);
-    const [isCardLoading, setIsCardLoading] = useState(false);
-    const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
-    const enterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const cardRef = useRef<HTMLDivElement>(null);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,57 +66,6 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isMenuOpen]);
-
-    const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (leaveTimeoutRef.current) {
-            clearTimeout(leaveTimeoutRef.current);
-        }
-
-        const targetElement = event.currentTarget;
-
-        enterTimeoutRef.current = setTimeout(async () => {
-            const rect = targetElement.getBoundingClientRect();
-            setCardPosition({
-                top: rect.bottom + window.scrollY + 5,
-                left: rect.left + window.scrollX,
-            });
-            setIsCardLoading(true);
-
-            try {
-                const communityData = await getCommunityBySlug(post.community_slug);
-                setHoveredCommunity(communityData);
-            } catch (error) {
-                console.error("Failed to fetch community data:", error);
-                setCardPosition(null);
-            } finally {
-                setIsCardLoading(false);
-            }
-        }, 700);
-    };
-
-    const handleMouseLeave = () => {
-        if (enterTimeoutRef.current) {
-            clearTimeout(enterTimeoutRef.current);
-        }
-        leaveTimeoutRef.current = setTimeout(() => {
-            setCardPosition(null);
-            setHoveredCommunity(null);
-        }, 400);
-    };
-
-    // const handleJoinCommunity = async (communityId: number) => {
-    //     requireAuth(async () => {
-    //         try {
-    //             await joinCommunity(communityId);
-    //             if (hoveredCommunity) {
-    //                 setHoveredCommunity({ ...hoveredCommunity, is_member: true });
-    //             }
-    //         } catch (error) {
-    //             console.error('Failed to join community:', error);
-    //             alert('Failed to join community.');
-    //         }
-    //     });
-    // };
 
     const handleDelete = async (slug: string) => {
         requireAuth(async () => {
@@ -186,7 +127,7 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                                             onClick={(e) => e.stopPropagation()}
                                             className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400"
                                         >
-                                            n/{currentPost.author}
+                                            u/{currentPost.author}
                                         </Link>
                                         • {new Date(currentPost.created).toLocaleDateString("en-GB", {
                                             day: "2-digit",
