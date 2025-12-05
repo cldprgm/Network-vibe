@@ -78,7 +78,7 @@ class CategoryCommunityListView(generics.ListAPIView):
 
         base_queryset = Community.objects.filter(categories=subcategory_id) \
             .select_related('creator') \
-            .order_by('-activity_score', '-id')
+            .order_by('-activity_score', '-members_count', '-id')
 
         # add (members__is_approved=True) later
         if user.is_authenticated:

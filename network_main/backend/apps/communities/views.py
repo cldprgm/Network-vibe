@@ -1,13 +1,13 @@
 from rest_framework import viewsets, mixins, status, views
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import CursorPagination
 
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, OuterRef, Exists, Value, Q, Prefetch
+from django.db.models import OuterRef, Exists, Value, Q, Prefetch
 from django.db.models.fields import BooleanField
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
@@ -27,10 +27,9 @@ from .community_permissions import IsCommunityCreator, HasCommunityPermission, C
 from .community_permissions import PERMISSONS_MAP
 
 
-class CommunityPagination(PageNumberPagination):
+class CommunityPagination(CursorPagination):
     page_size = 6
-    page_size_query_param = 'page_size'
-    max_page_size = 12
+    ordering = ('-activity_score', '-members_count', '-id')
 
 
 class CommunityViewSet(viewsets.ModelViewSet):
