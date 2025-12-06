@@ -22,7 +22,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     expose:
       - 8002
     command: [ "adminpanel", "gunicorn", "network.wsgi:application", "--workers", "1", "--bind", "0.0.0.0:8002" ]
@@ -45,7 +45,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network worker --loglevel=info
     depends_on:
       - redis
@@ -60,7 +60,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - redis
