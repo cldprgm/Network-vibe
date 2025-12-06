@@ -1,4 +1,4 @@
-from .settings_admin_panel import *
+from .settings_main import *
 
 INSTALLED_APPS = [app for app in INSTALLED_APPS if app not in [
     'django.contrib.admin',

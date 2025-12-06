@@ -36,7 +36,7 @@ services:
     env_file:
       - ./backend/.env.dev
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     ports:
       - 127.0.0.1:8001:8001
     command: [ "adminpanel", "python", "manage.py", "runserver", "0.0.0.0:8001" ]
@@ -67,7 +67,7 @@ services:
     env_file:
       - ./backend/.env.dev
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network worker --loglevel=info
     depends_on:
       - redis
@@ -83,7 +83,7 @@ services:
     env_file:
       - ./backend/.env.dev
     environment:
-      - DJANGO_SETTINGS_MODULE=network.settings_admin_panel
+      - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - redis
