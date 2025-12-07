@@ -94,14 +94,14 @@ class SetJWTCookiesMixin():
                             httponly=True,
                             domain=None,
                             path='/',
-                            secure=False,
+                            secure=True,
                             samesite='Lax')
         response.set_cookie(key='refresh_token',
                             value=str(refresh),
                             httponly=True,
                             domain=None,
                             path='/',
-                            secure=False,
+                            secure=True,
                             samesite='Lax')
         return response
 
@@ -323,7 +323,7 @@ class CookieTokenRefreshView(TokenRefreshView):
                                 httponly=True,
                                 domain=None,
                                 path='/',
-                                secure=False,
+                                secure=True,
                                 samesite='Lax')
             return response
         except TokenError:
