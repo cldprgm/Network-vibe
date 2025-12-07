@@ -79,7 +79,7 @@ services:
     volumes:
       - ./conf.d:/etc/nginx/conf.d
     ports:
-      - 80:80
+      - 80:80 # use "127.0.0.1:80:80" later
     depends_on:
       - apibackend
       - frontend
