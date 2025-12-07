@@ -2,12 +2,20 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from django.core.cache import cache
 
 from apps.users.models import CustomUser
 from apps.categories.models import Category
 from apps.communities.models import Community
 from apps.memberships.models import Membership
-from apps.posts.models import Post
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Clear cache before and after each test"""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
@@ -26,16 +34,6 @@ def test_user():
 
 
 @pytest.fixture
-def test_user_creator():
-    return CustomUser.objects.create_user(
-        username='testuserCr',
-        email='testCr@example.com',
-        password='testpassword',
-        is_active=True
-    )
-
-
-@pytest.fixture
 def second_user():
     return CustomUser.objects.create_user(
         username='seconduser',
@@ -47,21 +45,7 @@ def second_user():
 
 @pytest.fixture
 def authenticated_client(api_client, test_user):
-    login_url = reverse('login')
-    api_client.post(login_url, {
-        'email': 'test@example.com',
-        'password': 'testpassword'
-    })
-    return api_client
-
-
-@pytest.fixture
-def authenticated_client_creator(api_client, test_user_creator):
-    login_url = reverse('login')
-    api_client.post(login_url, {
-        'email': 'testCr@example.com',
-        'password': 'testpassword'
-    })
+    api_client.force_authenticate(user=test_user)
     return api_client
 
 
@@ -76,46 +60,39 @@ def category_gaming():
 
 
 @pytest.fixture
-def community_python(test_user_creator, category_python):
+def community_python(second_user, category_python):
     community = Community.objects.create(
-        creator=test_user_creator,
+        creator=second_user,
         name='Python Fans',
-        slug='python-fans'
+        slug='python-fans',
+        members_count=10,
+        activity_score=50
     )
     community.categories.add(category_python)
     return community
 
 
-# community that should be recommended
 @pytest.fixture
 def community_django(second_user, category_python):
     community = Community.objects.create(
         creator=second_user,
         name='Django Ninjas',
-        slug='django-ninjas'
+        slug='django-ninjas',
+        members_count=5,
+        activity_score=100
     )
     community.categories.add(category_python)
     return community
 
 
-# community from another category that should not be recommended
 @pytest.fixture
 def community_gaming(second_user, category_gaming):
     community = Community.objects.create(
         creator=second_user,
-        name='Gamers United',
-        slug='gamers-united'
-    )
-    community.categories.add(category_gaming)
-    return community
-
-
-@pytest.fixture
-def popular_community(test_user_creator, category_gaming):
-    community = Community.objects.create(
-        creator=test_user_creator,
-        name='Popular Community',
-        slug='popular-community'
+        name='Gamers',
+        slug='gamers',
+        members_count=100,
+        activity_score=10
     )
     community.categories.add(category_gaming)
     return community
@@ -123,55 +100,74 @@ def popular_community(test_user_creator, category_gaming):
 
 @pytest.mark.django_db
 class TestCommunityRecommendationsView:
-    def test_recommendations_unauthenticated(self, api_client):
+
+    def test_recommendations_unauthenticated_structure(self, api_client, community_python):
         url = reverse('community-recommendations')
         response = api_client.get(url)
+
         assert response.status_code == status.HTTP_200_OK
         assert response.data['type'] == 'unauthenticated_recommendations'
+        assert 'recommendations' in response.data
+        assert 'next' in response.data
 
-    def test_recommendations_for_new_user_cold_start(self, authenticated_client, popular_community, second_user, test_user_creator):
-        Membership.objects.create(
-            user=second_user, community=popular_community)
-
-        url = reverse('community-recommendations')
-        response = authenticated_client.get(url)
-
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['type'] == 'just_popular_communities'
-
-        recommendations = response.data['recommendations']
-        assert len(recommendations) > 0
-
-        popular_community_in_response = any(
-            rec['slug'] == popular_community.slug for rec in recommendations
+    def test_recommendations_ordering_by_score(self, authenticated_client, test_user,
+                                               category_python, community_python, community_django):
+        """
+        Sorting check: Django (score=100) must be higher than Python (score=50),
+        even if members_count is less.
+        """
+        subscribed_comm = Community.objects.create(
+            creator=test_user, name='Sub', slug='sub', members_count=1
         )
-        assert popular_community_in_response is True
-
-    def test_recommendations_for_user_with_subscriptions(self, authenticated_client, test_user, community_python, community_django, community_gaming):
-        Membership.objects.create(user=test_user, community=community_python)
+        subscribed_comm.categories.add(category_python)
+        Membership.objects.create(user=test_user, community=subscribed_comm)
 
         url = reverse('community-recommendations')
         response = authenticated_client.get(url)
 
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['type'] == 'recommended_communities'
+        recs = response.data['recommendations']
+        assert len(recs) >= 2
 
-        recommendations = response.data['recommendations']
-        recommended_slugs = {rec['slug'] for rec in recommendations}
+        assert recs[0]['slug'] == community_django.slug
+        assert recs[1]['slug'] == community_python.slug
 
-        assert community_django.slug in recommended_slugs
-        assert community_python.slug not in recommended_slugs
-        assert community_gaming.slug not in recommended_slugs
+    def test_caching_for_unauthenticated_user(self, api_client, community_python):
+        url = reverse('community-recommendations')
 
-    def test_recommendations_when_no_new_communities_to_recommend(self, authenticated_client, test_user, community_python, community_django):
+        response1 = api_client.get(url)
+        assert response1.status_code == 200
+
+        assert cache.get('unauth_recs:initial') is not None
+
+        community_python.delete()
+
+        response2 = api_client.get(url)
+        slugs = [r['slug'] for r in response2.data['recommendations']]
+        assert 'python-fans' in slugs
+
+    def test_caching_for_authenticated_user_first_page(self, authenticated_client, test_user, community_python):
+        url = reverse('community-recommendations')
+
+        authenticated_client.get(url)
+
+        cache_key = f'auth_recs_first_page:{test_user.id}'
+        assert cache.get(cache_key) is not None
+
+    def test_cache_invalidation_on_subscribe(self, authenticated_client, test_user, community_python):
+        url_recs = reverse('community-recommendations')
+
+        authenticated_client.get(url_recs)
+        cache_key = f'auth_recs_first_page:{test_user.id}'
+        assert cache.get(cache_key) is not None
+
         Membership.objects.create(user=test_user, community=community_python)
-        Membership.objects.create(user=test_user, community=community_django)
 
+        assert cache.get(cache_key) is None
+
+    def test_cold_start_fallback(self, authenticated_client, second_user, community_gaming):
         url = reverse('community-recommendations')
         response = authenticated_client.get(url)
 
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['type'] == 'recommended_communities'
-
-        recommendations = response.data['recommendations']
-        assert len(recommendations) == 0
+        assert response.data['type'] == 'just_popular_communities'
+        recs = response.data['recommendations']
+        assert recs[0]['slug'] == community_gaming.slug

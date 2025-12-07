@@ -1,8 +1,14 @@
+from apps.users.models import CustomUser
+from rest_framework.exceptions import ValidationError
 import pytest
-from datetime import timedelta
 import os
-from PIL import Image
 import io
+import jwt
+
+from datetime import timedelta
+from PIL import Image
+
+from unittest.mock import Mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
@@ -14,6 +20,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.exceptions import ErrorDetail
 
 from apps.communities.models import Community
 from apps.memberships.models import Membership
@@ -130,6 +137,354 @@ class TestUserLogin:
         }
         response = api_client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestGoogleLogin:
+    url = reverse('google_login')
+
+    def test_missing_code(self, api_client):
+        data = {}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'code' in response.data
+
+    def test_google_upstream_error(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_google_tokens',
+                     side_effect=Exception("Failed to exchange code with Google"))
+
+        data = {'code': 'invalid_code'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == "Failed to exchange code with Google"
+
+    def test_google_no_id_token(self, api_client, mocker):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'access_token': 'some_token'
+        }
+
+        mocker.patch('apps.services.oauth_tokens.requests.post',
+                     return_value=mock_response)
+
+        data = {'code': 'valid_code'}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert response.data['error'] == "[ErrorDetail(string='No ID token provided', code='invalid')]"
+
+    def test_successful_login_new_user(self, api_client, mocker):
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
+
+        google_payload = {
+            'email': 'new_google@example.com',
+            'sub': '1234567890',
+            'name': 'New Google User',
+            'given_name': 'New',
+            'family_name': 'User',
+            'picture': 'http://example.com/avatar.jpg'
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        data = {'code': 'valid_code_new_user'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user = CustomUser.objects.get(email='new_google@example.com')
+        assert user.google_id == '1234567890'
+        assert user.first_name == 'New'
+        assert user.is_active is True
+
+        assert 'access_token' in response.cookies
+        assert 'refresh_token' in response.cookies
+
+    def test_successful_login_existing_user_by_google_id(self, api_client, mocker):
+        existing_user = CustomUser.objects.create_user(
+            username='googleuser',
+            email='old_email@example.com',
+            password='password',
+            google_id='9876543210'
+        )
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'id_token': 'dummy_id_token'}
+        mocker.patch('apps.services.oauth_tokens.requests.post',
+                     return_value=mock_response)
+
+        google_payload = {
+            'email': 'actual_google_email@example.com',
+            'sub': '9876543210',
+            'name': 'Google User'
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        data = {'code': 'valid_code_existing'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['user']['email'] == existing_user.email
+
+    def test_successful_login_link_by_email(self, api_client, mocker):
+        user = CustomUser.objects.create_user(
+            username='emailuser',
+            email='link@example.com',
+            password='password'
+        )
+        assert user.google_id is None
+
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
+
+        google_payload = {
+            'email': 'link@example.com',
+            'sub': '111222333',
+            'name': 'Linked User'
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        data = {'code': 'valid_code_link'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user.refresh_from_db()
+        assert user.google_id == '111222333'
+
+    def test_jwt_decode_error(self, api_client, mocker):
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'bad_token'}
+        )
+
+        mocker.patch('apps.users.views.jwt.decode', side_effect=jwt.PyJWTError)
+
+        data = {'code': 'code_bad_token'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == 'Invalid ID token'
+
+    def test_incomplete_google_data(self, api_client, mocker):
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
+
+        google_payload = {
+            'sub': '12345',
+            'name': 'No Email User'
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        data = {'code': 'code_incomplete'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == "Incomplete data from Google"
+
+
+@pytest.mark.django_db
+class TestGithubLogin:
+    url = reverse('github_login')
+
+    def test_missing_code(self, api_client):
+        data = {}
+        response = api_client.post(self.url, data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'code' in response.data
+
+    def test_github_upstream_error_tokens(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     side_effect=Exception("Failed to exchange code with Github"))
+
+        data = {'code': 'invalid_code'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == "Failed to exchange code with Github"
+
+    def test_github_upstream_error_user_data(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'valid_token'})
+
+        mocker.patch('apps.users.views.get_github_user_data',
+                     side_effect=Exception("Failed to get Github user info"))
+
+        data = {'code': 'valid_code'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == "Failed to get Github user info"
+
+    def test_successful_login_new_user_public_email(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'gh_token_123'})
+
+        github_user_payload = {
+            'id': 1001,
+            'login': 'git_master',
+            'email': 'public@example.com',
+            'name': 'John Doe',
+            'avatar_url': 'http://github.com/avatar.jpg'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        mock_get_email = mocker.patch('apps.users.views.get_github_user_email')
+
+        data = {'code': 'valid_code_public'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user = CustomUser.objects.get(email='public@example.com')
+        assert user.github_id == '1001'
+        assert user.username == 'git_master'
+        assert user.first_name == 'John'
+        assert user.last_name == 'Doe'
+
+        mock_get_email.assert_not_called()
+
+        assert 'access_token' in response.cookies
+        assert 'refresh_token' in response.cookies
+
+    def test_successful_login_new_user_private_email(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'gh_token_456'})
+
+        github_user_payload = {
+            'id': 1002,
+            'login': 'ninja_coder',
+            'email': None,
+            'name': 'Ninja',
+            'avatar_url': 'http://github.com/ninja.jpg'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        mocker.patch('apps.users.views.get_github_user_email',
+                     return_value='private@example.com')
+
+        data = {'code': 'valid_code_private'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user = CustomUser.objects.get(email='private@example.com')
+        assert user.github_id == '1002'
+        assert user.first_name == 'Ninja'
+        assert user.last_name == ''
+
+    def test_github_error_fetching_email(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'gh_token_789'})
+
+        github_user_payload = {
+            'id': 1003,
+            'login': 'error_user',
+            'email': None,
+            'name': 'Error User'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        mocker.patch('apps.users.views.get_github_user_email',
+                     side_effect=Exception("Failed to get Github user email"))
+
+        data = {'code': 'valid_code_no_email_access'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data['error'] == "Failed to get Github user email"
+
+    def test_no_verified_email_found(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'gh_token_000'})
+
+        github_user_payload = {
+            'id': 1004,
+            'login': 'unverified_user',
+            'email': None,
+            'name': 'Unverified'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        mocker.patch('apps.users.views.get_github_user_email',
+                     side_effect=ValidationError("No verified email found in GitHub account"))
+
+        data = {'code': 'valid_code_unverified'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "No verified email found" in str(response.data['error'])
+
+    def test_successful_login_existing_user_by_github_id(self, api_client, mocker):
+        existing_user = CustomUser.objects.create_user(
+            username='old_github_user',
+            email='existing@example.com',
+            password='password',
+            github_id='99999'
+        )
+
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'token'})
+
+        github_user_payload = {
+            'id': 99999,
+            'login': 'gh_login',
+            'email': 'new_email_in_github@example.com',
+            'name': 'Old User'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        data = {'code': 'code_existing'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['user']['id'] == existing_user.id
+        assert response.data['user']['email'] == 'existing@example.com'
+
+    def test_successful_login_link_by_email(self, api_client, mocker):
+        user = CustomUser.objects.create_user(
+            username='email_user',
+            email='link_me@example.com',
+            password='password'
+        )
+        assert user.github_id is None
+
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'token'})
+
+        github_user_payload = {
+            'id': 55555,
+            'login': 'linker',
+            'email': 'link_me@example.com',
+            'name': 'Link User'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        data = {'code': 'code_link'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user.refresh_from_db()
+        assert user.github_id == '55555'
 
 
 @pytest.mark.django_db

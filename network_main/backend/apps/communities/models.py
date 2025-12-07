@@ -16,17 +16,13 @@ from apps.services.utils import unique_slugify, FileSizeValidator
 User = settings.AUTH_USER_MODEL
 
 
-class Community(models.Model):  # add members_count later
+class Community(models.Model):
     """Community model"""
 
     class Visibility(models.TextChoices):
         PUBLIC = 'PUBLIC', 'Public'
         RESTRICTED = 'RESTRICTED', 'Restricted'
         PRIVATE = 'PRIVATE', 'Private'
-
-    class Status(models.TextChoices):
-        DRAFT = 'DF', 'Draft'
-        PUBLISHED = 'PB', 'Published'
 
     name_validator = RegexValidator(
         regex=r'^[A-Za-zА-Яа-яЁё0-9_]+$',
@@ -87,18 +83,27 @@ class Community(models.Model):  # add members_count later
     created = models.DateTimeField(
         auto_now_add=True, verbose_name='Create time')
     updated = models.DateTimeField(auto_now=True, verbose_name='Update time')
-    slug = models.SlugField(max_length=100, verbose_name='URL', blank=True)
-    # delete this
-    status = models.CharField(choices=Status.choices, default=Status.PUBLISHED,
-                              max_length=10, verbose_name="Community status")
+    slug = models.SlugField(
+        max_length=100,
+        verbose_name='URL',
+        blank=True,
+        unique=True
+    )
+    members_count = models.IntegerField(
+        default=0,
+        verbose_name='Members count'
+    )
+    activity_score = models.IntegerField(default=0, db_index=True)
 
     class Meta:
         db_table = 'api_network_community'
-        ordering = ('created', )
+        ordering = ('-created', )
         verbose_name = 'Community'
         verbose_name_plural = 'Communities'
         indexes = [
-            models.Index(fields=['slug', 'visibility']),
+            models.Index(fields=['-created']),
+            models.Index(fields=['-members_count', '-id']),
+            models.Index(fields=['-activity_score', '-members_count', '-id']),
             GinIndex(
                 SearchVector('name', config='english'),
                 name='community_search_vector_idx'

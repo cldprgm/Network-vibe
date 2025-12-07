@@ -1,8 +1,8 @@
 import pytest
 import io
 import os
-import time
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
@@ -96,7 +96,7 @@ def comment(test_user, post):
 def media_file(post):
     return Media.objects.create(
         post=post,
-        file='backend/media/uploads/avatars/default.png'
+        file='uploads/avatars/default.png'
     )
 
 
@@ -793,11 +793,16 @@ class TestAnnotations:
 @pytest.mark.django_db
 class TestPostMedia:
     def test_media_in_post(self, api_client, post, media_file):
-        # test will crush if you use local storage
         url = reverse('post-detail', kwargs={'slug': post.slug})
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert 'media_data' in response.data
         assert len(response.data['media_data']) == 1
+
         expected_url = media_file.file.url
-        assert response.data['media_data'][0]['file'] == expected_url
+        returned_url = response.data['media_data'][0]['file']
+
+        returned_path = urlparse(returned_url).path
+        expected_path = urlparse(expected_url).path
+
+        assert returned_path == expected_path

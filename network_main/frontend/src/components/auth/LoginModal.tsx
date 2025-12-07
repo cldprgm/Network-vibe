@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { loginUser } from "@/services/auth";
 import { useAuthStore } from "@/zustand_store/authStore";
+import GoogleButton from "./auth_buttons/GoogleButtons";
+import GithubButton from "./auth_buttons/GithubButton";
 
 export default function LoginModal({
     onClose,
@@ -78,17 +80,41 @@ export default function LoginModal({
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-500 font-medium">{error}</p>
+                        <p className="text-sm text-red-500 font-medium text-center">{error}</p>
                     )}
 
                     <button
                         type="submit"
-                        className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold"
+                        disabled={isLoading}
+                        className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl transition-colors duration-200 font-semibold disabled:opacity-70"
                     >
                         {isLoading ? 'Logging in...' : 'Log In'}
                     </button>
                 </form>
-                <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+
+                {/* --- Social Login Section --- */}
+                <div className="my-6 flex items-center">
+                    <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                    <span className="mx-4 text-sm text-gray-500 dark:text-gray-400">or continue with</span>
+                    <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                </div>
+
+                <div className="space-y-3">
+                    <GoogleButton
+                        onSuccess={onClose}
+                        onError={setError}
+                        setLoading={setLoading}
+                    />
+
+                    <GithubButton
+                        onSuccess={onClose}
+                        onError={setError}
+                        setLoading={setLoading}
+                    />
+                </div>
+                {/* --------------------------- */}
+
+                <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
                     Don&apos;t have an account?{' '}
                     <button
                         type="button"

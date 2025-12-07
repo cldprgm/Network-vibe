@@ -1,9 +1,16 @@
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
+from django.utils.crypto import get_random_string
+
 from unidecode import unidecode
 from uuid import uuid4
 import magic
+import requests
+
+
+GITHUB_USER_URL = "https://api.github.com/user"
+GITHUB_USER_EMAIL = "https://api.github.com/user/emails"
 
 
 @deconstructible
@@ -75,3 +82,86 @@ def validate_magic_mime(value, allowed_mime_types: dict):
 def validate_files_length(files, max_files: int):
     if len(files) > max_files:
         raise ValidationError(f'You can upload no more than {max_files} files')
+
+
+def get_or_create_social_user(
+        provider_field: str,
+        social_id: str,
+        email: str,
+        username: str,
+        first_name: str = '',
+        last_name: str = '',
+        avatar: str = None
+):
+    """
+    A universal function for logging in via social media.
+    provider_field: The name of the field in the model (for example, 'google_id' or 'github_id')
+    """
+    from apps.users.models import CustomUser
+
+    filter_kwargs = {provider_field: social_id}
+    try:
+        return CustomUser.objects.get(**filter_kwargs)
+    except CustomUser.DoesNotExist:
+        pass
+
+    try:
+        user = CustomUser.objects.get(email=email)
+        setattr(user, provider_field, social_id)
+        user.save()
+
+        return user
+    except CustomUser.DoesNotExist:
+        if not username:
+            username = email.split('@')[0]
+
+        create_kwargs = {
+            'email': email,
+            'username': username,
+            'first_name': first_name,
+            'last_name': last_name,
+            'password': get_random_string(length=32),
+            'is_active': True,
+            **filter_kwargs
+        }
+        if avatar:
+            create_kwargs['avatar'] = avatar
+
+        user = CustomUser.objects.create_user(**create_kwargs)
+        return user
+
+
+def get_github_user_data(session: requests.Session, access_token: str) -> dict:
+    """Get github user data with access_token"""
+
+    auth_header = {"Authorization": f"token {access_token}"}
+    try:
+        user_res = session.get(GITHUB_USER_URL, headers=auth_header)
+        user_res.raise_for_status()
+
+        data = user_res.json()
+        return data
+    except requests.exceptions.RequestException:
+        raise ValidationError("Failed to get Github user info")
+
+
+def get_github_user_email(session: requests.Session, access_token: str) -> str:
+    """Get github user email with access_token"""
+
+    auth_header = {"Authorization": f"token {access_token}"}
+    try:
+        email = None
+
+        email_res = session.get(GITHUB_USER_EMAIL, headers=auth_header)
+        email_res.raise_for_status()
+
+        emails = email_res.json()
+        for e in emails:
+            if e.get('primary') and e.get('verified'):
+                email = e.get('email')
+                return email
+
+        if not email:
+            raise ValidationError("No verified email found in GitHub account")
+    except requests.exceptions.RequestException:
+        raise ValidationError("Failed to get Github user email")

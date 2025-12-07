@@ -2,10 +2,11 @@
 
 import { useState, FormEvent, useRef, useCallback, useEffect } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
-import { getCommunities, getCommunityBySlug } from '@/services/api';
+import { getCommunityBySlug, fetchCommunitiesForUserProfile } from '@/services/api';
+import { useAuthStore } from '@/zustand_store/authStore';
 import { CommunityType, Post } from '@/services/types';
-import { useParams, useRouter } from 'next/navigation';
-import { ChevronDown, Type, Image as ImageIcon, X, Upload } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ChevronDown, Type, Image as ImageIcon, X, Upload, Loader2, Search } from 'lucide-react';
 import { api } from '@/services/auth';
 import Image from 'next/image';
 
@@ -29,7 +30,16 @@ export default function EditPost() {
     const [existingMedia, setExistingMedia] = useState<ExistingMedia[]>([]);
     const [deletedMediaIds, setDeletedMediaIds] = useState<number[]>([]);
     const [rejections, setRejections] = useState<FileRejection[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+
+    const [communitiesLoading, setCommunitiesLoading] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    const { user } = useAuthStore();
+
+    const searchParams = useSearchParams();
+    const communitySlug = searchParams.get('communitySlug');
+
+    const [searchQuery, setSearchQuery] = useState('');
 
     const params = useParams();
     const slug = params.postSlug as string;
@@ -38,8 +48,11 @@ export default function EditPost() {
 
     const titleRef = useRef<HTMLTextAreaElement>(null);
     const contentRef = useRef<HTMLTextAreaElement>(null);
+    const dropdownRef = useRef<HTMLUListElement>(null);
+    const dropdownContainerRef = useRef<HTMLDivElement>(null);
 
     const [communities, setCommunities] = useState<CommunityType[]>([]);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
 
     const filesRef = useRef<FileWithPreview[]>([]);
 
@@ -48,16 +61,82 @@ export default function EditPost() {
     }, [files]);
 
     useEffect(() => {
-        const fetchCommunities = async () => {
+        if (!user?.slug) return;
+
+        const fetchInitialCommunities = async () => {
+            setCommunitiesLoading(true);
             try {
-                const response = await getCommunities(1);
+                const response = await fetchCommunitiesForUserProfile(user.slug);
                 setCommunities(response.results);
+                setNextCursor(response.nextCursor);
             } catch (err: any) {
                 console.log(err.message);
+            } finally {
+                setCommunitiesLoading(false);
             }
         };
-        fetchCommunities();
-    }, []);
+        fetchInitialCommunities();
+    }, [user?.slug]);
+
+    const loadMoreCommunities = async () => {
+        if (!nextCursor || communitiesLoading || !user?.slug) return;
+
+        setCommunitiesLoading(true);
+        try {
+            const { results, nextCursor: cursor } = await fetchCommunitiesForUserProfile(user.slug, nextCursor);
+            setCommunities(prev => [...prev, ...results]);
+            setNextCursor(cursor);
+        } catch (error) {
+            console.error('Failed to load more communities:', error);
+        } finally {
+            setCommunitiesLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (dropdownRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current;
+                if (scrollTop + clientHeight >= scrollHeight - 5) {
+                    loadMoreCommunities();
+                }
+            }
+        };
+
+        const dropdownEl = dropdownRef.current;
+        if (dropdownOpen && dropdownEl) {
+            dropdownEl.addEventListener('scroll', handleScroll);
+        }
+
+        return () => {
+            if (dropdownEl) {
+                dropdownEl.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [dropdownOpen, nextCursor, communitiesLoading]);
+
+    useEffect(() => {
+        if (!communitySlug) return;
+        getCommunityBySlug(communitySlug)
+            .then(c => setCommunity(c))
+            .catch(err => console.error(err));
+    }, [communitySlug]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownContainerRef.current && !dropdownContainerRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+
+        if (dropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownOpen]);
 
     useEffect(() => {
         if (!slug) return;
@@ -166,7 +245,7 @@ export default function EditPost() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!community) return;
-        setLoading(true);
+        setIsSubmitting(true);
         try {
             const formData = new FormData();
             formData.append('title', title);
@@ -199,9 +278,13 @@ export default function EditPost() {
         } catch (err: any) {
             console.error('Error updating post: ', err.message);
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
+
+    const filteredCommunities = communities.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const isTitleValid = title.trim().length >= 5;
     const canSubmit = isTitleValid && community !== null;
@@ -211,49 +294,79 @@ export default function EditPost() {
             <div className="flex-[5] bg-white dark:bg-[var(--background)] flex sm:mt-[30px] md:mt-[60px] justify-center p-4">
                 <div className="bg-white dark:bg-[var(--background)] w-full max-w-2xl rounded-2xl p-6">
                     <h1 className="text-2xl font-semibold mb-4 text-gray-200 dark:text-gray-300">Edit post</h1>
-                    <div className="relative">
+                    <div className="relative" ref={dropdownContainerRef}>
                         <button
                             type="button"
                             onClick={toggleDropdown}
-                            className="flex cursor-pointer peer block text-left rounded-3xl border dark:border-[var(--border)] px-4 py-3 bg-transparent"
+                            className="flex items-center justify-between w-full max-w-xs cursor-pointer rounded-2xl border dark:border-gray-600 px-4 py-3 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
-                            {community ? (
-                                <>
-                                    <Image
-                                        src={`${community.icon}`}
-                                        alt={`${community.name} icon`}
-                                        width={20}
-                                        height={20}
-                                        className="w-5 h-5 mr-2 rounded-full"
-                                    />
-                                    <span>n/{community.name}</span>
-                                </>
-                            ) : (
-                                <span>Select a community</span>
-                            )}
-                            <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                        </button>
-                        {dropdownOpen && (
-                            <ul className="ml-3 absolute z-10 mt-1 bg-white dark:bg-gray-600 border dark:border-[var(--border)] rounded-2xl max-h-60 overflow-auto shadow-lg">
-                                {communities.map((c) => (
-                                    <li
-                                        key={c.id}
-                                        onClick={() => selectCommunity(c)}
-                                        className="flex items-center px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                                    >
+                            <div className="flex items-center">
+                                {community ? (
+                                    <>
                                         <Image
-                                            src={`${c.icon}`}
-                                            alt={`${c.name} icon`}
-                                            width={20}
-                                            height={20}
-                                            className="w-5 h-5 mr-2 rounded-full"
+                                            src={community.icon}
+                                            alt={`${community.name} icon`}
+                                            width={24}
+                                            height={24}
+                                            className="w-6 h-6 mr-3 rounded-full"
                                         />
-                                        <span>n/{c.name}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                                        <span className="font-medium text-gray-800 dark:text-gray-200">{community.name}</span>
+                                    </>
+                                ) : (
+                                    <span className="text-gray-300">Select a community</span>
+                                )}
+                            </div>
+                            <ChevronDown className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {dropdownOpen && (
+                            <div className="absolute z-10 mt-2 w-full max-w-xs bg-white dark:bg-zinc-800 border dark:border-gray-600 rounded-lg shadow-xl">
+                                <div className="p-2">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Find a community..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <ul ref={dropdownRef} className="max-h-60 overflow-auto">
+                                    {filteredCommunities.length > 0 ? (
+                                        filteredCommunities.map((c) => (
+                                            <li
+                                                key={c.id}
+                                                onClick={() => selectCommunity(c)}
+                                                className="flex items-center px-4 py-3 hover:bg-gray-100 dark:hover:bg-zinc-700 cursor-pointer transition-colors"
+                                            >
+                                                <Image
+                                                    src={c.icon}
+                                                    alt={`${c.name} icon`}
+                                                    width={32}
+                                                    height={32}
+                                                    className="w-8 h-8 mr-3 rounded-full"
+                                                />
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">n/{c.name}</span>
+                                            </li>
+                                        ))
+                                    ) : !communitiesLoading && (
+                                        <li className="px-4 py-3 text-center text-gray-500">
+                                            Communities not found.
+                                        </li>
+                                    )}
+                                    {communitiesLoading && (
+                                        <li className="flex justify-center items-center p-4">
+                                            <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
                         )}
                     </div>
+
                     <div role="tablist" className="flex border-b dark:border-gray-400 mb-6 mt-3">
                         {['TEXT', 'MEDIA'].map(tab => (
                             <button
@@ -400,13 +513,13 @@ export default function EditPost() {
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={!canSubmit || loading}
+                                disabled={!canSubmit || isSubmitting}
                                 className={`ml-4 px-4 py-2 font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 
                             ${canSubmit
                                         ? 'cursor-pointer bg-green-600 text-white hover:bg-green-700'
                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                             >
-                                {loading ? 'Updating...' : 'Update Post'}
+                                {isSubmitting ? 'Updating...' : 'Update Post'}
                             </button>
                         </div>
 

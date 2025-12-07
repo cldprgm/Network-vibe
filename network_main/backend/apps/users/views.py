@@ -9,8 +9,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError
 
-from django.utils.decorators import method_decorator
-from django_ratelimit.decorators import ratelimit
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
@@ -20,10 +18,18 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 
 import time
+import requests
+import jwt
 
 from apps.posts.serializers import PostListSerializer
 from apps.communities.models import Community
 from apps.posts.views import get_optimized_post_queryset
+from apps.services.oauth_tokens import get_google_tokens, get_github_tokens
+from apps.services.utils import (
+    get_or_create_social_user,
+    get_github_user_email,
+    get_github_user_data
+)
 
 from .models import CustomUser, VerificationCode
 from .serializers import (
@@ -33,7 +39,9 @@ from .serializers import (
     LoginUserSerializer,
     VerifyCodeSerializer,
     ResendVerificationSerializer,
-    CustomUserCommunitiesSerializer
+    CustomUserCommunitiesSerializer,
+    GoogleAuthSerializer,
+    GithubAuthSerializer
 )
 from .throttles import (
     RegistrationThrottle,
@@ -68,7 +76,133 @@ class UserRegistrationView(CreateAPIView):
     permission_classes = [AllowAny]
 
 
-class VerifyEmailView(APIView):
+class SetJWTCookiesMixin():
+    """Adds method to create a response with JWT cookies."""
+
+    def get_response_with_jwt_in_cookies(self, user, request):
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response(
+            data={
+                'user': CustomUserInfoSerializer(user, context={'request': request}).data
+            },
+            status=status.HTTP_200_OK
+        )
+        response.set_cookie(key='access_token',
+                            value=access_token,
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=True,
+                            samesite='Lax')
+        response.set_cookie(key='refresh_token',
+                            value=str(refresh),
+                            httponly=True,
+                            domain=None,
+                            path='/',
+                            secure=True,
+                            samesite='Lax')
+        return response
+
+
+class GoogleLoginView(SetJWTCookiesMixin, APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        code = serializer.validated_data['code']
+
+        # Exchange code for tokens
+        try:
+            google_tokens = get_google_tokens(code)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        id_token = google_tokens.get('id_token')
+
+        # Get or create user
+        try:
+            payload = jwt.decode(id_token, options={'verify_signature': False})
+        except jwt.PyJWTError:
+            return Response(
+                {'error': 'Invalid ID token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = payload.get('email')
+        google_user_id = payload.get('sub')
+
+        if not email or not google_user_id:
+            return Response({"error": "Incomplete data from Google"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_or_create_social_user(
+            provider_field='google_id',
+            social_id=google_user_id,
+            email=email,
+            username=payload.get('name'),
+            first_name=payload.get('given_name', ''),
+            last_name=payload.get('family_name', ''),
+            avatar=payload.get('picture'),
+        )
+
+        # Send jwt
+        return self.get_response_with_jwt_in_cookies(user, request)
+
+
+class GithubLoginView(SetJWTCookiesMixin, APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = GithubAuthSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        code = serializer.validated_data['code']
+
+        with requests.Session() as session:
+            try:
+                # Exchange code for tokens
+                response = get_github_tokens(session, code)
+                access_token = response.get('access_token')
+
+                # Get user data
+                user_data = get_github_user_data(session, access_token)
+                github_id = str(user_data.get("id"))
+                email = user_data.get("email")
+
+                # Get email if missing
+                if not email:
+                    email = get_github_user_email(session, access_token)
+
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        full_name = user_data.get('name') or ''
+        name_parts = full_name.split(' ', 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        user = get_or_create_social_user(
+            provider_field='github_id',
+            social_id=github_id,
+            email=email,
+            username=user_data.get('login'),
+            first_name=first_name,
+            last_name=last_name,
+            avatar=user_data.get('avatar_url'),
+        )
+
+        # Send jwt
+        return self.get_response_with_jwt_in_cookies(user, request)
+
+
+class VerifyEmailView(SetJWTCookiesMixin, APIView):
     throttle_classes = [EmailVerifyThrottle]
     permission_classes = [AllowAny]
 
@@ -84,29 +218,7 @@ class VerifyEmailView(APIView):
                 user.is_active = True
                 user.save()
 
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            response = Response(
-                data={
-                    'user': CustomUserInfoSerializer(
-                        user,
-                        context={'request': request}).data
-                },
-                status=status.HTTP_200_OK
-            )
-            response.set_cookie(key='access_token',
-                                value=access_token,
-                                httponly=True,
-                                domain=None,
-                                samesite='Lax')
-            response.set_cookie(key='refresh_token',
-                                value=str(refresh),
-                                httponly=True,
-                                domain=None,
-                                samesite='Lax')
-
-            return response
+            return self.get_response_with_jwt_in_cookies(user, request)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -151,7 +263,7 @@ class VerifyEmailView(APIView):
 #         )
 
 
-class LoginView(APIView):
+class LoginView(SetJWTCookiesMixin, APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -160,32 +272,7 @@ class LoginView(APIView):
 
         if serializer.is_valid():
             user = serializer.validated_data
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            response = Response(
-                data={
-                    'user': CustomUserInfoSerializer(
-                        user,
-                        context={'request': request}).data
-                },
-                status=status.HTTP_200_OK
-            )
-            response.set_cookie(key='access_token',
-                                value=access_token,
-                                httponly=True,
-                                domain=None,
-                                path='/',
-                                secure=False,
-                                samesite='Lax')
-            response.set_cookie(key='refresh_token',
-                                value=str(refresh),
-                                httponly=True,
-                                domain=None,
-                                path='/',
-                                secure=False,
-                                samesite='Lax')
-            return response
+            return self.get_response_with_jwt_in_cookies(user, request)
         else:
             return Response(data=serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
@@ -236,7 +323,7 @@ class CookieTokenRefreshView(TokenRefreshView):
                                 httponly=True,
                                 domain=None,
                                 path='/',
-                                secure=False,
+                                secure=True,
                                 samesite='Lax')
             return response
         except TokenError:
