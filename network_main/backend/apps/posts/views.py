@@ -166,7 +166,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         else:
             cache_key = f'trending_posts_ids'
-            query_function = partial(get_trending_posts, days=10)
+            query_function = partial(get_trending_posts, days=30)
             cache_timeout = 240
 
         post_ids = cache.get(cache_key)

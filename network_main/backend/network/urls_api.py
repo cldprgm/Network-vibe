@@ -1,11 +1,9 @@
-from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('api/v1/users/', include('apps.users.urls')),
     path('api/v1/posts/', include('apps.posts.urls')),
     path('api/v1/search/', include('apps.search.urls')),

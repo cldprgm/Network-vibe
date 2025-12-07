@@ -34,6 +34,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1")
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SECURE = True
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split()
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split()
@@ -60,6 +66,7 @@ CORS_ALLOW_CREDENTIALS = True
 #     }
 # }
 
+ROOT_URLCONF = 'network.urls_admin_panel'
 
 # Application definition
 INSTALLED_APPS = [
@@ -100,8 +107,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
-
-ROOT_URLCONF = 'network.urls'
 
 TEMPLATES = [
     {
@@ -209,7 +214,7 @@ else:
                 # for public access(for browser caching)
                 "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
                 #
-                "object_parameters": {"CacheControl": "max-age=20000"},
+                "object_parameters": {"CacheControl": "max-age=50000"},
                 "location": 'media',
             },
         },
@@ -248,8 +253,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'apps.users.authentication.CookieJWTAuthentication',
     ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'drf_orjson_renderer.renderers.ORJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
+        'drf_orjson_renderer.parsers.ORJSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
@@ -280,11 +289,12 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'None',
     'AUTH_COOKIE_SECURE': True,
     'AUTH_COOKIE_DOMAIN': None,
     'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
 
@@ -302,11 +312,16 @@ CACHES = {
 
 # Smtp settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "True") == "True"
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False") == "True"
+
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+SERVER_EMAIL = EMAIL_HOST_USER
 
 # Celery settings
 CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -325,7 +340,21 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.posts.tasks.update_posts_score',
         'schedule': crontab(minute='*/5'),
     },
+    'update-community-activity-score-every-10-minutes': {
+        'task': 'apps.recommendations.tasks.update_community_score',
+        'schedule': crontab(minute='*/10'),
+    },
 }
 
 # Frontend url for email verification
 FRONTEND_VERIFICATION_URL = os.getenv("FRONTEND_VERIFICATION_URL")
+
+# Google oauth2
+GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID")
+GOOGLE_OAUTH2_SECRET_ID = os.getenv("GOOGLE_OAUTH2_SECRET_ID")
+GOOGLE_OAUTH2_REDIRECT_URI = os.getenv("GOOGLE_OAUTH2_REDIRECT_URI")
+
+# Github oauth2
+GITHUB_OAUTH2_CLIENT_ID = os.getenv("GITHUB_OAUTH2_CLIENT_ID")
+GITHUB_OAUTH2_SECRET_ID = os.getenv("GITHUB_OAUTH2_SECRET_ID")
+GITHUB_OAUTH2_REDIRECT_URI = os.getenv("GITHUB_OAUTH2_REDIRECT_URI")

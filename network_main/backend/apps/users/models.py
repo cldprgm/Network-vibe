@@ -39,13 +39,26 @@ class CustomUser(AbstractUser):
         choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')],
         blank=True
     )
+    google_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True
+    )
+    github_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True
+    )
 
     objects = CustomUserManager()
 
     class Meta:
         ordering = ('username',)
         indexes = [
-            models.Index(fields=['slug']),
             GinIndex(
                 SearchVector('username', config='english'),
                 name='user_search_vector_idx'
@@ -58,7 +71,7 @@ class CustomUser(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.username
+        return self.slug
 
 
 def generate_code(length=6):

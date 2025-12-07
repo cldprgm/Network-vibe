@@ -117,6 +117,36 @@ export const loginUser = async (email: string, password: string): Promise<AxiosR
     }
 };
 
+export const googleLoginAuth = async (code: string) => {
+    try {
+        const response = await api.post(
+            `/users/login/google/`,
+            { code },
+            { withCredentials: true }
+        );
+        return response
+    }
+    catch (e) {
+        throw new Error('Google Login failed')
+    }
+
+};
+
+export const githubLoginAuth = async (code: string) => {
+    try {
+        const response = await api.post(
+            `/users/login/github/`,
+            { code },
+            { withCredentials: true }
+        );
+        return response
+    }
+    catch (e) {
+        throw new Error('Github Login failed')
+    }
+
+};
+
 export const verifyCode = async (email: string, code: string) => {
     try {
         const response = await api.post(

@@ -116,7 +116,7 @@ class Post(models.Model):
         related_name='owned_posts'
     )
 
-    score = models.FloatField(default=0.0, db_index=True)
+    score = models.FloatField(default=0.0)
 
     objects = models.Manager()
     published = PublishedManager()
@@ -124,7 +124,10 @@ class Post(models.Model):
     class Meta:
         db_table = 'api_network_post'
         ordering = ['-created']
-        indexes = [models.Index(fields=['slug', '-created', 'status'])]
+        indexes = [
+            models.Index(fields=['status', '-created']),
+            models.Index(fields=['status', '-score']),
+        ]
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
 
@@ -238,22 +241,22 @@ class Media(models.Model):
         return 'unknown'
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.get_media_type() == 'image':
+        if self._state.adding and self.file:
             self.aspect_ratio = self._compute_aspect_ratio()
-            super().save(update_fields=['aspect_ratio'])
+        super().save(*args, **kwargs)
 
     def _compute_aspect_ratio(self):
         try:
-            with self.file.open('rb') as file:
-                parser = ImageFile.Parser()
-                header = file.read(8192)
-                parser.feed(header)
-                img = parser.close()
-                width, height = img.size
-                return f'{width}/{height}'
-        except (DecompressionBombError, UnidentifiedImageError, Exception):
+            self.file.open()
+            image = Image.open(self.file)
+            width, height = image.size
+            ratio = f"{width}/{height}"
+
+            return ratio
+        except Exception:
             return "16/9"
+        finally:
+            self.file.seek(0)
 
     @property
     def get_aspect_ratio(self):

@@ -49,6 +49,7 @@ def community(test_user, child_category):
         name='comm1',
         slug='comm1',
         description='desc',
+        members_count=0
     )
     community.categories.add(child_category)
     return community
