@@ -214,7 +214,7 @@ else:
                 # for public access(for browser caching)
                 "custom_domain": os.getenv("AWS_PUBLIC_DOMAIN"),
                 #
-                "object_parameters": {"CacheControl": "max-age=20000"},
+                "object_parameters": {"CacheControl": "max-age=50000"},
                 "location": 'media',
             },
         },
