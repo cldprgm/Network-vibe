@@ -10,7 +10,7 @@ import { useAuthStore } from '@/zustand_store/authStore';
 import { useRouter } from 'next/navigation';
 import AuthModalController from '../auth/AuthModalController';
 import Image from 'next/image';
-import { MoreHorizontal, Bookmark, Flag } from "lucide-react";
+import { MoreHorizontal, Bookmark, Flag, Link as LinkIcon, Send, Check } from "lucide-react";
 
 export default function CommunityPostListItems({ post }: { post: Post }) {
     const { isAuthenticated } = useAuthStore();
@@ -18,10 +18,16 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const router = useRouter();
 
+    const postContainerRef = useRef<HTMLDivElement>(null);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const shareMenuRef = useRef<HTMLDivElement>(null);
+    const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+    const [shareMenuPos, setShareMenuPos] = useState({ top: 0, left: 0 });
+    const [isCopied, setIsCopied] = useState(false);
 
     if (!post || !post.slug) {
         return null;
@@ -56,16 +62,22 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
             ) {
                 setIsMenuOpen(false);
             }
+            if (
+                shareMenuRef.current &&
+                !shareMenuRef.current.contains(event.target as Node)
+            ) {
+                setIsShareMenuOpen(false);
+            }
         };
 
-        if (isMenuOpen) {
+        if (isMenuOpen || isShareMenuOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isMenuOpen]);
+    }, [isMenuOpen, isShareMenuOpen]);
 
     const handleDelete = async (slug: string) => {
         requireAuth(async () => {
@@ -77,6 +89,35 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                 alert('Error for delete voice');
             }
         });
+    };
+
+    const toggleShareMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (!isShareMenuOpen && postContainerRef.current) {
+            const containerRect = postContainerRef.current.getBoundingClientRect();
+            const buttonRect = e.currentTarget.getBoundingClientRect();
+
+            setShareMenuPos({
+                top: buttonRect.bottom - containerRect.top + 5,
+                left: buttonRect.left - containerRect.left
+            });
+        }
+        setIsShareMenuOpen(!isShareMenuOpen);
+    };
+
+    const handleCopyLink = async () => {
+        const url = `${window.location.origin}/${currentPost.slug}/`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setIsCopied(true);
+            setTimeout(() => {
+                setIsCopied(false);
+                setIsShareMenuOpen(false);
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
     };
 
     return (
@@ -101,7 +142,11 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
             )} */}
 
             <div className='mt-2'>
-                <div onClick={() => router.push(`/${currentPost.slug}/`)} className="cursor-pointer bg-white dark:bg-[var(--background)] hover:bg-[var(--hover-post-background)] transition rounded-2xl hover:shadow-2xl mx-auto w-full overflow-hidden">
+                <div
+                    ref={postContainerRef}
+                    onClick={() => router.push(`/${currentPost.slug}/`)}
+                    className="cursor-pointer bg-white dark:bg-[var(--background)] hover:bg-[var(--hover-post-background)] transition rounded-2xl hover:shadow-2xl mx-auto w-full overflow-visible relative"
+                >
                     <div className="px-4 py-2">
 
                         <div className="flex justify-between items-start mb-3">
@@ -125,6 +170,7 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                                         <Link
                                             href={`/user/${currentPost.author_slug}`}
                                             onClick={(e) => e.stopPropagation()}
+                                            prefetch={false}
                                             className="text-sm mr-1.5 dark:text-gray-200/90 font-semibold text-primary hover:underline hover:text-blue-700 dark:hover:text-blue-400"
                                         >
                                             u/{currentPost.author}
@@ -150,13 +196,21 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                                 {isMenuOpen && (
                                     <div
                                         ref={menuRef}
-                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-600 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                        className="absolute right-2 mt-2 w-52 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-700 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
                                     >
-                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button
+                                            disabled
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="cursor-not-allowed flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left"
+                                        >
                                             <Bookmark className="w-4 h-4 mr-3" />
                                             Save
                                         </button>
-                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button
+                                            disabled
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="cursor-not-allowed flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left"
+                                        >
                                             <Flag className="w-4 h-4 mr-3" />
                                             Report
                                         </button>
@@ -180,23 +234,65 @@ export default function CommunityPostListItems({ post }: { post: Post }) {
                                     onVote={(value: number) => handleVote(currentPost.slug, value)}
                                     onDelete={() => handleDelete(currentPost.slug)}
                                 />
-                                <Link href={`/${currentPost.slug}/`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5">
+                                <Link
+                                    href={`/${currentPost.slug}/`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    prefetch={false}
+                                    className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5"
+                                >
                                     <svg width="18" height="18" viewBox="100 255 34 32" fill="currentColor">
                                         <path d="M116,281 C114.832,281 113.704,280.864 112.62,280.633 L107.912,283.463 L107.975,278.824 C104.366,276.654 102,273.066 102,269 C102,262.373 108.268,257 116,257 C123.732,257 130,262.373 130,269 C130,275.628 123.732,281 116,281 L116,281 Z M116,255 C107.164,255 100,261.269 100,269 C100,273.419 102.345,277.354 106,279.919 L106,287 L113.009,282.747 C113.979,282.907 114.977,283 116,283 C124.836,283 132,276.732 132,269 C132,261.269 124.836,255 116,255 L116,255 Z" />
                                     </svg>
                                     <span className="text-sm">{currentPost.comment_count}</span>
                                 </Link>
-                                <Link href="#" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5">
+                                <button
+                                    onClick={toggleShareMenu}
+                                    className="flex items-center gap-1 bg-gray-200/20 hover:bg-gray-200/40 rounded-full px-3 py-1.5 cursor-pointer"
+                                >
                                     <svg width="22" height="22" viewBox="5 4 17 17" fill="currentColor">
                                         <path d="M14.734 15.8974L19.22 12.1374C19.3971 11.9927 19.4998 11.7761 19.4998 11.5474C19.4998 11.3187 19.3971 11.1022 19.22 10.9574L14.734 7.19743C14.4947 6.9929 14.1598 6.94275 13.8711 7.06826C13.5824 7.19377 13.3906 7.47295 13.377 7.78743V9.27043C7.079 8.17943 5.5 13.8154 5.5 16.9974C6.961 14.5734 10.747 10.1794 13.377 13.8154V15.3024C13.3888 15.6178 13.5799 15.8987 13.8689 16.0254C14.158 16.1521 14.494 16.1024 14.734 15.8974Z" />
                                     </svg>
                                     <span className="text-sm">Share</span>
-                                </Link>
+                                </button>
                             </div>
                         </div>
-
                     </div>
+                    {isShareMenuOpen && (
+                        <div
+                            ref={shareMenuRef}
+                            style={{
+                                top: `${shareMenuPos.top}px`,
+                                left: `${shareMenuPos.left}px`
+                            }}
+                            className="absolute w-48 bg-white dark:bg-zinc-900 rounded-md shadow-xl ring-2 ring-gray-600 dark:ring-gray-700 z-50 overflow-hidden"
+                        >
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyLink();
+                                }}
+                                className="cursor-pointer flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                {isCopied ? (
+                                    <Check className="w-4 h-4 mr-3 text-green-500" />
+                                ) : (
+                                    <LinkIcon className="w-4 h-4 mr-3" />
+                                )}
+                                {isCopied ? "Copied!" : "Copy link"}
+                            </button>
+
+                            <button
+                                disabled
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center w-full px-4 py-3 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed hover:bg-transparent"
+                            >
+                                <Send className="w-4 h-4 mr-3" />
+                                Send to user
+                            </button>
+                        </div>
+                    )}
                 </div>
+
                 <hr className='border-[var(--border)] mt-2' />
             </div>
         </>
