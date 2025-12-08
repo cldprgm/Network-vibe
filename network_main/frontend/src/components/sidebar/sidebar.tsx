@@ -134,7 +134,7 @@ export default function Sidebar() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                <Link href="#" prefetch={false} className={clsx("cursor-not-allowed flex items-center p-2 text-gray-900 rounded-lg dark:text-gray-500 group", hoverBg)}>
                                     <Flame className={clsx("ms-2 w-5 h-5 ", icon)} />
                                     <span className="ms-3">Popular(Not working)</span>
                                 </Link>
@@ -146,7 +146,7 @@ export default function Sidebar() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                <Link href="#" prefetch={false} className={clsx("cursor-not-allowed flex items-center p-2 text-gray-900 rounded-lg dark:text-gray-500 group", hoverBg)}>
                                     <List className={clsx("ms-2 w-5 h-5 ", icon)} />
                                     <span className="ms-3">All(Not working)</span>
                                 </Link>
