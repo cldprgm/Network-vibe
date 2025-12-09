@@ -44,7 +44,7 @@ export async function fetchPosts(cursor?: string | number | null): Promise<{ res
     try {
         const params = cursor ? { cursor } : {};
         const response = await api.get<MainPaginatedResponse<Post>>(
-            `/posts/`,
+            `/recommendations/posts/`,
             { params }
         );
         const { results, next_cursor } = response.data;
