@@ -337,7 +337,7 @@ CELERY_IGNORE_RESULT = True
 # Celery Beat settings
 CELERY_BEAT_SCHEDULE = {
     'update-posts-score-every-5-minutes': {
-        'task': 'apps.posts.tasks.update_posts_score',
+        'task': 'apps.recommendations.tasks.update_posts_score',
         'schedule': crontab(minute='*/5'),
     },
     'update-community-activity-score-every-10-minutes': {
