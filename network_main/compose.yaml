@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: api_backend:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -15,9 +15,7 @@ services:
     depends_on:
       - db
   admin_panel:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: api_backend_prj:latest
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -27,6 +25,7 @@ services:
       - 8002
     command: [ "adminpanel", "gunicorn", "network.wsgi:application", "--workers", "1", "--bind", "0.0.0.0:8002" ]
     depends_on:
+      - apibackend
       - db
       - redis
   redis:
@@ -36,10 +35,7 @@ services:
     expose:
       - 6379
   celery:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: celery:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     container_name: celery_worker
     env_file:
@@ -51,10 +47,7 @@ services:
       - redis
       - apibackend
   celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: celery:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     container_name: celery_beat_scheduler
     env_file:
