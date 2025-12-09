@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    image: api_backend:1.0.0
+    image: api_backend_prj:latest
     container_name: api_backend_con
     restart: unless-stopped
     develop:
@@ -28,10 +28,7 @@ services:
     depends_on:
       - db
   admin_panel:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-    image: api_backend:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     env_file:
       - ./backend/.env.dev
@@ -41,6 +38,7 @@ services:
       - 127.0.0.1:8001:8001
     command: [ "adminpanel", "python", "manage.py", "runserver", "0.0.0.0:8001" ]
     depends_on:
+      - apibackend
       - db
       - redis
   redis:
@@ -58,10 +56,7 @@ services:
     env_file:
       - ./backend/.env.dev
   celery:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-    image: celery:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     container_name: celery_worker
     env_file:
@@ -74,10 +69,7 @@ services:
       - apibackend
 
   celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-    image: celery_beat:1.0.0
+    image: api_backend_prj:latest
     restart: unless-stopped
     container_name: celery_beat_scheduler
     env_file:
