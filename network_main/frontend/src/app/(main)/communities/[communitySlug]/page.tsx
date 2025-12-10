@@ -149,7 +149,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
             />
 
             {/* Main Content */}
-            <div className="flex flex-col lg:flex-row max-w-6xl mx-auto mt-10 px-4 lg:px-0">
+            <div className="flex flex-col lg:flex-row max-w-6xl mx-auto mt-10 px-1 lg:px-0">
                 {/* Posts Column */}
                 <div className="flex-1 lg:pr-8 space-y-6">
 
