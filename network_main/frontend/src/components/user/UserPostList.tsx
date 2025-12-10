@@ -57,7 +57,7 @@ export default function UserPostList({ userSlug, filter = 'new' }: PostsSectionP
     }, [nextCursor, loading]);
 
     return (
-        <section className="mt-5 mx-auto sm:p-2 md:p-1">
+        <section className="mt-5 mx-auto p-0 sm:p-2 md:p-1">
             <div className="border-b mb-5 flex justify-between text-sm dark:border-[var(--border)]" />
 
             {!loading && posts.length === 0 && (
