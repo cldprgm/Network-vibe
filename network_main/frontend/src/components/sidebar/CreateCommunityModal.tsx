@@ -542,7 +542,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onCreate }: Crea
                                 <div className="flex justify-end items-center">
                                     {step === steps.length - 1 && (
                                         <p className="mr-auto text-sm text-zinc-500 dark:text-zinc-400">
-                                            By continuing, you agree to our <Link href="#" className="text-indigo-500 hover:underline">Network Rules</Link>.
+                                            By continuing, you agree to our <Link href="/policy/rules" className="text-indigo-500 hover:underline">Network Rules</Link> and <Link href="/policy/terms_of_service" className="text-indigo-500 hover:underline">Terms of service</Link>.
                                         </p>
                                     )}
                                     <div className="flex items-center space-x-4">
