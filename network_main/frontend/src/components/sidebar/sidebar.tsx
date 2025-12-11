@@ -20,6 +20,8 @@ import {
     Star,
     BookText,
     Code,
+    Scale,
+    Shield,
     X
 } from "lucide-react";
 import "@/styles/SidebarCustomScrollbar.css"
@@ -279,6 +281,18 @@ export default function Sidebar() {
                                     <Link href="/policy/rules/" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <BookText className={clsx("ms-2 w-5 h-5 ", icon)} />
                                         <span className="ms-3">Network Rules</span>
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/policy/privacy_policy" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                        <Shield className={clsx("ms-2 w-5 h-5 ", icon)} />
+                                        <span className="ms-3">Privacy Policy</span>
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/policy/terms_of_service" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                        <Scale className={clsx("ms-2 w-5 h-5 ", icon)} />
+                                        <span className="ms-3">Terms of Service</span>
                                     </Link>
                                 </li>
                                 <li>
