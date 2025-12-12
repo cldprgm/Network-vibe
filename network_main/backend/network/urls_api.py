@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/v1/categories-tree/', include('apps.categories.urls')),
     path('api/v1/communities/', include('apps.communities.urls')),
     path('api/v1/recommendations/', include('apps.recommendations.urls')),
+    path('api/v1/sitemap/', include('apps.sitemap.urls')),
     # path('api/v1/memberships/', include('apps.memberships.urls')),
 
     path('api/v1/schema/', SpectacularAPIView.as_view(), name='schema'),
