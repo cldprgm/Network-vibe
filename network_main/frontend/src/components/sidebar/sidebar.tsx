@@ -235,9 +235,11 @@ export default function Sidebar() {
                                         </ul>
                                     </>
                                 ) : !loading && (
-                                    <div className="text-center px-2 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        No communities yet. Create one to get started!
-                                    </div>
+                                    <li className="list-none">
+                                        <div className="text-center px-2 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                            No communities yet. Create one to get started!
+                                        </div>
+                                    </li>
                                 )}
                             </>
                         )}
@@ -278,34 +280,52 @@ export default function Sidebar() {
                         {isResourcesOpen && (
                             <>
                                 <li>
-                                    <Link href="/policy/rules/" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                    <Link href="/policy/rules/" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <BookText className={clsx("ms-2 w-5 h-5 ", icon)} />
                                         <span className="ms-3">Network Rules</span>
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/policy/privacy_policy" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                    <Link href="/policy/privacy_policy" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <Shield className={clsx("ms-2 w-5 h-5 ", icon)} />
                                         <span className="ms-3">Privacy Policy</span>
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/policy/terms_of_service" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                    <Link href="/policy/terms_of_service" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <Scale className={clsx("ms-2 w-5 h-5 ", icon)} />
                                         <span className="ms-3">Terms of Service</span>
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                    <Link href="#" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <Code className={clsx("ms-2 w-5 h-5 ", icon)} />
                                         <span className="ms-3">Source Code(Not working)</span>
                                     </Link>
                                 </li>
                             </>
                         )}
-                        <hr className="border-[var(--border)] mt-4 mb-4"></hr>
-
                     </ul>
+
+                    <div className="mt-8 px-2 pb-6 pt-2 border-t border-[var(--border)]">
+                        <p className="text-[11px] leading-4 text-gray-400 dark:text-gray-500">
+                            By using this website, you agree to our{' '}
+                            <Link
+                                href="/policy/terms_of_service"
+                                prefetch={false}
+                                className="underline hover:text-gray-600 dark:hover:text-gray-300">
+                                Terms of Service
+                            </Link>
+                            {' '}and{' '}
+                            <Link
+                                href="/policy/privacy_policy"
+                                prefetch={false}
+                                className="underline hover:text-gray-600 dark:hover:text-gray-300">
+                                Privacy Policy
+                            </Link>.
+                        </p>
+                    </div>
+
                 </div>
             </aside>
             <CreateCommunityModal
