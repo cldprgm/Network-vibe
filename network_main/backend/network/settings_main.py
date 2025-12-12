@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'apps.posts.apps.PostsConfig',
     'apps.recommendations.apps.RecommendationsConfig',
     'apps.search.apps.SearchConfig',
+    'apps.sitemap.apps.SitemapConfig',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
@@ -272,10 +273,11 @@ REST_FRAMEWORK = {
         'user': '17000/minute',
 
         # custom scopes
-        'user_status_update': '30/hour',
+        'user_status_update': '40/hour',
         'registration': '5/minute',
         'email_verify': '7/minute',
-        'search': '30/minute',
+        'search': '40/minute',
+        'sitemap': '70/minute',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -348,6 +350,9 @@ CELERY_BEAT_SCHEDULE = {
 
 # Frontend url for email verification
 FRONTEND_VERIFICATION_URL = os.getenv("FRONTEND_VERIFICATION_URL")
+
+# Sitemap token
+SITEMAP_SECRET_TOKEN = os.getenv("SITEMAP_SECRET_TOKEN")
 
 # Google oauth2
 GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID")

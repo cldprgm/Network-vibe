@@ -12,6 +12,17 @@ import requests
 GITHUB_USER_URL = "https://api.github.com/user"
 GITHUB_USER_EMAIL = "https://api.github.com/user/emails"
 
+# A list of words that CANNOT be used for posts(they will be changed)
+RESERVED_SLUGS = {
+    'admin', 'api', 'media', 'static',
+    'sitemap.xml', 'robots.txt', 'favicon.ico', 'manifest.json', 'favicon.svg',
+    'login', 'register', 'signin', 'signup', 'logout',
+    'profile', 'settings', 'dashboard', 'account',
+    'about', 'contact', 'terms', 'privacy', 'rules',
+    'search', 'best', 'new', 'top', 'communities', 'users',
+    '404', '500', 'sitemaps',
+}
+
 
 @deconstructible
 class MimeTypeValidator:
@@ -57,7 +68,11 @@ def unique_slugify(instance, content):
     model = instance.__class__
     base_slug = slugify(unidecode(content))
     slug = _trim_slug_by_words(base_slug, max_length=30)
-    while model.objects.filter(slug=slug).exists():
+
+    if not slug:
+        slug = uuid4().hex[:8]
+
+    while slug in RESERVED_SLUGS or model.objects.filter(slug=slug).exists():
         slug = f'{slug}-{uuid4().hex[:8]}'
 
     return slug
