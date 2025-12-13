@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/zustand_store/authStore';
+import { useSidebarStore } from '@/zustand_store/sidebarStore';
 import { logoutUser, getUserInfo } from '@/services/auth';
 import IconComponent from './icon_component';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Settings, LogOut, User as UserIcon } from 'lucide-react';
+import { Settings, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import SearchComponent from './SearchComponent';
 
 export default function Navbar() {
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const { toggleMobile } = useSidebarStore();
 
   const setShowAuthModal = useAuthStore((s) => s.setShowAuthModal);
 
@@ -96,15 +98,21 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
 
           <div className="flex items-center">
+            <button
+              onClick={toggleMobile}
+              className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full mr-1"
+            >
+              <Menu size={24} />
+            </button>
             <Link href="/" className="flex items-center ms-2">
               <IconComponent />
-              <span className="ml-2 py-2 text-2xl font-semibold whitespace-nowrap dark:text-white">
+              <span className="ml-2 py-2 text-2xl font-semibold whitespace-nowrap dark:text-white hidden sm:block">
                 Network
               </span>
             </Link>
           </div>
 
-          <div className="flex-1 flex justify-center px-4">
+          <div className="flex-1 flex justify-center px-4 pr-1">
             <SearchComponent />
           </div>
 
@@ -116,7 +124,7 @@ export default function Navbar() {
               <svg fill="currentColor" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 9.25h-7.25V2a.772.772 0 0 0-.75-.75.772.772 0 0 0-.75.75v7.25H2a.772.772 0 0 0-.75.75c0 .398.352.75.75.75h7.25V18c0 .398.352.75.75.75s.75-.352.75-.75v-7.25H18c.398 0 .75-.352.75-.75a.772.772 0 0 0-.75-.75Z"></path>
               </svg>
-              Create
+              <span className="hidden sm:inline">Create</span>
             </Link>
             {isLoading ? (
               <span className="text-zinc-500 dark:text-zinc-400">Loading...</span>
@@ -187,7 +195,7 @@ export default function Navbar() {
                     </li>
                     <li>
                       <Link
-                        href="/settings"
+                        href="/user/settings"
                         onClick={closeDropdown}
                         className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
                         role="menuitem"
