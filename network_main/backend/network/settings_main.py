@@ -268,9 +268,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        # for tests (150/170)
-        'anon': '15000/minute',
-        'user': '17000/minute',
+        'anon': '170/minute',
+        'user': '190/minute',
 
         # custom scopes
         'user_status_update': '40/hour',
