@@ -12,6 +12,11 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=network.settings_api
     command: [ "apibackend", "gunicorn", "network.wsgi:application", "--workers", "4", "--bind", "0.0.0.0:8001", "--access-logfile", "-", "--error-logfile", "-" ]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "4"
     depends_on:
       - db
   admin_panel:
@@ -23,7 +28,12 @@ services:
       - DJANGO_SETTINGS_MODULE=network.settings_main
     expose:
       - 8002
-    command: [ "adminpanel", "gunicorn", "network.wsgi:application", "--workers", "1", "--bind", "0.0.0.0:8002" ]
+    command: [ "adminpanel", "gunicorn", "network.wsgi:application", "--workers", "1", "--bind", "0.0.0.0:8002", "--access-logfile", "-", "--error-logfile", "-" ]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
     depends_on:
       - apibackend
       - db
@@ -32,6 +42,11 @@ services:
     image: redis:8.2.1-alpine3.22
     container_name: redis_db
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
     expose:
       - 6379
   celery:
@@ -43,6 +58,11 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network worker --loglevel=info
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     depends_on:
       - redis
       - apibackend
@@ -55,6 +75,11 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=network.settings_main
     command: celery -A network beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     depends_on:
       - redis
       - apibackend
@@ -67,12 +92,22 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env # add secrets later
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
   nginx:
     image: nginx:1.29.1-alpine-slim
     volumes:
       - ./conf.d:/etc/nginx/conf.d
     ports:
       - 80:80 # use "127.0.0.1:80:80" later
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
     depends_on:
       - apibackend
       - frontend
@@ -89,6 +124,11 @@ services:
     env_file:
       - ./frontend/.env
     command: node server.js
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
     depends_on:
       - apibackend
 
