@@ -67,22 +67,22 @@ export async function GET(req: NextRequest) {
             headers: { Cookie: cookieHeader },
             withCredentials: true,
         });
-        const authRes = await authApi.get('/posts/', { params });
+        const authRes = await authApi.get('/recommendations/posts/', { params });
         return NextResponse.json(authRes.data);
     } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
-            console.log('Auth GET /posts/ 401, refreshing...');
+            console.log('Auth GET /recommendations/posts/ 401, refreshing...');
             const { newAccessCookie, logoutCookies } = await refreshAccessToken(cookieHeader);
 
             if (newAccessCookie) {
-                console.log('Got new access_token, repeat request on /posts/');
+                console.log('Got new access_token, repeat request on /recommendations/posts/');
                 const retryApi = axios.create({
                     baseURL: baseUrl,
                     headers: { Cookie: cookieHeader + '; ' + newAccessCookie },
                     withCredentials: true,
                 });
                 try {
-                    const retryRes = await retryApi.get('/posts/', { params });
+                    const retryRes = await retryApi.get('/recommendations/posts/', { params });
                     const response = NextResponse.json(retryRes.data);
                     response.headers.append('Set-Cookie', newAccessCookie);
                     return response;
@@ -111,19 +111,19 @@ export async function GET(req: NextRequest) {
                         baseURL: baseUrl,
                         withCredentials: false,
                     });
-                    const publicRes = await publicApi.get('/posts/', { params });
+                    const publicRes = await publicApi.get('/recommendations/posts/', { params });
                     const response = NextResponse.json(publicRes.data);
                     logoutCookies.forEach((c) => response.headers.append('Set-Cookie', c));
                     return response;
                 } catch (anonErr: unknown) {
                     if (axios.isAxiosError(anonErr)) {
                         console.error(
-                            'Error with anonymous request /posts/ after logout:',
+                            'Error with anonymous request /recommendations/posts/ after logout:',
                             anonErr.response?.status,
                             anonErr.message
                         );
                     } else {
-                        console.error('Unknown error during /posts/ request', anonErr);
+                        console.error('Unknown error during /recommendations/posts/ request', anonErr);
                     }
                     return NextResponse.json(
                         { error: 'Failed to upload public data of the posts.' },

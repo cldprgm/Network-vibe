@@ -12,19 +12,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { MoreHorizontal, Pencil, Bookmark, Flag, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Bookmark, Flag, Trash, Link as LinkIcon, Send, Check } from "lucide-react";
 
 export default function PostDetailItems({ postData }: { postData: Post }) {
     const [post, setPostData] = useState(postData);
     const { isAuthenticated } = useAuthStore();
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
+    const postContainerRef = useRef<HTMLDivElement>(null);
+
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const shareMenuRef = useRef<HTMLDivElement>(null);
+    const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+    const [shareMenuPos, setShareMenuPos] = useState({ top: 0, left: 0 });
+    const [isCopied, setIsCopied] = useState(false);
 
     const router = useRouter();
 
@@ -89,23 +96,61 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
             ) {
                 setIsMenuOpen(false);
             }
+            if (
+                shareMenuRef.current &&
+                !shareMenuRef.current.contains(event.target as Node)
+            ) {
+                setIsShareMenuOpen(false);
+            }
         };
 
-        if (isMenuOpen) {
+        if (isMenuOpen || isShareMenuOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isMenuOpen]);
+    }, [isMenuOpen, isShareMenuOpen]);
+
+    const toggleShareMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (!isShareMenuOpen && postContainerRef.current) {
+            const containerRect = postContainerRef.current.getBoundingClientRect();
+            const buttonRect = e.currentTarget.getBoundingClientRect();
+
+            setShareMenuPos({
+                top: buttonRect.bottom - containerRect.top + 5,
+                left: buttonRect.left - containerRect.left
+            });
+        }
+        setIsShareMenuOpen(!isShareMenuOpen);
+    };
+
+    const handleCopyLink = async () => {
+        const url = `${window.location.origin}/${post.slug}/`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setIsCopied(true);
+            setTimeout(() => {
+                setIsCopied(false);
+                setIsShareMenuOpen(false);
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    };
 
     return (
         <>
             {showAuthModal && <AuthModalController onCloseAll={() => setShowAuthModal(false)} />}
 
             <div className='mt-2'>
-                <div className="bg-white dark:bg-[var(--background)] rounded-2xl mx-auto w-full overflow-hidden">
+                <div
+                    ref={postContainerRef}
+                    className="bg-white dark:bg-[var(--background)] rounded-2xl mx-auto w-full relative"
+                >
                     <div className="px-4 py-2">
 
                         <div className="flex justify-between items-start mb-3">
@@ -162,7 +207,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 {isMenuOpen && (
                                     <div
                                         ref={menuRef}
-                                        className="absolute right-2 mt-2 w-42 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-600 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
+                                        className="absolute right-2 mt-2 w-52 bg-white dark:bg-zinc-900 rounded-md shadow-xl/30 z-10 ring-2 ring-gray-700 ring-opacity-5 overflow-hidden transform transition-all duration-150 ease-in-out origin-top-right"
                                     >
                                         {post?.is_creator && (
                                             <div>
@@ -171,7 +216,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                                         setIsMenuOpen(false);
                                                         router.push(`/${post.slug}/edit`);
                                                     }}
-                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-green-700 dark:text-green-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-green-700 dark:text-green-200 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left">
                                                     <Pencil className="w-4 h-4 mr-3" />
                                                     Edit
                                                 </button>
@@ -180,17 +225,23 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                                         setIsMenuOpen(false);
                                                         setIsDeleteDialogOpen(true);
                                                     }}
-                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                                    className="cursor-pointer flex items-center px-5 py-3 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left">
                                                     <Trash className="w-4 h-4 mr-3" />
                                                     Delete
                                                 </button>
                                             </div>
                                         )}
-                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button
+                                            disabled
+                                            className="cursor-not-allowed flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left"
+                                        >
                                             <Bookmark className="w-4 h-4 mr-3" />
                                             Save
                                         </button>
-                                        <button className="cursor-pointer flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left">
+                                        <button
+                                            disabled
+                                            className="cursor-not-allowed flex items-center px-5 py-3 text-sm text-gray-700 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-left"
+                                        >
                                             <Flag className="w-4 h-4 mr-3" />
                                             Report
                                         </button>
@@ -214,6 +265,7 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                                 post={post}
                                 onVote={handleVote}
                                 onDelete={handleDeleteVote}
+                                onShareClick={toggleShareMenu}
                             />
 
                             <CommentsSection
@@ -222,6 +274,40 @@ export default function PostDetailItems({ postData }: { postData: Post }) {
                             />
                         </div>
                     </div>
+                    {isShareMenuOpen && (
+                        <div
+                            ref={shareMenuRef}
+                            style={{
+                                top: `${shareMenuPos.top}px`,
+                                left: `${shareMenuPos.left}px`
+                            }}
+                            className="absolute w-48 bg-white dark:bg-zinc-900 rounded-md shadow-xl ring-2 ring-gray-600 dark:ring-gray-700 z-50 overflow-hidden"
+                        >
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyLink();
+                                }}
+                                className="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                            >
+                                {isCopied ? (
+                                    <Check className="w-4 h-4 mr-3 text-green-500" />
+                                ) : (
+                                    <LinkIcon className="w-4 h-4 mr-3" />
+                                )}
+                                {isCopied ? "Copied!" : "Copy link"}
+                            </button>
+
+                            <button
+                                disabled
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center w-full px-4 py-3 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed hover:bg-transparent"
+                            >
+                                <Send className="w-4 h-4 mr-3" />
+                                Send to user
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
             <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)} className="relative z-50">
