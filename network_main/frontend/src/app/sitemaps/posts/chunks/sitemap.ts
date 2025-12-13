@@ -22,22 +22,19 @@ export async function generateSitemaps() {
                 'X-Sitemap-Token': SECRET
             },
         });
-
         if (!res.ok) throw new Error('Failed to fetch count');
-
         const data: SitemapResponse = await res.json();
         const totalSitemaps = Math.ceil(data.count / LIMIT);
-
         return Array.from({ length: totalSitemaps }, (_, i) => ({ id: i }));
     } catch (error) {
-        console.error('Sitemap generation error:', error);
-        return [];
+        console.warn('⚠️ Build time warning: the API is unavailable, we use a stub for the sitemap.');
+
+        return [{ id: 0 }];
     }
 }
 
 export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
     const offset = id * LIMIT;
-
     try {
         const res = await fetch(
             `${API_URL}/api/v1/sitemap/posts/?limit=${LIMIT}&offset=${offset}`, {
