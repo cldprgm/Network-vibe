@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
+Disallow: /submit/
 Disallow: /user/oauth/callback/github/
 Disallow: /user/verify-email/
 Disallow: /user/settings/
