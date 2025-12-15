@@ -1,4 +1,8 @@
 from celery import shared_task
+import requests
+import os
+from urllib.parse import urlparse
+from django.core.files.base import ContentFile
 
 from django.core.mail import send_mail
 from django.conf import settings
@@ -34,3 +38,27 @@ def send_verification_email(user, email, code):
         recipient_list=[email],
         fail_silently=False
     )
+
+
+@shared_task
+def download_social_avatar_task(user_id, avatar_url):
+    try:
+        user = CustomUser.objects.get(id=user_id)
+        if user.avatar and 'default' not in str(user.avatar):
+            return
+
+        response = requests.get(avatar_url, timeout=10)
+        if response.status_code == 200:
+            parsed_url = urlparse(avatar_url)
+            ext = os.path.splitext(parsed_url.path)[1] or '.jpg'
+            filename = f'social_avatar_{user.pk}{ext}'
+            user.avatar.save(
+                filename,
+                ContentFile(response.content),
+                save=True
+            )
+
+    except CustomUser.DoesNotExist:
+        pass
+    except Exception as e:
+        print(f"Error downloading avatar: {e}")
