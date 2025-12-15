@@ -113,20 +113,25 @@ def get_or_create_social_user(
     provider_field: The name of the field in the model (for example, 'google_id' or 'github_id')
     """
     from apps.users.models import CustomUser
+    from apps.users.tasks import download_social_avatar_task
+
+    user = None
 
     filter_kwargs = {provider_field: social_id}
     try:
-        return CustomUser.objects.get(**filter_kwargs)
+        user = CustomUser.objects.get(**filter_kwargs)
     except CustomUser.DoesNotExist:
         pass
 
-    try:
-        user = CustomUser.objects.get(email=email)
-        setattr(user, provider_field, social_id)
-        user.save()
+    if not user:
+        try:
+            user = CustomUser.objects.get(email=email)
+            setattr(user, provider_field, social_id)
+            user.save()
 
-        return user
-    except CustomUser.DoesNotExist:
+        except CustomUser.DoesNotExist:
+            pass
+    if not user:
         if not username:
             username = email.split('@')[0]
 
@@ -139,11 +144,12 @@ def get_or_create_social_user(
             'is_active': True,
             **filter_kwargs
         }
-        if avatar:
-            create_kwargs['avatar'] = avatar
-
         user = CustomUser.objects.create_user(**create_kwargs)
-        return user
+
+    if avatar and user:
+        download_social_avatar_task.delay(user.id, avatar)
+
+    return user
 
 
 def get_github_user_data(session: requests.Session, access_token: str) -> dict:
