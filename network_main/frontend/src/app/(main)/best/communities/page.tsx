@@ -47,6 +47,7 @@ const CommunityListItem = ({ community, rank }: CommunityListItemProps) => {
     return (
         <Link
             href={`/communities/${community.slug}`}
+            prefetch={false}
             className="flex items-center py-3 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors duration-200"
         >
             <div className="flex justify-center items-center font-bold text-sm w-8 text-gray-700 dark:text-gray-300">

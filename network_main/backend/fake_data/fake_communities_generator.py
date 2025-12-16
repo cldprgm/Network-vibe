@@ -37,7 +37,7 @@ try:
         'SELECT id FROM api_network_category WHERE parent_id IS NOT NULL')
     categories_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(100000):
+    for _ in range(5000):
         name = fake.text(max_nb_chars=10) + str(uuid.uuid4().int)[:10]
         slug = unique_slugify(name)
         description = fake.text(max_nb_chars=150)

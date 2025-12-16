@@ -258,7 +258,7 @@ export default function Sidebar() {
                         </li>
                         {isMoreOnNetworkOpen && (
                             <li>
-                                <Link href="/best/communities/" className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                <Link href="/best/communities/" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                     <Star className={clsx("ms-2 w-5 h-5 ", icon)} />
                                     <span className="ms-3">Best Of Network</span>
                                 </Link>
