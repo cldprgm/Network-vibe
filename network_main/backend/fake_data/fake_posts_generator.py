@@ -35,7 +35,7 @@ try:
     cursor.execute('SELECT id FROM api_network_community')
     community_ids = [row[0] for row in cursor.fetchall()]
 
-    for _ in range(100000):
+    for _ in range(10000):
         title = fake.text(max_nb_chars=50)
         slug = unique_slugify(title)
         description = fake.text(max_nb_chars=150)
@@ -46,7 +46,7 @@ try:
         community_id = random.choice(community_ids)
         sum_rating = 0
         comment_count = 0
-        score = round(random.uniform(-5, 25), 2)
+        score = round(random.uniform(-2, 1), 2)
 
         cursor.execute(
             """

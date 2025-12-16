@@ -372,6 +372,59 @@ class TestPostView:
             user=test_user
         ).exists()
 
+    def test_slug_generated_on_create(self, authenticated_client, community, test_user):
+        data = {
+            'author': test_user,
+            'title': 'Slug Generation Test',
+            'community_obj': community.id,
+            'status': 'DF'
+        }
+        response = authenticated_client.post(self.url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        post = Post.objects.get(title='Slug Generation Test')
+        assert post.slug == 'slug-generation-test'
+
+    def test_slug_frozen_when_published(self, api_client, community, test_user):
+        api_client.force_authenticate(user=test_user)
+
+        post = Post.objects.create(
+            author=test_user,
+            community=community,
+            title="Published Article",
+            status='PB'
+        )
+        old_slug = post.slug
+
+        url = reverse('post-detail', kwargs={'slug': post.slug})
+        data = {'title': 'Updated Article Title'}
+
+        response = api_client.patch(url, data)
+        assert response.status_code == status.HTTP_200_OK
+
+        post.refresh_from_db()
+        assert post.title == 'Updated Article Title'
+        assert post.slug == old_slug
+
+    def test_slug_unique_generation(self, authenticated_client, community, test_user):
+        data = {
+            'author': test_user,
+            'title': 'Unique Title',
+            'community_obj': community.id
+        }
+
+        response1 = authenticated_client.post(self.url, data)
+        assert response1.status_code == status.HTTP_201_CREATED
+        slug1 = response1.data['slug']
+
+        response2 = authenticated_client.post(self.url, data)
+        assert response2.status_code == status.HTTP_201_CREATED
+        slug2 = response2.data['slug']
+
+        assert slug1 != slug2
+        assert 'unique-title' in slug1
+        assert 'unique-title' in slug2
+
 
 @pytest.mark.django_db
 class TestCommentView:

@@ -294,6 +294,55 @@ class TestGoogleLogin:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data['error'] == "Incomplete data from Google"
 
+    def test_google_avatar_task_triggered(self, api_client, mocker):
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
+        google_payload = {
+            'email': 'avatar_user@example.com',
+            'sub': '88888888',
+            'name': 'Avatar User',
+            'picture': 'https://lh3.googleusercontent.com/some_avatar.jpg'
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        mock_task = mocker.patch(
+            'apps.users.tasks.download_social_avatar_task.delay')
+
+        data = {'code': 'code_with_avatar'}
+        response = api_client.post(self.url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+
+        user = CustomUser.objects.get(email='avatar_user@example.com')
+
+        mock_task.assert_called_once_with(
+            user.id, 'https://lh3.googleusercontent.com/some_avatar.jpg')
+
+    def test_google_no_avatar_no_task(self, api_client, mocker):
+        mocker.patch(
+            'apps.users.views.get_google_tokens',
+            return_value={'id_token': 'dummy_token'}
+        )
+        google_payload = {
+            'email': 'no_avatar@example.com',
+            'sub': '7777777',
+            'name': 'Ghost User',
+            'picture': None
+        }
+        mocker.patch('apps.users.views.jwt.decode',
+                     return_value=google_payload)
+
+        mock_task = mocker.patch(
+            'apps.users.tasks.download_social_avatar_task.delay')
+
+        data = {'code': 'code_no_avatar'}
+        api_client.post(self.url, data)
+
+        mock_task.assert_not_called()
+
 
 @pytest.mark.django_db
 class TestGithubLogin:
@@ -485,6 +534,33 @@ class TestGithubLogin:
 
         user.refresh_from_db()
         assert user.github_id == '55555'
+
+    def test_github_avatar_task_triggered(self, api_client, mocker):
+        mocker.patch('apps.users.views.get_github_tokens',
+                     return_value={'access_token': 'gh_token_img'})
+
+        github_user_payload = {
+            'id': 303030,
+            'login': 'gh_img_user',
+            'email': 'gh_img@example.com',
+            'name': 'Github Img',
+            'avatar_url': 'https://avatars.githubusercontent.com/u/303030?v=4'
+        }
+        mocker.patch('apps.users.views.get_github_user_data',
+                     return_value=github_user_payload)
+
+        mock_task = mocker.patch(
+            'apps.users.tasks.download_social_avatar_task.delay')
+
+        data = {'code': 'gh_code_avatar'}
+        api_client.post(self.url, data)
+
+        user = CustomUser.objects.get(email='gh_img@example.com')
+
+        mock_task.assert_called_once_with(
+            user.id,
+            'https://avatars.githubusercontent.com/u/303030?v=4'
+        )
 
 
 @pytest.mark.django_db
