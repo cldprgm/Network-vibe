@@ -185,6 +185,7 @@ export default function Navbar() {
                     <li>
                       <Link
                         href={`/user/${user.slug}`}
+                        prefetch={false}
                         onClick={closeDropdown}
                         className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
                         role="menuitem"
@@ -196,6 +197,7 @@ export default function Navbar() {
                     <li>
                       <Link
                         href="/user/settings"
+                        prefetch={false}
                         onClick={closeDropdown}
                         className="group flex items-center px-7 py-3 text-sm text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700 transition-colors duration-150"
                         role="menuitem"
