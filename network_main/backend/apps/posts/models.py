@@ -132,7 +132,17 @@ class Post(models.Model):
         verbose_name_plural = 'Posts'
 
     def save(self, *args, **kwargs):
-        # fix self.title != Post.objects.get(pk=self.pk).title
+        # if this is an update to an existing post
+        if self.pk:
+            if self.status == 'DF':
+                try:
+                    old_instance = Post.objects.get(pk=self.pk)
+                    if self.title != old_instance.title:
+                        self.slug = unique_slugify(self, self.title)
+                except Post.DoesNotExist:
+                    pass
+
+        # if this is post create(or slug is empty)
         if not self.slug:
             self.slug = unique_slugify(self, self.title)
         super().save(*args, **kwargs)
