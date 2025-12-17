@@ -12,6 +12,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
+from django.conf import settings
 from django_redis import get_redis_connection
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
@@ -89,20 +90,30 @@ class SetJWTCookiesMixin():
             },
             status=status.HTTP_200_OK
         )
+
+        access_token_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(
+        )
+        refresh_token_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(
+        )
+
         response.set_cookie(key='access_token',
                             value=access_token,
                             httponly=True,
                             domain=None,
                             path='/',
                             secure=True,
-                            samesite='Lax')
+                            samesite='Lax',
+                            max_age=access_token_lifetime,
+                            expires=access_token_lifetime)
         response.set_cookie(key='refresh_token',
                             value=str(refresh),
                             httponly=True,
                             domain=None,
                             path='/',
                             secure=True,
-                            samesite='Lax')
+                            samesite='Lax',
+                            max_age=refresh_token_lifetime,
+                            expires=refresh_token_lifetime)
         return response
 
 
@@ -318,13 +329,19 @@ class CookieTokenRefreshView(TokenRefreshView):
                 {'message': 'Access token refreshed successfully'},
                 status=status.HTTP_200_OK
             )
+
+            access_token_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(
+            )
+
             response.set_cookie(key='access_token',
                                 value=access_token,
                                 httponly=True,
                                 domain=None,
                                 path='/',
                                 secure=True,
-                                samesite='Lax')
+                                samesite='Lax',
+                                max_age=access_token_lifetime,
+                                expires=access_token_lifetime)
             return response
         except TokenError:
             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
