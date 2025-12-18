@@ -169,7 +169,6 @@ class TestPostRecommendations:
             object_id=post.id,
             user=test_user,
             value=1,
-            ip_address='127.0.0.1'
         )
 
         request = authenticated_client.get(
@@ -195,7 +194,6 @@ class TestPostRecommendations:
             object_id=post.id,
             user=test_user,
             value=1,
-            ip_address='127.0.0.1'
         )
 
         request = authenticated_client.get(
@@ -241,7 +239,6 @@ class TestPostRecommendations:
             object_id=post.id,
             user=test_user,
             value=1,
-            ip_address='127.0.0.1'
         )
 
         request = authenticated_client.get(

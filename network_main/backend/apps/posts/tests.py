@@ -79,7 +79,6 @@ def comment(test_user, post):
         post=post,
         author=test_user,
         content='testcomment',
-
     )
 
 
@@ -359,7 +358,6 @@ class TestPostView:
             content_type=ContentType.objects.get_for_model(Post),
             object_id=post.id,
             user=test_user,
-            ip_address='192.168.0.1',
             value=1
         )
 
@@ -567,7 +565,6 @@ class TestCommentView:
             content_type=ContentType.objects.get_for_model(Comment),
             object_id=comment.id,
             user=test_user,
-            ip_address='192.168.0.1',
             value=1
         )
 
@@ -617,7 +614,6 @@ class TestAnnotations:
             content_type=ContentType.objects.get_for_model(Post),
             object_id=post.id,
             user=test_user,
-            ip_address='192.168.0.1',
             value=1
         )
 
@@ -632,7 +628,6 @@ class TestAnnotations:
         Rating.objects.create(
             content_type=ContentType.objects.get_for_model(Post),
             object_id=post.id,
-            ip_address='192.168.1.1',
             user=new_user,
             value=1
         )
@@ -651,7 +646,6 @@ class TestAnnotations:
             content_type=ContentType.objects.get_for_model(Comment),
             object_id=comment.id,
             user=test_user,
-            ip_address='192.168.0.1',
             value=1
         )
 
@@ -666,7 +660,6 @@ class TestAnnotations:
         Rating.objects.create(
             content_type=ContentType.objects.get_for_model(Comment),
             object_id=comment.id,
-            ip_address='192.168.1.1',
             user=new_user,
             value=1
         )

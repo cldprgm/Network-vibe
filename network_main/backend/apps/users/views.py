@@ -51,9 +51,9 @@ from .throttles import (
 )
 
 
-def email_key(group, request):
-    email = request.data.get("email")
-    return (email or '').lower()
+# def email_key(group, request):
+#     email = request.data.get("email")
+#     return (email or '').lower()
 
 
 class CustomUserView(RetrieveAPIView):

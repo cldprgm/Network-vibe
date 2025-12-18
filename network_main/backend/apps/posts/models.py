@@ -154,11 +154,6 @@ class Post(models.Model):
 class Comment(MPTTModel):
     """Tree Comment model"""
 
-    STATUS_OPTIONS = (
-        ("DF", "Draft"),
-        ("PB", "Published"),
-    )
-
     post = models.ForeignKey(
         to=Post,
         on_delete=models.CASCADE,
@@ -172,10 +167,6 @@ class Comment(MPTTModel):
     content = models.TextField(max_length=500)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
-    # delete status later
-    status = models.CharField(
-        max_length=10, choices=STATUS_OPTIONS, default='PB')
-    #
     sum_rating = models.IntegerField(default=0, verbose_name='Rating sum')
     parent = TreeForeignKey(
         'self',

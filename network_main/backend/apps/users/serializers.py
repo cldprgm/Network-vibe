@@ -33,6 +33,8 @@ class CustomUserCommunitiesSerializer(CommunityBaseSerializer):
     class Meta(CommunityBaseSerializer.Meta):
         fields = CommunityBaseSerializer.Meta.fields
 
+    # fix later:
+    #
     # categories not needed here
     def __init__(self, instance=None, data=..., **kwargs):
         super().__init__(instance, data, **kwargs)
