@@ -8,5 +8,5 @@ Disallow: /user/verify-email/
 Disallow: /user/settings/
 Disallow: /*?query=
 
-Host: https://network-vibe.fun
-Sitemap: https://network-vibe.fun/sitemap.xml
+Host: https://www.network-vibe.fun
+Sitemap: https://www.network-vibe.fun/sitemap.xml

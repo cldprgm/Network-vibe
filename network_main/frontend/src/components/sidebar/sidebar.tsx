@@ -22,12 +22,14 @@ import {
     Code,
     Scale,
     Shield,
-    X
+    X,
+    Snowflake
 } from "lucide-react";
 import "@/styles/SidebarCustomScrollbar.css"
 import { fetchCommunitiesForUserProfile } from "@/services/api";
 import { useAuthStore } from "@/zustand_store/authStore";
 import { useSidebarStore } from "@/zustand_store/sidebarStore";
+import { useSnowStore } from "@/zustand_store/snowStore"
 
 export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(true);
@@ -37,6 +39,8 @@ export default function Sidebar() {
     const { user } = useAuthStore();
 
     const { isMobileOpen, closeMobile } = useSidebarStore();
+
+    const { isSnowing, toggleSnow } = useSnowStore();
 
     const [mounted, setMounted] = useState(false);
 
@@ -187,6 +191,21 @@ export default function Sidebar() {
                                 <List className={clsx("ms-2 w-5 h-5 ", icon)} />
                                 <span className="ms-3">All(Not working)</span>
                             </Link>
+                        </li>
+                        <hr className="border-[var(--border)] mt-4 mb-4"></hr>
+
+                        <li>
+                            <button
+                                onClick={toggleSnow}
+                                className={clsx("w-full flex items-center p-2 text-gray-900 rounded-lg dark:text-white group cursor-pointer", hoverBg)}
+                            >
+                                <Snowflake className={clsx(
+                                    "ms-2 w-5 h-5 transition-colors",
+                                    icon,
+                                    isSnowing && "text-blue-400 dark:text-blue-300 fill-blue-100"
+                                )} />
+                                <span className="ms-3">Let it snow</span>
+                            </button>
                         </li>
                         <hr className="border-[var(--border)] mt-4 mb-4"></hr>
 
