@@ -15,13 +15,18 @@ class Rating(models.Model):
     content_object = GenericForeignKey('content_type', 'object_id')
 
     user = models.ForeignKey(
-        to=User, on_delete=models.CASCADE, verbose_name='User')
+        to=User,
+        on_delete=models.CASCADE,
+        verbose_name='User'
+    )
     value = models.IntegerField(
-        choices=[(1, 'upvote'), (-1, 'downvote')], verbose_name='Rating value')
+        choices=[(1, 'upvote'), (-1, 'downvote')],
+        verbose_name='Rating value'
+    )
     time_created = models.DateTimeField(
-        auto_now_add=True, verbose_name='Time created')
-    # Delete this later
-    ip_address = models.GenericIPAddressField(verbose_name='IP address')
+        auto_now_add=True,
+        verbose_name='Time created'
+    )
 
     class Meta:
         db_table = 'api_network_rating'

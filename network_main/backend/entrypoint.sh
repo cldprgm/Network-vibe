@@ -7,9 +7,6 @@ if [ "$1" = "apibackend" ]; then
   echo "--> API: Running DB migrations..."
   python manage.py makemigrations
   python manage.py migrate
-  # only for debug toolbar(delete later)
-  python manage.py collectstatic --verbosity=2 --noinput
-  #
 
   echo "--> API: Loading fixtures..." 
   python manage.py loaddata fixtures/categories.json
