@@ -1,5 +1,6 @@
 import Sidebar from "@/components/sidebar/sidebar";
 import Navbar from "@/components/header/navbar";
+import SnowOverlay from "@/components/SnowOverlay";
 
 export default function MainLayout({
     children,
@@ -8,6 +9,7 @@ export default function MainLayout({
 }>) {
     return (
         <>
+            <SnowOverlay />
             <Navbar />
             <div className="flex min-h-screen">
                 <Sidebar />
