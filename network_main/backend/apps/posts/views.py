@@ -98,6 +98,7 @@ class PostViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('You cannot delete this post.')
         instance.delete()
 
+    # refactor later
     @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='ratings')
     def ratings(self, request, slug=None):
         post = self.get_object()
@@ -178,6 +179,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('You cannot edit this comment.')
         serializer.save()
 
+    # refactor later
     @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticatedOrReadOnly], url_path='ratings')
     def ratings(self, request, pk, slug=None):
         comment = self.get_object()
@@ -227,7 +229,7 @@ class CommentRepliesViewSet(mixins.ListModelMixin,
         parent_id = self.kwargs['pk']
         return (
             Comment.objects
-            .filter(parent_id=parent_id, status='PB')
+            .filter(parent_id=parent_id)
             .select_related('author')
             .with_ratings(self.request.user)
             .order_by('time_created')

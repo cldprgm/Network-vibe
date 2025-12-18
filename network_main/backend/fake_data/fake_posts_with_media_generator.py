@@ -108,7 +108,7 @@ try:
         try:
             image_content, w, h = generate_image_data(1080, 1080)
 
-            aspect_ratio = float(w) / float(h)  # будет 1.0
+            aspect_ratio = float(w) / float(h)
 
             filename = f"{uuid4().hex}.jpg"
             db_path = f"{upload_to_prefix}/{filename}"

@@ -32,19 +32,18 @@ try:
     for _ in range(num_ratings):
         user_id = random.choice(author_ids)
         value = 1
-        ip_address = fake.ipv4()
         time_created = fake.date_time_between(start_date='-1y', end_date='now')
 
         post_content_type_id = 14
 
         cursor.execute(
             """
-            INSERT INTO api_network_rating (content_type_id, object_id, user_id, value, time_created, ip_address)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO api_network_rating (content_type_id, object_id, user_id, value, time_created)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
             """,
             (post_content_type_id, post_id, user_id,
-             value, time_created, ip_address)
+             value, time_created)
         )
 
     conn.commit()

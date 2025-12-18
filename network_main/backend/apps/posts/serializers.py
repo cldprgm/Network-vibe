@@ -210,7 +210,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
     def validate_title(self, value):
         return clean(value, tags=[], attributes={}, strip=True)
 
-    # use it after adding WYSIWYG
+    # something will need to be done about it
     #
     # def validate_description(self, value):
     #     return clean(value, tags=[], attributes={}, strip=True)
@@ -280,7 +280,6 @@ class RatingSerializer(serializers.ModelSerializer):
         attrs['content_type'] = content_type
         attrs['object_id'] = object_id
         attrs['user'] = request.user
-        attrs['ip_address'] = request.META.get('REMOTE_ADDR')
         return attrs
 
     def create(self, validated_data):
@@ -290,7 +289,6 @@ class RatingSerializer(serializers.ModelSerializer):
             user=validated_data['user'],
             defaults={
                 'value': validated_data['value'],
-                'ip_address': validated_data['ip_address'],
             }
         )
         self.created = created
