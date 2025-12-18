@@ -20,7 +20,11 @@ export default function SnowOverlay() {
             pointerEvents: 'none'
         }}>
             <ReactSnowfall
-                snowflakeCount={200}
+                color="#ffffff"
+
+                radius={[0.5, 1.5]}
+
+                snowflakeCount={400}
                 style={{ position: 'absolute' }}
             />
         </div>
