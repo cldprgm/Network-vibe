@@ -1,3 +1,4 @@
+# build stage
 FROM python:3.13.7-slim-bookworm as builder
 
 WORKDIR /usr/src/app
@@ -13,6 +14,7 @@ RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
 
+# final stage
 FROM python:3.13.7-slim-bookworm
 
 WORKDIR /usr/src/apibackend
@@ -32,5 +34,7 @@ COPY . .
 
 RUN sed -i 's/\r$//g' /usr/src/apibackend/entrypoint.sh
 RUN chmod +x /usr/src/apibackend/entrypoint.sh
+
+USER nonroot
 
 ENTRYPOINT [ "./entrypoint.sh" ]
