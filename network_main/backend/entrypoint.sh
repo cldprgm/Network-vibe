@@ -5,7 +5,6 @@ if [ "$1" = "apibackend" ]; then
   shift
 
   echo "--> API: Running DB migrations..."
-  python manage.py makemigrations
   python manage.py migrate
 
   echo "--> API: Loading fixtures..." 

@@ -46,6 +46,7 @@ from .serializers import (
 )
 from .throttles import (
     RegistrationThrottle,
+    LoginThrottle,
     EmailVerifyThrottle,
     UserStatusUpdateThrottle
 )
@@ -276,6 +277,7 @@ class VerifyEmailView(SetJWTCookiesMixin, APIView):
 
 class LoginView(SetJWTCookiesMixin, APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
     authentication_classes = []
 
     def post(self, request):

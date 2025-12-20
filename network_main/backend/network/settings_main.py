@@ -256,7 +256,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'drf_orjson_renderer.renderers.ORJSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_PARSER_CLASSES': [
         'drf_orjson_renderer.parsers.ORJSONParser',
@@ -274,6 +273,7 @@ REST_FRAMEWORK = {
         # custom scopes
         'user_status_update': '40/hour',
         'registration': '5/minute',
+        'login': '10/minute',
         'email_verify': '7/minute',
         'search': '40/minute',
         'sitemap': '70/minute',
@@ -282,6 +282,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+if DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append(
+        'rest_framework.renderers.BrowsableAPIRenderer')
 
 
 SIMPLE_JWT = {

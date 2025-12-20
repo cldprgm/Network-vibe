@@ -6,6 +6,11 @@ class RegistrationThrottle(AnonRateThrottle):
     scope = 'registration'
 
 
+class LoginThrottle(AnonRateThrottle):
+    """Limit is defined in settings.py by scope='login'"""
+    scope = 'login'
+
+
 class EmailVerifyThrottle(AnonRateThrottle):
     """Limit is defined in settings.py by scope='email_verify'"""
     scope = 'email_verify'
