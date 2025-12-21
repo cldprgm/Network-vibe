@@ -1,11 +1,6 @@
 <a id="readme-top"></a>
 
 <div align="center">
-  <a href="https://github.com/cldprgm/Network-vibe">
-    <img src="network_main/frontend/public/favicon.svg" alt="Logo" width="150" height="auto" />
-  </a>
-  <br />
-  <br />
   <!-- Badges -->
   <a href="./LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
@@ -19,6 +14,11 @@
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Nginx-1.29-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
 
+  <br />
+  <br />
+  <a href="https://github.com/cldprgm/Network-vibe">
+    <img src="network_main/frontend/public/favicon.svg" alt="Logo" width="150" height="auto" />
+  </a>
   <br />
   <br />
 
