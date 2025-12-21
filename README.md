@@ -1,6 +1,14 @@
 <a id="readme-top"></a>
 
 <div align="center">
+  
+  <a href="https://github.com/cldprgm/Network-vibe">
+    <img src="network_main/frontend/public/favicon.svg" alt="Logo" width="150" height="auto" />
+  </a>
+  <br />
+  <br />
+
+  <h1 align="center">Network</h1>
   <!-- Badges -->
   <a href="./LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
@@ -16,13 +24,6 @@
 
   <br />
   <br />
-  <a href="https://github.com/cldprgm/Network-vibe">
-    <img src="network_main/frontend/public/favicon.svg" alt="Logo" width="150" height="auto" />
-  </a>
-  <br />
-  <br />
-
-  <h1 align="center">Network</h1>
 
   <p align="center">
     Full‑stack application with <strong>Backend-first</strong> architecture.
