@@ -5,7 +5,7 @@ if [ "$1" = "apibackend" ]; then
   shift
 
   echo "--> API: Running DB migrations..."
-  python manage.py migrate
+  python manage.py migrate --settings=network.settings_main
 
   echo "--> API: Loading fixtures..." 
   python manage.py loaddata fixtures/categories.json
