@@ -16,6 +16,7 @@ from PIL import Image, ImageFile, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 
 import os
+from functools import partial
 
 from apps.communities.models import Community
 from apps.ratings.models import Rating
@@ -215,7 +216,7 @@ class Media(models.Model):
             FileExtensionValidator(
                 allowed_extensions=sum(MEDIA_EXTENSIONS.values(), [])
             ),
-            validate_file_size,
+            partial(validate_file_size, max_file_size_mb=10),
         ],
         verbose_name='File'
     )

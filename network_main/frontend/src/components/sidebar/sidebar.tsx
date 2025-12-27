@@ -317,9 +317,9 @@ export default function Sidebar() {
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
+                                    <Link href="https://github.com/cldprgm/Network-vibe" prefetch={false} className={clsx("flex items-center p-2 text-gray-900 rounded-lg dark:text-white group", hoverBg)}>
                                         <Code className={clsx("ms-2 w-5 h-5 ", icon)} />
-                                        <span className="ms-3">Source Code(Not working)</span>
+                                        <span className="ms-3">Source Code</span>
                                     </Link>
                                 </li>
                             </>
