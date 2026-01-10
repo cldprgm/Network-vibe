@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid slug provided' }, { status: 400 });
     }
 
+    const saveSlug = encodeURIComponent(slug);
+
     const cookieHeader = req.headers.get('cookie') || '';
 
     try {
@@ -68,7 +70,7 @@ export async function GET(req: NextRequest) {
             headers: { Cookie: cookieHeader },
             withCredentials: true,
         });
-        const authRes = await authApi.get(`/posts/${slug}/`);
+        const authRes = await authApi.get(`/posts/${saveSlug}/`);
         return NextResponse.json(authRes.data);
     } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -83,7 +85,7 @@ export async function GET(req: NextRequest) {
                     withCredentials: true,
                 });
                 try {
-                    const retryRes = await retryApi.get(`/posts/${slug}/`);
+                    const retryRes = await retryApi.get(`/posts/${saveSlug}/`);
                     const response = NextResponse.json(retryRes.data);
                     response.headers.append('Set-Cookie', newAccessCookie);
                     return response;
@@ -114,7 +116,7 @@ export async function GET(req: NextRequest) {
                         baseURL: baseUrl,
                         withCredentials: false,
                     });
-                    const publicRes = await publicApi.get(`/posts/${slug}/`);
+                    const publicRes = await publicApi.get(`/posts/${saveSlug}/`);
                     const finalResponse = NextResponse.json(publicRes.data);
                     logoutCookies.forEach((c) => finalResponse.headers.append('Set-Cookie', c));
                     return finalResponse;
