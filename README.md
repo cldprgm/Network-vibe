@@ -207,52 +207,52 @@ In the dev environment `.env.dev` files are used, in prod — `.env`.
   <summary><strong>Backend Variables (.env)</strong> &mdash; <em>Click to expand</em></summary>
 
 ```bash
-export DEBUG="False" # Enables/disables Django DEBUG mode (affects storages, static/media, etc.)
-export SECRET_KEY="django-secret-key" # Django secret key
-export ALLOWED_HOSTS="domain localhost 127.0.0.1 apibackend" # Allowed hosts (space-separated)
-export CORS_ALLOWED_ORIGINS="https://domain http://localhost:3000 http://frontend:3000 http://127.0.0.1:3000" # CORS origins (space-separated)
-export CSRF_TRUSTED_ORIGINS="https://domain http://localhost:8001 http://frontend:3000 http://localhost:3000" # CSRF trusted origins (space-separated)
+DEBUG="False" # Enables/disables Django DEBUG mode (affects storages, static/media, etc.)
+SECRET_KEY="django-secret-key" # Django secret key
+ALLOWED_HOSTS="domain localhost 127.0.0.1 apibackend" # Allowed hosts (space-separated)
+CORS_ALLOWED_ORIGINS="https://domain http://localhost:3000 http://frontend:3000 http://127.0.0.1:3000" # CORS origins (space-separated)
+CSRF_TRUSTED_ORIGINS="https://domain http://localhost:8001 http://frontend:3000 http://localhost:3000" # CSRF trusted origins (space-separated)
 
-export DB_ENGINE="django.db.backends.postgresql" # Django DB backend
-export DB_NAME="network_db" # DB Name
-export DB_USER="postgres_user" # DB User
-export DB_PASSWORD="postgres_password" # DB Password
-export DB_HOST="db" # DB Host
-export DB_PORT="5432" # DB Port
+DB_ENGINE="django.db.backends.postgresql" # Django DB backend
+DB_NAME="network_db" # DB Name
+DB_USER="postgres_user" # DB User
+DB_PASSWORD="postgres_password" # DB Password
+DB_HOST="db" # DB Host
+DB_PORT="5432" # DB Port
 
-export POSTGRES_USER="postgres_user" # Created Postgres user (container)
-export POSTGRES_PASSWORD="postgres_password" # Postgres password (container)
-export POSTGRES_DB="network_db" # Postgres DB name (container)
+POSTGRES_USER="postgres_user" # Created Postgres user (container)
+POSTGRES_PASSWORD="postgres_password" # Postgres password (container)
+POSTGRES_DB="network_db" # Postgres DB name (container)
 
-export FRONTEND_VERIFICATION_URL="http://localhost:3000/user/verify-email" # URL for email verification (frontend)
-export SITEMAP_SECRET_TOKEN="secret-sitemap-key-123" # Token for sitemap endpoints (must match the token on frontend)
+FRONTEND_VERIFICATION_URL="http://localhost:3000/user/verify-email" # URL for email verification (frontend)
+SITEMAP_SECRET_TOKEN="secret-sitemap-key-123" # Token for sitemap endpoints (must match the token on frontend)
 
-export REDIS_URL="redis://redis:6379/1" # Redis cache URL (django-redis)
-export CELERY_BROKER_URL="redis://redis:6379/0" # Celery broker
-export CELERY_RESULT_BACKEND="redis://redis:6379/0" # Celery results backend
+REDIS_URL="redis://redis:6379/1" # Redis cache URL (django-redis)
+CELERY_BROKER_URL="redis://redis:6379/0" # Celery broker
+CELERY_RESULT_BACKEND="redis://redis:6379/0" # Celery results backend
 
-export EMAIL_HOST="smtp.gmail.com" # SMTP host 
-export EMAIL_PORT="587" # SMTP port 
-export EMAIL_USE_SSL="True" # SMTP SSL 
-export EMAIL_USE_TLS="False" # SMTP TLS 
-export EMAIL_HOST_USER="smtp_email" # SMTP login 
-export EMAIL_HOST_PASSWORD="smtp_password" # SMTP password 
-export DEFAULT_FROM_EMAIL="smtp_email" # From address 
+EMAIL_HOST="smtp.gmail.com" # SMTP host 
+EMAIL_PORT="587" # SMTP port 
+EMAIL_USE_SSL="True" # SMTP SSL 
+EMAIL_USE_TLS="False" # SMTP TLS 
+EMAIL_HOST_USER="smtp_email" # SMTP login 
+EMAIL_HOST_PASSWORD="smtp_password" # SMTP password 
+DEFAULT_FROM_EMAIL="smtp_email" # From address 
 
-export GOOGLE_OAUTH2_CLIENT_ID="CLIENT_ID" # Google OAuth client id 
-export GOOGLE_OAUTH2_SECRET_ID="SECRET_ID" # Google OAuth client secret 
-export GOOGLE_OAUTH2_REDIRECT_URI="http://localhost:3000" # Google redirect URI 
+GOOGLE_OAUTH2_CLIENT_ID="CLIENT_ID" # Google OAuth client id 
+GOOGLE_OAUTH2_SECRET_ID="SECRET_ID" # Google OAuth client secret 
+GOOGLE_OAUTH2_REDIRECT_URI="http://localhost:3000" # Google redirect URI 
 
-export GITHUB_OAUTH2_CLIENT_ID="CLIENT_ID" # GitHub OAuth client id 
-export GITHUB_OAUTH2_SECRET_ID="SECRET_ID" # GitHub OAuth client secret 
-export GITHUB_OAUTH2_REDIRECT_URI="http://localhost:3000/user/oauth/callback/github" # GitHub redirect URI 
+GITHUB_OAUTH2_CLIENT_ID="CLIENT_ID" # GitHub OAuth client id 
+GITHUB_OAUTH2_SECRET_ID="SECRET_ID" # GitHub OAuth client secret 
+GITHUB_OAUTH2_REDIRECT_URI="http://localhost:3000/user/oauth/callback/github" # GitHub redirect URI 
 
-export AWS_ACCESS_KEY_ID="s3_access_key" # S3 access key (needed if DEBUG=false)
-export AWS_SECRET_ACCESS_KEY="s3_secret_key" # S3 secret key (needed if DEBUG=false)
-export AWS_STORAGE_BUCKET_NAME="s3_bucket_name" # S3 bucket (needed if DEBUG=false)
-export AWS_S3_REGION_NAME="s3_region_name" # S3 region (needed if DEBUG=false)
-export AWS_S3_ENDPOINT_URL="s3_endpoint_url" # S3 endpoint (S3-compatible) (needed if DEBUG=false)
-export AWS_PUBLIC_DOMAIN="public_domain" # Public domain for STATIC_URL/MEDIA_URL (needed if DEBUG=false)
+AWS_ACCESS_KEY_ID="s3_access_key" # S3 access key (needed if DEBUG=false)
+AWS_SECRET_ACCESS_KEY="s3_secret_key" # S3 secret key (needed if DEBUG=false)
+AWS_STORAGE_BUCKET_NAME="s3_bucket_name" # S3 bucket (needed if DEBUG=false)
+AWS_S3_REGION_NAME="s3_region_name" # S3 region (needed if DEBUG=false)
+AWS_S3_ENDPOINT_URL="s3_endpoint_url" # S3 endpoint (S3-compatible) (needed if DEBUG=false)
+AWS_PUBLIC_DOMAIN="public_domain" # Public domain for STATIC_URL/MEDIA_URL (needed if DEBUG=false)
 ```
 </details>
 
@@ -260,18 +260,18 @@ export AWS_PUBLIC_DOMAIN="public_domain" # Public domain for STATIC_URL/MEDIA_UR
   <summary><strong>Frontend Variables (.env)</strong> &mdash; <em>Click to expand</em></summary>
 
 ```bash
-export NEXT_PUBLIC_SITE_URL="http://ip_address" # Public site URL
-export NEXT_PUBLIC_API_BASE_URL="http://ip_address/api/v1" # Base API URL for the client
-export NEXT_PUBLIC_API_ASSETS_URL="https://s3_bucket_name.s3_endpoint_url" # Media/assets base URL
-export NEXT_PUBLIC_API_BASE_CONTAINER_URL="http://apibackend:8001" # API URL inside docker network
-export SITEMAP_SECRET_TOKEN="secret-sitemap-key-123" # Token for sitemap/preview scenarios (must match the token on backend)
+NEXT_PUBLIC_SITE_URL="http://ip_address" # Public site URL
+NEXT_PUBLIC_API_BASE_URL="http://ip_address/api/v1" # Base API URL for the client
+NEXT_PUBLIC_API_ASSETS_URL="https://s3_bucket_name.s3_endpoint_url" # Media/assets base URL
+NEXT_PUBLIC_API_BASE_CONTAINER_URL="http://apibackend:8001" # API URL inside docker network
+SITEMAP_SECRET_TOKEN="secret-sitemap-key-123" # Token for sitemap/preview scenarios (must match the token on backend)
 
-export AWS_S3_ENDPOINT_URL="s3_endpoint_url" # S3 endpoint for remote image origins
-export AWS_STORAGE_BUCKET_NAME="s3_bucket_name" # Bucket for remote image origins
-export AWS_PUBLIC_DOMAIN="public_domain" # Public domain for remote image origins
+AWS_S3_ENDPOINT_URL="s3_endpoint_url" # S3 endpoint for remote image origins
+AWS_STORAGE_BUCKET_NAME="s3_bucket_name" # Bucket for remote image origins
+AWS_PUBLIC_DOMAIN="public_domain" # Public domain for remote image origins
 
-export NEXT_PUBLIC_GOOGLE_CLIENT_ID="CLIENT_ID" # Google OAuth client id (frontend)
-export NEXT_PUBLIC_GITHUB_CLIENT_ID="CLIENT_ID" # GitHub OAuth client id (frontend)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="CLIENT_ID" # Google OAuth client id (frontend)
+NEXT_PUBLIC_GITHUB_CLIENT_ID="CLIENT_ID" # GitHub OAuth client id (frontend)
 ```
 </details>
 
