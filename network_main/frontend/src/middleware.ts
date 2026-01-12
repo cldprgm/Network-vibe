@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
                             secure: true, // false on localhost
                             sameSite: 'lax',
                             path: '/',
-                            maxAge: 2 * 60
+                            maxAge: 15 * 60
                         });
 
                         response.headers.set('Cookie', `access_token=${newAccessToken}; refresh_token=${refreshToken}`);
