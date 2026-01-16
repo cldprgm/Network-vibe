@@ -11,6 +11,7 @@ from apps.ratings.models import Rating
 from apps.services.utils import validate_magic_mime, validate_file_size, validate_files_length
 
 from .models import Post, Comment, Media
+from .tasks import start_compression_for_post_media
 
 ALLOWED_MIME_TYPES = {
     'image': ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -227,6 +228,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
         post = Post.objects.create(**validated_data)
         for file in media_files:
             Media.objects.create(post=post, file=file)
+        start_compression_for_post_media(post.id)
         return post
 
     def update(self, instance, validated_data):
@@ -237,6 +239,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
         if media_files:
             for file in media_files:
                 Media.objects.create(post=post, file=file)
+            start_compression_for_post_media(post.id)
         if deleted_media_ids:
             Media.objects.filter(id__in=deleted_media_ids, post=post).delete()
         return post
