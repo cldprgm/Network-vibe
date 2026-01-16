@@ -1,47 +1,63 @@
 import os
 import pyvips
+import uuid
 from celery import shared_task, group
-
 from django.core.files.base import ContentFile
 from django.db import transaction
+from botocore.exceptions import ClientError
 
 from .models import Post, Media
 
 MAX_SIZE_THRESHOLD = 1 * 1024 * 1024
 
 
-@shared_task
-def process_image_to_webp(image_id):
+@shared_task(bind=True, autoretry_for=(ClientError,), retry_kwargs={'max_retries': 3, 'countdown': 4})
+def process_image_to_webp(self, image_id):
     temp_input_path = None
     try:
         image = Media.objects.get(id=image_id)
 
-        if image.file.size < MAX_SIZE_THRESHOLD:
-            print(f'Image {image_id} too small. Skipping compression.')
-            return
-        elif image.file.name.lower().endswith('.webp'):
-            print(f'Image {image_id} already webp. Skipping compression.')
-            return
+        if not image.file:
+            return f"Image {image_id} has no file."
 
         file_ext = os.path.splitext(image.file.name)[1]
-        temp_input_path = f'/tmp/{image_id}_input{file_ext}'
+        temp_input_path = f'/tmp/{image_id}_{uuid.uuid4().hex}{file_ext}'
 
         with open(temp_input_path, 'wb') as f:
             for chunk in image.file.chunks(chunk_size=1024*300):
                 f.write(chunk)
 
         vips_image = pyvips.Image.new_from_file(
-            temp_input_path, access='sequential')
+            temp_input_path, access='sequential'
+        )
 
-        webp_buffer = vips_image.write_to_buffer('.webp', Q=50, strip=True)
+        ratio = f"{vips_image.width}/{vips_image.height}"
+        image.aspect_ratio = ratio
 
-        new_filename = os.path.splitext(image.file.name)[0] + '.webp'
+        update_fields_list = ['aspect_ratio']
 
-        image.file.save(new_filename, ContentFile(webp_buffer), save=False)
-        image.save(update_fields=['file'])
+        is_small = image.file.size < MAX_SIZE_THRESHOLD
+        is_already_webp = image.file.name.lower().endswith('.webp')
 
-        return (f'Successfully converted image {image_id} to webp.')
+        if is_small or is_already_webp:
+            image.save(update_fields=update_fields_list)
+            action = 'Updated ratio only (skipped compression)'
+        else:
+            webp_buffer = vips_image.write_to_buffer('.webp', Q=50, strip=True)
 
+            basename = os.path.basename(image.file.name)
+            new_filename = os.path.splitext(basename)[0] + '.webp'
+
+            image.file.save(new_filename, ContentFile(webp_buffer), save=False)
+            update_fields_list.append('file')
+            image.save(update_fields=update_fields_list)
+
+            action = 'Converted to WebP and updated ratio'
+
+        return (f'Success image {image_id}: {action}')
+
+    except ClientError as e:
+        raise e
     except Exception as e:
         return (f'Error compression for image {image_id}: {e}')
     finally:
