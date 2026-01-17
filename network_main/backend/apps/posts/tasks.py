@@ -38,8 +38,9 @@ def process_image_to_webp(self, image_id):
 
         is_small = image.file.size < MAX_SIZE_THRESHOLD
         is_already_webp = image.file.name.lower().endswith('.webp')
+        is_gif = image.file.name.lower().endswith('.gif')
 
-        if is_small or is_already_webp:
+        if is_small or is_already_webp or is_gif:
             image.save(update_fields=update_fields_list)
             action = 'Updated ratio only (skipped compression)'
         else:
