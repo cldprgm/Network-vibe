@@ -1,107 +1,19 @@
 import { Media } from "@/services/types";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { parseAspectRatio } from "@/services/media";
 
-const parseAspectRatio = (aspect?: string, mediaType?: string) => {
-    if (!aspect) {
-        return mediaType === "video" ? 16 / 9 : 4 / 3;
-    }
-    const [w, h] = aspect.split("/").map(Number);
-    if (!w || !h) return mediaType === "video" ? 16 / 9 : 4 / 3;
-    return w / h;
-};
 
-export default function useContainerAspectRatio(mediaItems: Media[], currentMedia: Media) {
-    const [containerAspectRatio, setContainerAspectRatio] = useState<number | null>(null);
+export default function useContainerAspectRatio(mediaItems: Media[]) {
+    return useMemo(() => {
+        if (!mediaItems.length) return 4 / 3;
 
-    useEffect(() => {
-        let cancelled = false;
+        const ratios = mediaItems.map(item =>
+            parseAspectRatio(item.aspect_ratio, item.media_type)
+        );
 
-        if (!mediaItems.length) {
-            if (!cancelled) setContainerAspectRatio(4 / 3);
-            return;
-        }
+        const minRatio = Math.min(...ratios);
 
-        if (currentMedia.media_type === "video" && currentMedia.file_url) {
-            const vid = document.createElement("video");
-            vid.preload = "metadata";
-            vid.src = `${currentMedia.file_url}`;
+        return Math.max(0.3, minRatio);
 
-            const onLoaded = () => {
-                if (cancelled) return;
-                const w = vid.videoWidth || 0;
-                const h = vid.videoHeight || 0;
-                const ratio = w && h ? w / h : parseAspectRatio(currentMedia.aspect_ratio, "video");
-                if (!cancelled) setContainerAspectRatio(ratio);
-            };
-
-            const onError = () => {
-                if (cancelled) return;
-                const ratio = parseAspectRatio(currentMedia.aspect_ratio, "video");
-                if (!cancelled) setContainerAspectRatio(ratio);
-            };
-
-            vid.addEventListener("loadedmetadata", onLoaded);
-            vid.addEventListener("error", onError);
-
-            return () => {
-                cancelled = true;
-                vid.removeEventListener("loadedmetadata", onLoaded);
-                vid.removeEventListener("error", onError);
-                try { vid.src = ""; } catch { }
-            };
-        }
-
-        const imageMedia = mediaItems.filter((m) => m.media_type === "image");
-        if (!imageMedia.length) {
-            if (!cancelled) setContainerAspectRatio(parseAspectRatio(mediaItems[0]?.aspect_ratio, mediaItems[0]?.media_type));
-            return;
-        }
-
-        const ratios: number[] = [];
-        let loadedCount = 0;
-
-        imageMedia.forEach((m) => {
-            const declared = m.aspect_ratio ? parseAspectRatio(m.aspect_ratio, m.media_type) : null;
-
-            if (!m.file_url) {
-                if (declared) ratios.push(declared);
-                loadedCount++;
-                if (loadedCount === imageMedia.length && !cancelled) {
-                    const minRatio = Math.max(0.3, Math.min(...ratios));
-                    setContainerAspectRatio(minRatio);
-                }
-                return;
-            }
-
-            const img = new window.Image();
-            img.src = `${m.file_url}`;
-
-            img.onload = () => {
-                if (cancelled) return;
-                const r = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : (declared ?? 4 / 3);
-                ratios.push(r);
-                loadedCount++;
-                if (loadedCount === imageMedia.length && !cancelled) {
-                    const minRatio = Math.max(0.3, Math.min(...ratios));
-                    setContainerAspectRatio(minRatio);
-                }
-            };
-
-            img.onerror = () => {
-                if (cancelled) return;
-                if (declared) ratios.push(declared);
-                loadedCount++;
-                if (loadedCount === imageMedia.length && !cancelled) {
-                    const minRatio = Math.max(0.3, Math.min(...ratios));
-                    setContainerAspectRatio(minRatio);
-                }
-            };
-        });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [mediaItems, currentMedia?.file_url, currentMedia?.media_type]);
-
-    return containerAspectRatio;
+    }, [mediaItems]);
 }

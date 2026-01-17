@@ -1,9 +1,6 @@
 import { Media } from "@/services/types";
-import { useEffect, useRef, useState } from "react";
-import useImageSize from "./hooks/useImageSize";
-import useVideoAspectRatio from "./hooks/useVideoAspectRatio";
-
-const publicBaseUrl = process.env.NEXT_PUBLIC_API_ASSETS_URL || '';
+import { useEffect, useRef } from "react";
+import { parseAspectRatio } from "@/services/media";
 
 interface FullscreenViewerProps {
     mediaItems: Media[];
@@ -22,18 +19,14 @@ export default function FullscreenViewer({
 }: FullscreenViewerProps) {
     const currentMedia = mediaItems[currentIndex];
     const fullscreenRef = useRef<HTMLDivElement>(null);
-    const imageSize = useImageSize(currentMedia);
-    const videoAspectRatio = useVideoAspectRatio(currentMedia);
+
+    const aspectRatio = parseAspectRatio(currentMedia.aspect_ratio);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                onClose();
-            } else if (e.key === "ArrowRight") {
-                onNext();
-            } else if (e.key === "ArrowLeft") {
-                onPrev();
-            }
+            if (e.key === "Escape") onClose();
+            else if (e.key === "ArrowRight") onNext();
+            else if (e.key === "ArrowLeft") onPrev();
         };
 
         const handleClickOutside = (e: MouseEvent) => {
@@ -49,21 +42,14 @@ export default function FullscreenViewer({
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [mediaItems.length, onClose, onNext, onPrev]);
+    }, [onClose, onNext, onPrev]);
 
     const getSizeClass = () => {
-        if (!imageSize.width || !imageSize.height) return "object-contain max-w-[90vw] max-h-[90vh]";
+        if (!aspectRatio) return "object-contain max-w-[90vw] max-h-[90vh]";
 
-        const windowRatio = window.innerWidth / window.innerHeight;
-        const imageRatio = imageSize.width / imageSize.height;
+        if (aspectRatio < 0.7) return "max-h-[90vh] w-auto";
 
-        if (imageRatio < 0.7) {
-            return "max-h-[90vh] w-auto";
-        }
-
-        if (imageRatio > 1.5) {
-            return "max-w-[90vw] h-auto";
-        }
+        if (aspectRatio > 1.5) return "max-w-[90vw] h-auto";
 
         return "min-w-[90vw] max-w-[90vw] max-h-[90vh]";
     };
@@ -155,9 +141,7 @@ export default function FullscreenViewer({
                                 controls
                                 autoPlay
                                 className="max-w-[90vw] max-h-[90vh] object-contain"
-                                style={{
-                                    aspectRatio: videoAspectRatio ?? undefined,
-                                }}
+                                style={{ aspectRatio: aspectRatio }}
                             />
                         )}
                     </div>
