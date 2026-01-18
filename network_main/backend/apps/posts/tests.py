@@ -1,7 +1,9 @@
 import pytest
 import io
 import os
+import pyvips
 from urllib.parse import urlparse
+from unittest.mock import MagicMock, patch, PropertyMock
 
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
@@ -16,6 +18,10 @@ from apps.communities.models import Community
 from apps.categories.models import Category
 from apps.ratings.models import Rating
 from apps.posts.models import Post, Comment, Media
+from apps.posts.tasks import process_image_to_webp, MAX_SIZE_THRESHOLD
+from apps.services.utils import delete_s3_file
+
+pyvips.cache_set_max(0)
 
 
 @pytest.fixture
@@ -690,3 +696,120 @@ class TestPostMedia:
         expected_path = urlparse(expected_url).path
 
         assert returned_path == expected_path
+
+
+@pytest.mark.django_db
+class TestMediaCompression:
+    def test_delete_old_s3_file_success(self):
+        mock_storage = MagicMock()
+        mock_storage.exists.return_value = True
+
+        filename = "old_image.jpg"
+        delete_s3_file(mock_storage, filename)
+
+        mock_storage.exists.assert_called_once_with(filename)
+        mock_storage.delete.assert_called_once_with(filename)
+
+    def test_delete_old_s3_file_not_exists(self):
+        mock_storage = MagicMock()
+        mock_storage.exists.return_value = False
+
+        delete_s3_file(mock_storage, "missing.jpg")
+
+        mock_storage.delete.assert_not_called()
+
+    def test_delete_old_s3_file_exception(self):
+        mock_storage = MagicMock()
+        mock_storage.exists.return_value = True
+        mock_storage.delete.side_effect = Exception("S3 Error")
+
+        try:
+            delete_s3_file(mock_storage, "error.jpg")
+        except Exception:
+            pytest.fail("delete_old_s3_file raised Exception unexpectedly!")
+
+    # --- Celery tasks ---
+
+    def test_process_image_no_file(self, media_file):
+        media_file.file = None
+        media_file.save()
+
+        result = process_image_to_webp(media_file.id)
+        assert f"Image {media_file.id} has no file" in result
+
+    @patch('apps.posts.tasks.pyvips.Image')
+    def test_process_image_skip_compression(self, mock_vips, media_file):
+        mock_image_instance = MagicMock()
+        mock_image_instance.width = 100
+        mock_image_instance.height = 200
+        mock_vips.new_from_file.return_value = mock_image_instance
+
+        res = process_image_to_webp(media_file.id)
+
+        media_file.refresh_from_db()
+
+        assert media_file.aspect_ratio == "100/200"
+        assert "Updated ratio only" in res
+        mock_image_instance.write_to_buffer.assert_not_called()
+
+    def test_process_image_conversion_success(self, media_file):
+        with patch('apps.posts.tasks.Media.objects.get', return_value=media_file) as mock_get_obj, \
+                patch('apps.posts.tasks.os.remove') as mock_os_remove, \
+                patch('apps.posts.tasks.os.path.exists', return_value=True), \
+                patch('apps.posts.tasks.delete_s3_file') as mock_delete_s3, \
+                patch('apps.posts.tasks.pyvips.Image') as mock_vips, \
+                patch('builtins.open', new_callable=MagicMock) as mock_open, \
+                patch('django.db.models.fields.files.FieldFile.size', new_callable=PropertyMock) as mock_size:
+
+            mock_size.return_value = MAX_SIZE_THRESHOLD + 1000
+
+            media_file.file.chunks = MagicMock(return_value=[b'dummy_data'])
+
+            media_file.save = MagicMock()
+            media_file.file.save = MagicMock()
+
+            mock_vips_instance = MagicMock()
+            mock_vips_instance.width = 800
+            mock_vips_instance.height = 600
+            mock_vips_instance.write_to_buffer.return_value = b'fake_webp_bytes'
+            mock_vips.new_from_file.return_value = mock_vips_instance
+
+            old_filename = media_file.file.name
+
+            res = process_image_to_webp(media_file.id)
+
+            mock_get_obj.assert_called_with(id=media_file.id)
+
+            mock_vips_instance.write_to_buffer.assert_called_with(
+                '.webp', Q=50, strip=True
+            )
+
+            assert media_file.file.save.called
+            args, _ = media_file.file.save.call_args
+            assert args[0].endswith('.webp')
+
+            mock_delete_s3.assert_called_once()
+            del_args, _ = mock_delete_s3.call_args
+            assert del_args[1] == old_filename
+
+            mock_os_remove.assert_called_once()
+
+            assert "Converted to WebP" in res
+
+    @patch('apps.posts.tasks.pyvips.Image')
+    def test_process_image_already_webp(self, mock_vips, post):
+        media_webp = Media.objects.create(
+            post=post,
+            file=SimpleUploadedFile(
+                "existing.webp", b"data", content_type="image/webp")
+        )
+
+        mock_instance = MagicMock()
+        mock_instance.width = 50
+        mock_instance.height = 50
+        mock_vips.new_from_file.return_value = mock_instance
+
+        res = process_image_to_webp(media_webp.id)
+
+        assert "Updated ratio only" in res
+        mock_instance.write_to_buffer.assert_not_called()
