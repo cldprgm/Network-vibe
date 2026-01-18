@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from botocore.exceptions import ClientError
 
+from apps.services.utils import delete_s3_file
 from .models import Post, Media
 
 MAX_SIZE_THRESHOLD = 1 * 1024 * 1024
@@ -46,12 +47,17 @@ def process_image_to_webp(self, image_id):
         else:
             webp_buffer = vips_image.write_to_buffer('.webp', Q=50, strip=True)
 
+            old_file = image.file.name
+            storage_instance = image.file.storage
+
             basename = os.path.basename(image.file.name)
             new_filename = os.path.splitext(basename)[0] + '.webp'
 
             image.file.save(new_filename, ContentFile(webp_buffer), save=False)
             update_fields_list.append('file')
             image.save(update_fields=update_fields_list)
+
+            delete_s3_file(storage_instance, old_file)
 
             action = 'Converted to WebP and updated ratio'
 
