@@ -3,7 +3,7 @@ FROM python:3.13.7-slim-bookworm
 WORKDIR /usr/src/apibackend
 
 RUN apt-get update && apt-get install -y \
-    libpq-dev gcc python3-dev libmagic1 \
+    libpq-dev gcc python3-dev libmagic1 libvips-dev libvips libvips-tools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir media

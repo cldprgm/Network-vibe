@@ -15,7 +15,7 @@ export default function PostMedia({ post }: { post: Post }) {
   const mediaItems = post.media_data;
   const currentMedia = mediaItems[currentIndex];
 
-  const containerAspectRatio = useContainerAspectRatio(mediaItems, currentMedia);
+  const containerAspectRatio = useContainerAspectRatio(mediaItems);
 
   const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % mediaItems.length);
   const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);

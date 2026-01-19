@@ -10,6 +10,7 @@ import { getCommunityBySlug } from '@/services/api';
 import { ChevronDown, Type, Image as ImageIcon, X, Upload, Loader2, Search } from 'lucide-react';
 import { Suspense } from 'react';
 import { useAuthStore } from '@/zustand_store/authStore';
+import { processAndAppendFiles } from '@/services/fileProcessing';
 import Image from 'next/image';
 
 interface FileWithPreview extends File {
@@ -24,8 +25,11 @@ function CreatePostContent() {
     const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
     const [files, setFiles] = useState<FileWithPreview[]>([]);
     const [rejections, setRejections] = useState<FileRejection[]>([]);
+
     const [loading, setLoading] = useState<boolean>(false);
     const [postLoading, setPostLoading] = useState<boolean>(false);
+
+    const [compressionStatus, setCompressionStatus] = useState<string>('');
 
     const { user } = useAuthStore();
 
@@ -206,15 +210,16 @@ function CreatePostContent() {
         e.preventDefault();
         if (!community) return;
         setPostLoading(true);
+        setCompressionStatus('Preparing...');
         try {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('description', content);
             formData.append('community_obj', String(community.id));
 
-            files.forEach((file) => {
-                formData.append('media_files', file, file.name)
-            });
+            await processAndAppendFiles(files, formData, setCompressionStatus);
+
+            setCompressionStatus('Uploading...');
 
             const newPost = await apiCreatePost(formData);
             setTitle('');
@@ -223,6 +228,7 @@ function CreatePostContent() {
             setFiles([]);
             adjustHeight(titleRef.current);
             adjustHeight(contentRef.current);
+            setCompressionStatus('');
 
             const postSlug = newPost?.slug;
 
@@ -237,6 +243,7 @@ function CreatePostContent() {
             console.error('Error creating post: ', err.message)
         } finally {
             setPostLoading(false);
+            setCompressionStatus('');
         }
     };
 
@@ -470,7 +477,7 @@ function CreatePostContent() {
                                         ? 'cursor-pointer bg-blue-600 text-white hover:bg-blue-700'
                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                             >
-                                {postLoading ? 'Posting...' : 'Submit Post'}
+                                {postLoading ? (compressionStatus || 'Posting...') : 'Submit Post'}
                             </button>
                         </div>
 

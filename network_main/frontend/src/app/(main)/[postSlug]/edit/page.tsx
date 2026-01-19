@@ -9,6 +9,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Type, Image as ImageIcon, X, Upload, Loader2, Search } from 'lucide-react';
 import { api } from '@/services/auth';
 import Image from 'next/image';
+import { processAndAppendFiles } from '@/services/fileProcessing';
 
 interface FileWithPreview extends File {
     preview: string;
@@ -33,6 +34,8 @@ export default function EditPost() {
 
     const [communitiesLoading, setCommunitiesLoading] = useState<boolean>(false);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    const [compressionStatus, setCompressionStatus] = useState<string>('');
 
     const { user } = useAuthStore();
 
@@ -245,23 +248,27 @@ export default function EditPost() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!community) return;
+
         setIsSubmitting(true);
+        setCompressionStatus('Preparing...');
+
         try {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('description', content);
             formData.append('community_obj', String(community.id));
 
-            files.forEach((file) => {
-                formData.append('media_files', file, file.name);
-            });
-
             deletedMediaIds.forEach((id) => {
                 formData.append('deleted_media_files', String(id));
             });
 
+            await processAndAppendFiles(files, formData, setCompressionStatus);
+
+            setCompressionStatus('Uploading...');
+
             const response = await api.patch(`/posts/${slug}/`, formData);
             const updatedPost = response.data;
+
             setTitle('');
             setContent('');
             setCommunity(null);
@@ -270,15 +277,16 @@ export default function EditPost() {
             setDeletedMediaIds([]);
             adjustHeight(titleRef.current);
             adjustHeight(contentRef.current);
+            setCompressionStatus('');
 
             const postSlug = updatedPost?.slug || slug;
-
             router.push(`/${postSlug}`);
 
         } catch (err: any) {
             console.error('Error updating post: ', err.message);
         } finally {
             setIsSubmitting(false);
+            setCompressionStatus('');
         }
     };
 
@@ -519,7 +527,7 @@ export default function EditPost() {
                                         ? 'cursor-pointer bg-green-600 text-white hover:bg-green-700'
                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
                             >
-                                {isSubmitting ? 'Updating...' : 'Update Post'}
+                                {isSubmitting ? (compressionStatus || 'Updating...') : 'Update Post'}
                             </button>
                         </div>
 

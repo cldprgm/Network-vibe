@@ -7,6 +7,9 @@ from unidecode import unidecode
 from uuid import uuid4
 import magic
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 GITHUB_USER_URL = "https://api.github.com/user"
@@ -186,3 +189,18 @@ def get_github_user_email(session: requests.Session, access_token: str) -> str:
             raise ValidationError("No verified email found in GitHub account")
     except requests.exceptions.RequestException:
         raise ValidationError("Failed to get Github user email")
+
+
+def delete_s3_file(storage, filename):
+    """
+    Delete file from the storage.
+    Deletion error does not stop the execution.
+    """
+    if not filename:
+        return
+    try:
+        if storage.exists(filename):
+            storage.delete(filename)
+            logger.info(f"Successfully deleted file from s3: {filename}")
+    except Exception as e:
+        logger.error(f"Failed to delete old file {filename} from S3: {e}")

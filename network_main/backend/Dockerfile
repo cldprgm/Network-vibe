@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y \
-    libpq-dev gcc python3-dev \
+    libpq-dev gcc python3-dev libvips-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
@@ -22,7 +22,7 @@ WORKDIR /usr/src/apibackend
 RUN useradd -s /bin/sh -u 1234 nonroot
 
 RUN apt-get update && apt-get install -y \
-    libpq5 libmagic1 \
+    libpq5 libmagic1 libvips libvips-tools\
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/app/wheels /wheels
