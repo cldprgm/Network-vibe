@@ -132,8 +132,16 @@ class GoogleLoginView(SetJWTCookiesMixin, APIView):
         # Exchange code for tokens
         try:
             google_tokens = get_google_tokens(code)
+        except requests.RequestException:
+            return Response(
+                {'error': 'Google service unavailable'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Internal server error'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         id_token = google_tokens.get('id_token')
 
@@ -191,9 +199,16 @@ class GithubLoginView(SetJWTCookiesMixin, APIView):
                 # Get email if missing
                 if not email:
                     email = get_github_user_email(session, access_token)
-
+            except requests.RequestException:
+                return Response(
+                    {'error': 'GitHub service unavailable'},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
             except Exception as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Internal server error'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         full_name = user_data.get('name') or ''
         name_parts = full_name.split(' ', 1)
