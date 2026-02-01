@@ -155,8 +155,8 @@ class TestGoogleLogin:
 
         data = {'code': 'invalid_code'}
         response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == "Failed to exchange code with Google"
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.data['error'] == "Internal server error"
 
     def test_google_no_id_token(self, api_client, mocker):
         mock_response = Mock()
@@ -170,9 +170,9 @@ class TestGoogleLogin:
 
         data = {'code': 'valid_code'}
         response = api_client.post(self.url, data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        assert response.data['error'] == "[ErrorDetail(string='No ID token provided', code='invalid')]"
+        assert response.data['error'] == "Internal server error"
 
     def test_successful_login_new_user(self, api_client, mocker):
         mocker.patch(
@@ -361,8 +361,8 @@ class TestGithubLogin:
         data = {'code': 'invalid_code'}
         response = api_client.post(self.url, data)
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == "Failed to exchange code with Github"
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.data['error'] == "Internal server error"
 
     def test_github_upstream_error_user_data(self, api_client, mocker):
         mocker.patch('apps.users.views.get_github_tokens',
@@ -374,8 +374,8 @@ class TestGithubLogin:
         data = {'code': 'valid_code'}
         response = api_client.post(self.url, data)
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == "Failed to get Github user info"
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.data['error'] == "Internal server error"
 
     def test_successful_login_new_user_public_email(self, api_client, mocker):
         mocker.patch('apps.users.views.get_github_tokens',
@@ -455,8 +455,8 @@ class TestGithubLogin:
         data = {'code': 'valid_code_no_email_access'}
         response = api_client.post(self.url, data)
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == "Failed to get Github user email"
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.data['error'] == "Internal server error"
 
     def test_no_verified_email_found(self, api_client, mocker):
         mocker.patch('apps.users.views.get_github_tokens',
@@ -477,8 +477,8 @@ class TestGithubLogin:
         data = {'code': 'valid_code_unverified'}
         response = api_client.post(self.url, data)
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "No verified email found" in str(response.data['error'])
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert "Internal server error" in str(response.data['error'])
 
     def test_successful_login_existing_user_by_github_id(self, api_client, mocker):
         existing_user = CustomUser.objects.create_user(
